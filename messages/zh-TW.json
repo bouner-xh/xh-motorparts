@@ -1,0 +1,64 @@
+{
+  "nav": {
+    "home": "首頁",
+    "products": "產品目錄",
+    "about": "關於我們",
+    "contact": "聯絡我們",
+    "privacy": "隱私政策"
+  },
+  "home": {
+    "title": "產品分類",
+    "subtitle": "快速瀏覽主要產品分類，並查看對應型號、規格與詢價資訊。"
+  },
+  "products": {
+    "title": "產品目錄",
+    "subtitle": "依產品分類查看型號、規格與詳細資料，方便分享與詢價。",
+    "viewDetail": "查看詳細",
+    "specifications": "規格",
+    "stock": "庫存",
+    "category": "分類",
+    "imagePath": "圖片路徑",
+    "backToCategory": "返回分類"
+  },
+  "about": {
+    "title": "關於我們",
+    "intro": "我們是台灣摩托車零件製造商，專注產品品質與穩定供應。",
+    "content": "我們持續提供穩定的產品供應、清楚的型號資訊與可靠的商務合作服務。"
+  },
+  "contact": {
+    "title": "聯絡我們",
+    "address": "地址：台中市南屯區黎明路一段533-2號",
+    "phone": "電話：0930 797 299",
+    "email": "Email：bounerchang@gmail.com"
+  },
+  "privacy": {
+    "title": "隱私政策",
+    "content": "我們重視你的資料安全，網站分析與詢價資料皆依用途妥善處理。"
+  },
+  "cookie": {
+    "message": "本網站使用 Cookie 進行流量分析與服務優化。繼續使用即表示你可管理分析同意設定。",
+    "accept": "接受",
+    "decline": "拒絕"
+  },
+  "inquiry": {
+    "title": "產品詢價",
+    "name": "姓名",
+    "email": "Email",
+    "message": "詢價內容",
+    "submit": "送出詢價",
+    "sending": "送出中...",
+    "success": "詢價已送出，我們會盡快與你聯繫。",
+    "error": "送出失敗，請稍後再試。",
+    "captchaPending": "驗證服務尚未啟用，送出前請先確認目前環境設定。"
+  },
+  "admin": {
+    "loginTitle": "管理員登入",
+    "loginDescription": "請使用管理員帳號登入後台以管理產品與詢價資料。",
+    "loginButton": "登入",
+    "dashboardTitle": "管理後台",
+    "productsCardTitle": "產品管理",
+    "productsCardDescription": "後續將接上產品 CRUD、圖片上傳與分類管理。",
+    "inquiriesCardTitle": "詢價管理",
+    "inquiriesCardDescription": "後續將接上 RFQ / CRM / 回覆紀錄。"
+  }
+}

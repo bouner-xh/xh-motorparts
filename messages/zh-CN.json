@@ -1,0 +1,64 @@
+{
+  "nav": {
+    "home": "首页",
+    "products": "产品目录",
+    "about": "关于我们",
+    "contact": "联系我们",
+    "privacy": "隐私政策"
+  },
+  "home": {
+    "title": "产品分类",
+    "subtitle": "快速浏览主要产品分类，并查看对应型号、规格与询价信息。"
+  },
+  "products": {
+    "title": "产品目录",
+    "subtitle": "依产品分类查看型号、规格与详细资料，方便分享与询价。",
+    "viewDetail": "查看详细",
+    "specifications": "规格",
+    "stock": "库存",
+    "category": "分类",
+    "imagePath": "图片路径",
+    "backToCategory": "返回分类"
+  },
+  "about": {
+    "title": "关于我们",
+    "intro": "我们是台湾摩托车零件制造商，专注产品品质与稳定供应。",
+    "content": "我们持续提供稳定的产品供应、清楚的型号信息与可靠的商务合作服务。"
+  },
+  "contact": {
+    "title": "联系我们",
+    "address": "地址：台中市南屯区黎明路一段533-2号",
+    "phone": "电话：0930 797 299",
+    "email": "Email：bounerchang@gmail.com"
+  },
+  "privacy": {
+    "title": "隐私政策",
+    "content": "我们重视你的资料安全，网站分析与询价资料都会依用途妥善处理。"
+  },
+  "cookie": {
+    "message": "本网站使用 Cookie 进行流量分析与服务优化。继续使用即表示你可管理分析同意设置。",
+    "accept": "接受",
+    "decline": "拒绝"
+  },
+  "inquiry": {
+    "title": "产品询价",
+    "name": "姓名",
+    "email": "Email",
+    "message": "询价内容",
+    "submit": "提交询价",
+    "sending": "提交中...",
+    "success": "询价已提交，我们会尽快与你联系。",
+    "error": "提交失败，请稍后再试。",
+    "captchaPending": "验证服务尚未启用，提交前请先确认当前环境设置。"
+  },
+  "admin": {
+    "loginTitle": "管理员登录",
+    "loginDescription": "请使用管理员账号登录后台以管理产品与询价资料。",
+    "loginButton": "登录",
+    "dashboardTitle": "管理后台",
+    "productsCardTitle": "产品管理",
+    "productsCardDescription": "后续将接入产品 CRUD、图片上传与分类管理。",
+    "inquiriesCardTitle": "询价管理",
+    "inquiriesCardDescription": "后续将接入 RFQ / CRM / 回复记录。"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "nav": {
+    "home": "Home",
+    "products": "Products",
+    "about": "About",
+    "contact": "Contact",
+    "privacy": "Privacy"
+  },
+  "home": {
+    "title": "Product Categories",
+    "subtitle": "Browse core product categories and quickly reach the right model, specification and inquiry page."
+  },
+  "products": {
+    "title": "Product Catalog",
+    "subtitle": "Browse products by category and review model numbers, specifications and detail pages for inquiry.",
+    "viewDetail": "View details",
+    "specifications": "Specifications",
+    "stock": "Stock",
+    "category": "Category",
+    "imagePath": "Image path",
+    "backToCategory": "Back to category"
+  },
+  "about": {
+    "title": "About Us",
+    "intro": "We are a Taiwan-based motorcycle parts manufacturer focused on quality and stable supply.",
+    "content": "We focus on reliable supply, clear product information and long-term business cooperation."
+  },
+  "contact": {
+    "title": "Contact Us",
+    "address": "Address: No. 533-2, Sec. 1, Liming Rd., Nantun Dist., Taichung City, Taiwan",
+    "phone": "Phone: 0930 797 299",
+    "email": "Email: bounerchang@gmail.com"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "content": "We value data protection and handle analytics and inquiry information according to their intended purpose."
+  },
+  "cookie": {
+    "message": "This site uses cookies for analytics and service improvement. You can manage analytics consent here.",
+    "accept": "Accept",
+    "decline": "Decline"
+  },
+  "inquiry": {
+    "title": "Product inquiry",
+    "name": "Name",
+    "email": "Email",
+    "message": "Inquiry message",
+    "submit": "Send inquiry",
+    "sending": "Sending...",
+    "success": "Inquiry submitted. We will get back to you as soon as possible.",
+    "error": "Submission failed. Please try again later.",
+    "captchaPending": "Verification service is not enabled yet. Please confirm the environment settings before submitting."
+  },
+  "admin": {
+    "loginTitle": "Admin login",
+    "loginDescription": "Sign in with an admin account to manage catalog and inquiry data.",
+    "loginButton": "Login",
+    "dashboardTitle": "Admin dashboard",
+    "productsCardTitle": "Product management",
+    "productsCardDescription": "Product CRUD, image upload and category management will be connected next.",
+    "inquiriesCardTitle": "Inquiry management",
+    "inquiriesCardDescription": "RFQ / CRM / reply history will be connected next."
+  }
+}
