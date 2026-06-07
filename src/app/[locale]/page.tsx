@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
 import { locales, type Locale } from '@/lib/catalog';
 import { getCategoryCoverUrl } from '@/lib/assets';
 import { getCategorySummaries } from '@/lib/catalog-service';
-import { heroContent, sharedStats } from '@/lib/site-content';
+import { homeContent } from '@/lib/site-content';
 import { notFound } from 'next/navigation';
 
 export default async function LocaleHome({
@@ -19,56 +19,38 @@ export default async function LocaleHome({
 
   const localeValue = locale as Locale;
   setRequestLocale(localeValue);
-  const t = await getTranslations({ locale: localeValue, namespace: 'home' });
   const categories = await getCategorySummaries(localeValue);
-  const hero = heroContent[localeValue];
+  const content = homeContent[localeValue];
 
   return (
     <main>
       <section className="hero">
-        <div className="surface hero__panel">
-          <span className="hero__eyebrow">{hero.eyebrow}</span>
-          <h2 className="hero__title">{hero.title}</h2>
-          <p className="muted hero__description">{hero.subtitle}</p>
+        <div className="surface hero__panel" style={{ gridColumn: '1 / -1', padding: '3rem 2rem' }}>
+          <span className="hero__eyebrow">{content.hero.eyebrow}</span>
+          <h2 className="hero__title" style={{ whiteSpace: 'pre-line' }}>{content.hero.title}</h2>
+          <p className="muted hero__description">{content.hero.subtitle}</p>
           <div className="hero__actions">
             <Link href={`/${localeValue}/products`}>
-              <button type="button">{hero.primaryCta}</button>
+              <button type="button">{content.hero.primaryCta}</button>
             </Link>
             <Link className="button-secondary" href={`/${localeValue}/about`}>
-              {hero.secondaryCta}
+              {content.hero.secondaryCta}
             </Link>
-          </div>
-          <div className="hero__trust">
-            {hero.trustPoints.map((item) => (
-              <div key={item} className="hero__trust-item">
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="surface hero__stats">
-          <div className="section-heading">
-            <div>
-              <h2>{t('title')}</h2>
-              <p className="muted">{t('subtitle')}</p>
-            </div>
-          </div>
-          <div className="stats-grid">
-            {sharedStats.map((stat) => (
-              <article key={stat.value} className="card stats-card">
-                <p className="stats-card__value">{stat.value}</p>
-                <p className="muted stats-card__label">{stat.label[localeValue]}</p>
-              </article>
-            ))}
           </div>
         </div>
       </section>
 
+      <section className="brand-belief">
+        <h2>{content.brandBelief.title}</h2>
+        {content.brandBelief.body.map((line, idx) => (
+          <p key={idx}>{line}</p>
+        ))}
+      </section>
+
       <section className="section-heading">
         <div>
-          <h2>{t('title')}</h2>
-          <p className="muted">{t('subtitle')}</p>
+          <h2>{content.categoryIntro.title}</h2>
+          <p className="muted">{content.categoryIntro.subtitle}</p>
         </div>
       </section>
 
@@ -85,6 +67,39 @@ export default async function LocaleHome({
             </div>
           </Link>
         ))}
+      </section>
+
+      <section style={{ marginTop: '4rem' }}>
+        <div className="section-heading">
+          <h2>{content.whyChooseUs.title}</h2>
+        </div>
+        <div className="why-grid">
+          {content.whyChooseUs.items.map((item, idx) => (
+            <div key={idx} className="why-card">
+              <span className="why-card__icon">{item.icon}</span>
+              <div className="why-card__title">{item.title}</div>
+              <div className="why-card__desc">{item.description}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="flow-container">
+        <div className="section-heading" style={{ justifyContent: 'center', marginTop: 0 }}>
+          <h2 style={{ textAlign: 'center' }}>{content.inquiryFlow.title}</h2>
+        </div>
+        <div className="flow-steps">
+          {content.inquiryFlow.steps.map((step, idx) => (
+            <div key={idx} className="flow-step">
+              <div className="flow-step__number">{idx + 1}</div>
+              <div className="flow-step__title">{step.title}</div>
+              <div className="flow-step__desc">{step.desc}</div>
+            </div>
+          ))}
+        </div>
+        <div className="flow-conclusion">
+          {content.inquiryFlow.conclusion}
+        </div>
       </section>
     </main>
   );
