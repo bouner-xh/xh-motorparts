@@ -2,6 +2,46 @@ import {getAllProducts, getProductsByCategory, findProduct} from '@/data/product
 import {categoryDescriptions, categoryKeys, categoryNames, type CategoryKey, type Locale} from '@/lib/catalog';
 import {getSupabaseServerClient} from '@/lib/supabase/server';
 
+const defaultImagePath = 'images/no-image.jpg';
+
+function getPrimaryCategorySlug(categoryRef: {slug?: string} | Array<{slug?: string}> | null) {
+  return Array.isArray(categoryRef) ? categoryRef[0]?.slug : categoryRef?.slug;
+}
+
+function getLocalizedName(nameI18n: Record<string, string> | undefined, locale: Locale, modelNumber: string) {
+  if (!nameI18n) {
+    return modelNumber;
+  }
+
+  return nameI18n[locale] || nameI18n['zh-TW'] || nameI18n.en || modelNumber;
+}
+
+async function getPrimaryImageMap(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>, productIds: string[]) {
+  const imageMap = new Map<string, string>();
+
+  if (!productIds.length) {
+    return imageMap;
+  }
+
+  try {
+    const {data} = await supabase
+      .from('product_images')
+      .select('product_id,storage_path,sort_order')
+      .in('product_id', productIds)
+      .order('sort_order', {ascending: true});
+
+    (data || []).forEach((item) => {
+      if (!imageMap.has(item.product_id)) {
+        imageMap.set(item.product_id, item.storage_path || defaultImagePath);
+      }
+    });
+  } catch {
+    return imageMap;
+  }
+
+  return imageMap;
+}
+
 export interface CategorySummary {
   key: CategoryKey;
   name: string;
@@ -46,7 +86,7 @@ export async function getCategorySummaries(locale: Locale): Promise<CategorySumm
   }
 }
 
-export async function getCategoryProducts(category: CategoryKey) {
+export async function getCategoryProducts(category: CategoryKey, locale: Locale = 'zh-TW') {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -65,12 +105,17 @@ export async function getCategoryProducts(category: CategoryKey) {
       throw error;
     }
 
+    const imageMap = await getPrimaryImageMap(
+      supabase,
+      data.map((item) => item.id)
+    );
+
     return data.map((item) => ({
       id: item.id,
       category,
       model: item.model_number,
-      name: item.name_i18n?.['zh-TW'] || item.model_number,
-      image: 'images/no-image.jpg',
+      name: getLocalizedName(item.name_i18n, locale, item.model_number),
+      image: imageMap.get(item.id) || defaultImagePath,
       stock: item.stock_quantity ?? 0,
       specifications: item.specifications ?? []
     }));
@@ -79,7 +124,7 @@ export async function getCategoryProducts(category: CategoryKey) {
   }
 }
 
-export async function getCatalogProduct(category: CategoryKey, modelNumber: string) {
+export async function getCatalogProduct(category: CategoryKey, modelNumber: string, locale: Locale = 'zh-TW') {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -99,12 +144,14 @@ export async function getCatalogProduct(category: CategoryKey, modelNumber: stri
       throw error;
     }
 
+    const imageMap = await getPrimaryImageMap(supabase, [data.id]);
+
     return {
       id: data.id,
       category,
       model: data.model_number,
-      name: data.name_i18n?.['zh-TW'] || data.model_number,
-      image: 'images/no-image.jpg',
+      name: getLocalizedName(data.name_i18n, locale, data.model_number),
+      image: imageMap.get(data.id) || defaultImagePath,
       stock: data.stock_quantity ?? 0,
       specifications: data.specifications ?? []
     };
@@ -113,7 +160,7 @@ export async function getCatalogProduct(category: CategoryKey, modelNumber: stri
   }
 }
 
-export async function getCatalogProducts() {
+export async function getCatalogProducts(locale: Locale = 'zh-TW') {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -131,22 +178,27 @@ export async function getCatalogProducts() {
       throw error;
     }
 
+    const imageMap = await getPrimaryImageMap(
+      supabase,
+      data.map((item) => item.id)
+    );
+
     return data
       .filter((item) => {
         const categoryRef = item.category as {slug?: string} | Array<{slug?: string}> | null;
-        const categorySlug = Array.isArray(categoryRef) ? categoryRef[0]?.slug : categoryRef?.slug;
+        const categorySlug = getPrimaryCategorySlug(categoryRef);
         return categoryKeys.includes(categorySlug as CategoryKey);
       })
       .map((item) => {
         const categoryRef = item.category as {slug?: string} | Array<{slug?: string}> | null;
-        const categorySlug = Array.isArray(categoryRef) ? categoryRef[0]?.slug : categoryRef?.slug;
+        const categorySlug = getPrimaryCategorySlug(categoryRef);
 
         return {
         id: item.id,
         category: categorySlug as CategoryKey,
         model: item.model_number,
-        name: item.name_i18n?.['zh-TW'] || item.model_number,
-        image: 'images/no-image.jpg',
+        name: getLocalizedName(item.name_i18n, locale, item.model_number),
+        image: imageMap.get(item.id) || defaultImagePath,
         stock: item.stock_quantity ?? 0,
         specifications: item.specifications ?? []
       };

@@ -1,6 +1,16 @@
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
+const cspScriptSrc = isProduction
+  ? "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com https://www.clarity.ms"
+  : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://challenges.cloudflare.com https://www.clarity.ms";
+
+const cspConnectSrc = isProduction
+  ? "connect-src 'self' https://*.supabase.co https://api.resend.com"
+  : "connect-src 'self' ws: wss: http://localhost:* http://127.0.0.1:* https://*.supabase.co https://api.resend.com";
+
 const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -14,10 +24,10 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com https://www.clarity.ms",
+      cspScriptSrc,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://*.r2.dev https://*.cloudflare.com",
-      "connect-src 'self' https://*.supabase.co https://api.resend.com",
+      "img-src 'self' data: blob: https://*.r2.dev https://*.cloudflare.com https://*.supabase.co",
+      cspConnectSrc,
       "frame-src https://challenges.cloudflare.com",
     ].join('; '),
   },
@@ -35,6 +45,15 @@ const nextConfig: NextConfig = {
         headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
       },
     ];
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   },
 };
 

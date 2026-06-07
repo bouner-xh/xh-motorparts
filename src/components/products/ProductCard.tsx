@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type {Product} from '@/data/products';
-import {toLegacyAssetUrl} from '@/lib/assets';
+import {toProductImageUrl} from '@/lib/assets';
 
 export function ProductCard({
   product,
@@ -19,7 +19,7 @@ export function ProductCard({
       <div className="product-card__image-wrap">
         <Image
           className="product-card__image"
-          src={toLegacyAssetUrl(product.image)}
+          src={toProductImageUrl(product.image)}
           alt={`${product.model} ${product.name}`}
           fill
           sizes="(max-width: 768px) 100vw, 25vw"
