@@ -7,7 +7,7 @@ import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { getAllProducts } from '@/data/products';
 import { InquiryForm } from '@/components/products/InquiryForm';
 import { ProductSchema } from '@/components/products/ProductSchema';
-import { toLegacyAssetUrl } from '@/lib/assets';
+import { toProductImageUrl } from '@/lib/assets';
 import { getCatalogProduct } from '@/lib/catalog-service';
 import { categoryKeys, categoryNames, locales, type CategoryKey, type Locale } from '@/lib/catalog';
 import { getBaseUrl } from '@/lib/site';
@@ -35,7 +35,7 @@ export async function generateMetadata({
   }
 
   const categoryValue = category as CategoryKey;
-  const product = await getCatalogProduct(categoryValue, decodeURIComponent(modelNumber));
+  const product = await getCatalogProduct(categoryValue, decodeURIComponent(modelNumber), locale as Locale);
   if (!product) {
     return {};
   }
@@ -51,7 +51,7 @@ export async function generateMetadata({
       title: `${product.model} | ${product.name}`,
       description: `${product.model} ${product.name}，${product.specifications.join(', ')}`,
       url: `${baseUrl}/${locale}/products/${categoryValue}/${encodedModel}`,
-      images: [`${baseUrl}${toLegacyAssetUrl(product.image)}`],
+      images: [toProductImageUrl(product.image)],
       locale,
       siteName: locale === 'en' ? 'Xie Huang Enterprise Co., Ltd.' : '協皇企業有限公司'
     },
@@ -74,7 +74,7 @@ export default async function ProductDetailPage({
   const localeValue = locale as Locale;
   const categoryValue = category as CategoryKey;
   const decodedModel = decodeURIComponent(modelNumber);
-  const product = await getCatalogProduct(categoryValue, decodedModel);
+  const product = await getCatalogProduct(categoryValue, decodedModel, localeValue);
   setRequestLocale(localeValue);
   const tProducts = await getTranslations({ locale: localeValue, namespace: 'products' });
   const tNav = await getTranslations({ locale: localeValue, namespace: 'nav' });
@@ -101,7 +101,7 @@ export default async function ProductDetailPage({
       <section className="detail-grid">
         <article className="card detail-media">
           <Image
-            src={toLegacyAssetUrl(product.image)}
+            src={toProductImageUrl(product.image)}
             alt={`${product.model} ${product.name}`}
             width={900}
             height={900}
@@ -125,17 +125,17 @@ export default async function ProductDetailPage({
           <p className="muted">
             {tProducts('stock')}：{product.stock}
           </p>
-          <p className="muted">
-            {tProducts('imagePath')}：{product.image}
-          </p>
-          <p className="muted">URL：{shareUrl}</p>
-          <p>
-            <Link className="text-link" href={`/${localeValue}/products/${categoryValue}`}>
-              ← {tProducts('backToCategory')}
-            </Link>
-          </p>
 
-          <InquiryForm productModel={product.model} productName={product.name} />
+          <div style={{ marginTop: 'auto' }}>
+            <p style={{ margin: 0 }}>
+              <Link className="text-link" href={`/${localeValue}/products/${categoryValue}`}>
+                ← {tProducts('backToCategory')}
+              </Link>
+            </p>
+            <div style={{ marginTop: '-0.4rem' }}>
+              <InquiryForm productModel={product.model} productName={product.name} />
+            </div>
+          </div>
         </div>
       </section>
     </main>

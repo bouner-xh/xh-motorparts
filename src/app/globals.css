@@ -33,6 +33,7 @@ a {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -54,6 +55,7 @@ label {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   padding: 0.7rem 0.8rem;
@@ -358,12 +360,17 @@ textarea {
 
 .detail-grid {
   grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
-  align-items: start;
+  align-items: stretch;
 }
 
 .detail-media,
 .detail-info {
   padding: 1.2rem;
+}
+
+.detail-info {
+  display: flex;
+  flex-direction: column;
 }
 
 .detail-media img {

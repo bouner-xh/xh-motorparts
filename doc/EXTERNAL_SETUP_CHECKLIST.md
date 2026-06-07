@@ -1,25 +1,12 @@
 # 外部服務接線清單與驗收指引
 
-更新日期：2026-06-06
+更新日期：2026-06-07
 
 ## 0. 本地預覽方式
 
 快速版可直接看：`README.md`
 
-### A. 舊版靜態站預覽
-在專案根目錄執行：
-
-`python3 -m http.server 8000`
-
-預覽重點：
-- `http://localhost:8000/index.html`
-- `http://localhost:8000/products.html`
-
-用途：
-- 檢查目前舊版 HTML / CSS / 原生 JS 是否仍可運作
-- 驗證舊站多語切換、分類切換、搜尋與圖片路徑
-
-### B. 新版 Next.js 預覽
+### A. Next.js 預覽（單軌）
 在專案根目錄執行：
 
 `npm run dev`
@@ -40,10 +27,10 @@
 - `http://localhost:3000/api/health`
 
 用途：
-- 檢查 v1.4 遷移後的新站骨架
+- 檢查現行 Next.js 主線功能
 - 驗證多語路由、產品 permalink、Breadcrumb、Schema、Cookie Banner 與 API 骨架
 
-### C. 本地建置驗證
+### B. 本地建置驗證
 在專案根目錄執行：
 
 `npm run build`
@@ -52,7 +39,7 @@
 - 驗證目前專案可成功編譯
 - 交付前至少執行一次
 
-### D. 目前本地預覽的限制
+### C. 目前本地預覽的限制
 - 未提供 Supabase env 時，產品資料會 fallback 到 `src/data/products.ts`
 - 未提供 Turnstile / Upstash / Resend env 時，詢價流程為骨架模式
 - 未提供 GA4 / Clarity env 時，分析 script 不會啟用

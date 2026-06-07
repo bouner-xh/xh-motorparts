@@ -1,6 +1,6 @@
 import {getBaseUrl} from '@/lib/site';
 import type {Product} from '@/data/products';
-import {toLegacyAssetUrl} from '@/lib/assets';
+import {toProductImageUrl} from '@/lib/assets';
 import {categoryNames, type CategoryKey, type Locale} from '@/lib/catalog';
 
 export function ProductSchema({
@@ -21,7 +21,7 @@ export function ProductSchema({
     mpn: product.model,
     category: categoryNames[locale][category],
     description: `${product.name} ${product.specifications.join(', ')}`,
-    image: [`${baseUrl}${toLegacyAssetUrl(product.image)}`],
+    image: [toProductImageUrl(product.image)],
     brand: {
       '@type': 'Brand',
       name: locale === 'en' ? 'Xie Huang Enterprise Co., Ltd.' : '協皇企業有限公司'

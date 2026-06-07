@@ -29,7 +29,7 @@ export default async function CategoryPage({
 
   const localeValue = locale as Locale;
   const categoryValue = category as CategoryKey;
-  const rows = await getCategoryProducts(categoryValue);
+  const rows = await getCategoryProducts(categoryValue, localeValue);
   setRequestLocale(localeValue);
   const tProducts = await getTranslations({ locale: localeValue, namespace: 'products' });
   const tNav = await getTranslations({ locale: localeValue, namespace: 'nav' });
