@@ -8,7 +8,7 @@ import { InquiryForm } from '@/components/products/InquiryForm';
 import { ProductSchema } from '@/components/products/ProductSchema';
 import { toProductImageUrl } from '@/lib/assets';
 import { getCatalogProduct, getCategoryBySlug, getSubCategoryBySlug } from '@/lib/catalog-service';
-import { locales, type Locale } from '@/lib/catalog';
+import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
 
 export async function generateMetadata({
   params,
@@ -67,21 +67,20 @@ export default async function ProductDetailPage({
   }
 
   const localeValue = locale as Locale;
-  const categoryData = await getCategoryBySlug(category, localeValue);
-  if (!categoryData) {
-    notFound();
-  }
+  setRequestLocale(localeValue);
 
   const decodedModel = decodeURIComponent(modelNumber);
-  const product = await getCatalogProduct(categoryData.slug, decodedModel, localeValue);
-  setRequestLocale(localeValue);
-  const tProducts = await getTranslations({ locale: localeValue, namespace: 'products' });
-  const tNav = await getTranslations({ locale: localeValue, namespace: 'nav' });
-
   const decodedSubCategory = decodeURIComponent(subCategory);
-  const subCategoryData = await getSubCategoryBySlug(categoryData.slug, decodedSubCategory, localeValue);
 
-  if (!product || !subCategoryData) {
+  const [categoryData, product, subCategoryData, tProducts, tNav] = await Promise.all([
+    getCategoryBySlug(category, localeValue),
+    getCatalogProduct(category as CategoryKey, decodedModel, localeValue),
+    getSubCategoryBySlug(category as CategoryKey, decodedSubCategory, localeValue),
+    getTranslations({ locale: localeValue, namespace: 'products' }),
+    getTranslations({ locale: localeValue, namespace: 'nav' })
+  ]);
+
+  if (!categoryData || !product || !subCategoryData) {
     notFound();
   }
 

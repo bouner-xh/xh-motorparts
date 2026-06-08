@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { locales, type Locale } from '@/lib/catalog';
+import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
 import { getCategoryBySlug, getSubCategories } from '@/lib/catalog-service';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
@@ -51,14 +51,17 @@ export default async function CategoryPage({
   }
 
   const localeValue = locale as Locale;
-  const categoryData = await getCategoryBySlug(category, localeValue);
+  setRequestLocale(localeValue);
+
+  const [categoryData, subCategories, tNav] = await Promise.all([
+    getCategoryBySlug(category, localeValue),
+    getSubCategories(category as CategoryKey, localeValue),
+    getTranslations({ locale: localeValue, namespace: 'nav' })
+  ]);
+
   if (!categoryData) {
     notFound();
   }
-
-  const subCategories = await getSubCategories(categoryData.slug, localeValue);
-  setRequestLocale(localeValue);
-  const tNav = await getTranslations({ locale: localeValue, namespace: 'nav' });
 
   return (
     <main>
