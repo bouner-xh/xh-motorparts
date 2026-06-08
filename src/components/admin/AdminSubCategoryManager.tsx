@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { categoryKeys, type Locale } from '@/lib/catalog';
 
 interface AdminSubCategoryItem {

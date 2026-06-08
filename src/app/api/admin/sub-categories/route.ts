@@ -44,7 +44,15 @@ export async function GET(request: Request) {
   const { data, error } = await query;
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  const items = (data || []).map((item: any) => {
+  interface SubCategoryQueryRow {
+    id: string;
+    slug: string;
+    name_i18n: Record<string, string> | null;
+    sort_order: number | null;
+    category: { slug?: string } | { slug?: string }[] | null;
+  }
+
+  const items = (data as SubCategoryQueryRow[] || []).map((item) => {
     const cat = Array.isArray(item.category) ? item.category[0]?.slug : item.category?.slug;
     return {
       id: item.id,
