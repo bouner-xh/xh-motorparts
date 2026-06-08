@@ -1,6 +1,6 @@
 import {z} from 'zod';
 import {getSupabaseServerAuthClient, getSupabaseServiceRoleClient} from '@/lib/supabase/server';
-import {revalidatePath} from 'next/cache';
+import {revalidateCatalog} from '@/lib/revalidate';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
 
@@ -309,7 +309,7 @@ export async function POST(request: Request) {
 
   await bindPrimaryImage(service, inserted.id, payload.imagePath);
 
-  revalidatePath('/', 'layout');
+  revalidateCatalog();
   return Response.json({ok: true, id: inserted.id, requestId});
 }
 
@@ -374,7 +374,7 @@ export async function PUT(request: Request) {
 
   await bindPrimaryImage(service, productId, payload.imagePath);
 
-  revalidatePath('/', 'layout');
+  revalidateCatalog();
   return Response.json({ok: true, requestId});
 }
 
@@ -404,6 +404,6 @@ export async function DELETE(request: Request) {
     return Response.json({error: normalizeDatabaseError(error.message), requestId}, {status: 500});
   }
 
-  revalidatePath('/', 'layout');
+  revalidateCatalog();
   return Response.json({ok: true, requestId});
 }
