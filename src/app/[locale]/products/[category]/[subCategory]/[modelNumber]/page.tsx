@@ -9,7 +9,6 @@ import { ProductSchema } from '@/components/products/ProductSchema';
 import { toProductImageUrl } from '@/lib/assets';
 import { getCatalogProduct, getSubCategoryBySlug } from '@/lib/catalog-service';
 import { categoryKeys, categoryNames, locales, type CategoryKey, type Locale } from '@/lib/catalog';
-import { getBaseUrl } from '@/lib/site';
 
 export async function generateMetadata({
   params,
@@ -79,7 +78,6 @@ export default async function ProductDetailPage({
     notFound();
   }
 
-  void getBaseUrl();
 
   return (
     <main>

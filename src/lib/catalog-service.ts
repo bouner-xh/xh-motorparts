@@ -266,3 +266,32 @@ export async function getSubCategoryBySlug(category: CategoryKey, slug: string, 
     return null;
   }
 }
+
+export interface SubCategoryWithCategory {
+  slug: string;
+  categorySlug: string;
+}
+
+export async function getAllSubCategories(): Promise<SubCategoryWithCategory[]> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('sub_categories')
+      .select('slug, category:categories!inner(slug)')
+      .order('sort_order', { ascending: true });
+
+    if (error || !data) return [];
+
+    return data.map((item: { slug: string; category: { slug?: string } | { slug?: string }[] | null }) => {
+      const catSlug = Array.isArray(item.category) ? item.category[0]?.slug : item.category?.slug;
+      return {
+        slug: item.slug,
+        categorySlug: catSlug || '',
+      };
+    });
+  } catch {
+    return [];
+  }
+}
