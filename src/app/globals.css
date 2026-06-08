@@ -644,3 +644,35 @@ textarea {
     gap: 3rem;
   }
 }
+
+/* Drag and Drop Sorting Styles */
+.draggable-row {
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.draggable-row.dragging {
+  opacity: 0.4;
+  background-color: rgba(30, 41, 59, 0.8) !important;
+}
+
+.draggable-row.drag-over {
+  border-bottom: 2px solid #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.05) !important;
+}
+
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  cursor: grab;
+  color: #64748b;
+  font-size: 1.2rem;
+  user-select: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  color: #dc2626;
+}
