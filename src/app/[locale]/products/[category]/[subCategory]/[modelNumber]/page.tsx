@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
-import { getAllProducts } from '@/data/products';
 import { InquiryForm } from '@/components/products/InquiryForm';
 import { ProductSchema } from '@/components/products/ProductSchema';
 import { toProductImageUrl } from '@/lib/assets';
@@ -80,8 +79,7 @@ export default async function ProductDetailPage({
     notFound();
   }
 
-  const baseUrl = getBaseUrl();
-  const shareUrl = `${baseUrl}/${localeValue}/products/${categoryValue}/${encodeURIComponent(subCategoryData.slug)}/${encodeURIComponent(product.model)}`;
+  void getBaseUrl();
 
   return (
     <main>
