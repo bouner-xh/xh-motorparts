@@ -47,6 +47,8 @@ export function AdminCategoryManager({ locale }: { locale: Locale }) {
   const [statusType, setStatusType] = useState<StatusType>('idle');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   function setStatus(type: StatusType, message: string) {
     setStatusType(type);
@@ -204,6 +206,7 @@ export function AdminCategoryManager({ locale }: { locale: Locale }) {
       <table style={{ width: '100%', marginTop: '1.5rem', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ textAlign: 'left', borderBottom: '1px solid #334155' }}>
+            <th style={{ width: '40px' }}></th>
             <th>Slug</th>
             <th>名稱 (繁中)</th>
             <th>排序</th>
@@ -211,8 +214,72 @@ export function AdminCategoryManager({ locale }: { locale: Locale }) {
           </tr>
         </thead>
         <tbody>
-          {isLoading ? (<tr><td colSpan={4}>載入中...</td></tr>) : rows.length === 0 ? (<tr><td colSpan={4}>無大分類</td></tr>) : rows.map(r => (
-            <tr key={r.id} style={{ borderBottom: '1px solid #1e293b' }}>
+          {isLoading ? (<tr><td colSpan={5}>載入中...</td></tr>) : rows.length === 0 ? (<tr><td colSpan={5}>無大分類</td></tr>) : rows.map((r, index) => (
+            <tr
+              key={r.id}
+              style={{ borderBottom: '1px solid #1e293b' }}
+              draggable
+              onDragStart={(e) => {
+                setDraggedIndex(index);
+                e.dataTransfer.effectAllowed = 'move';
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (draggedIndex !== index && dragOverIndex !== index) {
+                  setDragOverIndex(index);
+                }
+              }}
+              onDragLeave={() => {
+                if (dragOverIndex === index) {
+                  setDragOverIndex(null);
+                }
+              }}
+              onDragEnd={() => {
+                setDraggedIndex(null);
+                setDragOverIndex(null);
+              }}
+              onDrop={async (e) => {
+                e.preventDefault();
+                setDragOverIndex(null);
+                if (draggedIndex === null || draggedIndex === index) return;
+
+                const newRows = [...rows];
+                const [draggedItem] = newRows.splice(draggedIndex, 1);
+                newRows.splice(index, 0, draggedItem);
+
+                const updatedRows = newRows.map((item, idx) => ({
+                  ...item,
+                  sortOrder: (idx + 1) * 10
+                }));
+
+                setRows(updatedRows);
+                setDraggedIndex(null);
+
+                setStatus('info', '正在儲存排列順序...');
+                try {
+                  const payload = updatedRows.map(item => ({
+                    id: item.id,
+                    sortOrder: item.sortOrder
+                  }));
+                  const response = await fetch('/api/admin/categories', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                  });
+                  const result = await response.json();
+                  if (!response.ok) throw new Error(result.error || '儲存排列失敗');
+                  setStatus('success', '排列順序儲存成功');
+                  window.dispatchEvent(new Event('categories-updated'));
+                } catch (error) {
+                  setStatus('error', error instanceof Error ? error.message : '儲存排列失敗');
+                  void loadCategories();
+                }
+              }}
+              className={`draggable-row ${draggedIndex === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
+            >
+              <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '0.5rem 0' }}>
+                <span className="drag-handle">☰</span>
+              </td>
               <td style={{ padding: '0.5rem 0' }}>{r.slug}</td>
               <td>{r.nameZhTw}</td>
               <td>{r.sortOrder}</td>

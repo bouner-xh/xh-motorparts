@@ -104,7 +104,27 @@ export async function PUT(request: Request) {
   const service = getSupabaseServiceRoleClient();
   if (!service) return Response.json({ error: 'Missing service role' }, { status: 500 });
 
-  const parsed = subCategoryPayloadSchema.safeParse(await request.json());
+  const body = await request.json();
+
+  if (Array.isArray(body)) {
+    const sortItemsSchema = z.array(z.object({
+      id: z.string(),
+      sortOrder: z.number().int()
+    }));
+    const parsed = sortItemsSchema.safeParse(body);
+    if (!parsed.success) return Response.json({ error: 'Invalid sort payload' }, { status: 400 });
+
+    const updates = parsed.data.map(item =>
+      service.from('sub_categories').update({ sort_order: item.sortOrder }).eq('id', item.id)
+    );
+    const results = await Promise.all(updates);
+    const firstError = results.find(r => r.error);
+    if (firstError) return Response.json({ error: firstError.error?.message || 'Update failed' }, { status: 500 });
+
+    return Response.json({ ok: true });
+  }
+
+  const parsed = subCategoryPayloadSchema.safeParse(body);
   if (!parsed.success || !parsed.data.id) return Response.json({ error: 'Invalid payload' }, { status: 400 });
   const payload = parsed.data;
 
