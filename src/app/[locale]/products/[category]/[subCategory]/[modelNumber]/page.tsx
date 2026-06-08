@@ -140,3 +140,5 @@ export default async function ProductDetailPage({
     </main>
   );
 }
+
+export const revalidate = 300;

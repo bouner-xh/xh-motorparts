@@ -92,3 +92,7 @@ export default async function LocaleLayout({
     </NextIntlClientProvider>
   );
 }
+
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
-import { getCategoryBySlug, getCategoryProducts, getSubCategoryBySlug } from '@/lib/catalog-service';
+import { getCategoryBySlug, getCategoryProducts, getSubCategoryBySlug, getCategorySummaries, getSubCategories } from '@/lib/catalog-service';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { ProductCard } from '@/components/products/ProductCard';
@@ -115,4 +115,20 @@ export default async function SubCategoryPage({
       </div>
     </main>
   );
+}
+
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const paramsList: Array<{ locale: string; category: string; subCategory: string }> = [];
+  for (const locale of locales) {
+    const categories = await getCategorySummaries(locale);
+    for (const cat of categories) {
+      const subCategories = await getSubCategories(cat.key, locale);
+      for (const sub of subCategories) {
+        paramsList.push({ locale, category: cat.key, subCategory: sub.slug });
+      }
+    }
+  }
+  return paramsList;
 }
