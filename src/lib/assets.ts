@@ -42,7 +42,8 @@ export function toProductImageUrl(assetPath: string) {
 }
 
 export function getCategoryCoverUrl(category: CategoryKey) {
-  return `/legacy-assets/covers/${categoryCoverFileNames[category]}`;
+  const fileName = categoryCoverFileNames[category] || 'no-image.jpg';
+  return `/legacy-assets/covers/${fileName}`;
 }
 
 export function getLegacyImagesRoot() {
@@ -50,5 +51,5 @@ export function getLegacyImagesRoot() {
 }
 
 export function getCategoryHeroLabel(locale: Locale, category: CategoryKey) {
-  return categoryNames[locale][category];
+  return categoryNames[locale][category] || category;
 }

@@ -7,8 +7,8 @@ import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { InquiryForm } from '@/components/products/InquiryForm';
 import { ProductSchema } from '@/components/products/ProductSchema';
 import { toProductImageUrl } from '@/lib/assets';
-import { getCatalogProduct, getSubCategoryBySlug } from '@/lib/catalog-service';
-import { categoryKeys, categoryNames, locales, type CategoryKey, type Locale } from '@/lib/catalog';
+import { getCatalogProduct, getCategoryBySlug, getSubCategoryBySlug } from '@/lib/catalog-service';
+import { locales, type Locale } from '@/lib/catalog';
 
 export async function generateMetadata({
   params,
@@ -17,17 +17,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, category, subCategory, modelNumber } = await params;
 
-  if (!locales.includes(locale as Locale) || !categoryKeys.includes(category as CategoryKey)) {
+  if (!locales.includes(locale as Locale)) {
     return {};
   }
 
-  const categoryValue = category as CategoryKey;
+  const localeValue = locale as Locale;
+  const categoryData = await getCategoryBySlug(category, localeValue);
+  if (!categoryData) return {};
+
   const decodedSubCategory = decodeURIComponent(subCategory);
   
-  const subCategoryData = await getSubCategoryBySlug(categoryValue, decodedSubCategory, locale as Locale);
+  const subCategoryData = await getSubCategoryBySlug(categoryData.slug, decodedSubCategory, localeValue);
   if (!subCategoryData) return {};
 
-  const product = await getCatalogProduct(categoryValue, decodeURIComponent(modelNumber), locale as Locale);
+  const product = await getCatalogProduct(categoryData.slug, decodeURIComponent(modelNumber), localeValue);
   if (!product) {
     return {};
   }
@@ -42,13 +45,13 @@ export async function generateMetadata({
       type: 'website',
       title: `${product.model} | ${product.name}`,
       description: `${product.model} ${product.name}，${product.specifications.join(', ')}`,
-      url: `${baseUrl}/${locale}/products/${categoryValue}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`,
+      url: `${baseUrl}/${locale}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`,
       images: [toProductImageUrl(product.image)],
       locale,
       siteName: locale === 'en' ? 'Xie Huang Enterprise Co., Ltd.' : '協皇企業有限公司'
     },
     alternates: {
-      canonical: `${baseUrl}/${locale}/products/${categoryValue}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`,
+      canonical: `${baseUrl}/${locale}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`,
     },
   };
 }
@@ -59,35 +62,38 @@ export default async function ProductDetailPage({
   params: Promise<{ locale: string; category: string; subCategory: string; modelNumber: string }>;
 }) {
   const { locale, category, subCategory, modelNumber } = await params;
-  if (!locales.includes(locale as Locale) || !categoryKeys.includes(category as CategoryKey)) {
+  if (!locales.includes(locale as Locale)) {
     notFound();
   }
 
   const localeValue = locale as Locale;
-  const categoryValue = category as CategoryKey;
+  const categoryData = await getCategoryBySlug(category, localeValue);
+  if (!categoryData) {
+    notFound();
+  }
+
   const decodedModel = decodeURIComponent(modelNumber);
-  const product = await getCatalogProduct(categoryValue, decodedModel, localeValue);
+  const product = await getCatalogProduct(categoryData.slug, decodedModel, localeValue);
   setRequestLocale(localeValue);
   const tProducts = await getTranslations({ locale: localeValue, namespace: 'products' });
   const tNav = await getTranslations({ locale: localeValue, namespace: 'nav' });
 
   const decodedSubCategory = decodeURIComponent(subCategory);
-  const subCategoryData = await getSubCategoryBySlug(categoryValue, decodedSubCategory, localeValue);
+  const subCategoryData = await getSubCategoryBySlug(categoryData.slug, decodedSubCategory, localeValue);
 
   if (!product || !subCategoryData) {
     notFound();
   }
 
-
   return (
     <main>
-      <ProductSchema product={product} category={categoryValue} locale={localeValue} />
+      <ProductSchema product={product} category={categoryData.slug} locale={localeValue} />
       <Breadcrumb
         items={[
           { label: tNav('home'), href: `/${localeValue}` },
           { label: tNav('products'), href: `/${localeValue}/products` },
-          { label: categoryNames[localeValue][categoryValue], href: `/${localeValue}/products/${categoryValue}` },
-          { label: subCategoryData.name, href: `/${localeValue}/products/${categoryValue}/${encodeURIComponent(subCategoryData.slug)}` },
+          { label: categoryData.name, href: `/${localeValue}/products/${categoryData.slug}` },
+          { label: subCategoryData.name, href: `/${localeValue}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}` },
           { label: product.model },
         ]}
       />
@@ -107,7 +113,7 @@ export default async function ProductDetailPage({
           <h2>{product.model}</h2>
           <p>{product.name}</p>
           <p className="muted">
-            {tProducts('category')}：{categoryNames[localeValue][categoryValue]}
+            {tProducts('category')}：{categoryData.name}
           </p>
           <div className="spec-list">
             {product.specifications.map((spec: string) => (
@@ -122,7 +128,7 @@ export default async function ProductDetailPage({
 
           <div style={{ marginTop: 'auto' }}>
             <p style={{ margin: 0 }}>
-              <Link className="text-link" href={`/${localeValue}/products/${categoryValue}/${encodeURIComponent(subCategoryData.slug)}`}>
+              <Link className="text-link" href={`/${localeValue}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}`}>
                 ← 返回 {subCategoryData.name}
               </Link>
             </p>

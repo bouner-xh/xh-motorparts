@@ -13,7 +13,7 @@ export const categoryKeys = [
   'cable',
 ] as const;
 
-export type CategoryKey = (typeof categoryKeys)[number];
+export type CategoryKey = string;
 
 export const categoryNames: Record<Locale, Record<CategoryKey, string>> = {
   'zh-TW': {

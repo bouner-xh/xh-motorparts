@@ -1,7 +1,11 @@
-'use client';
-
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {categoryKeys, type Locale} from '@/lib/catalog';
+import type { Locale } from '@/lib/catalog';
+
+interface AdminCategoryItem {
+  id: string;
+  slug: string;
+  nameZhTw: string;
+}
 
 interface AdminProductItem {
   id: string;
@@ -55,7 +59,7 @@ const DEBUG_MAX_ENTRIES = 120;
 const ADMIN_MANAGER_BUILD_MARKER = 'admin-manager-20260607-1';
 
 const emptyFormState: ProductFormState = {
-  category: categoryKeys[0],
+  category: '',
   modelNumber: '',
   nameZhTw: '',
   nameZhCn: '',
@@ -67,10 +71,10 @@ const emptyFormState: ProductFormState = {
   imagePath: ''
 };
 
-function buildPrefilledFormState(): ProductFormState {
+function buildPrefilledFormState(defaultCategory: string = ''): ProductFormState {
   const stamp = Date.now().toString().slice(-6);
   return {
-    category: 'cylinder',
+    category: defaultCategory,
     modelNumber: `TEST-${stamp}`,
     nameZhTw: `測試產品-${stamp}`,
     nameZhCn: `测试产品-${stamp}`,
@@ -84,6 +88,7 @@ function buildPrefilledFormState(): ProductFormState {
 }
 
 export function AdminProductManager({locale}: {locale: Locale}) {
+  const [categories, setCategories] = useState<AdminCategoryItem[]>([]);
   const [rows, setRows] = useState<AdminProductItem[]>([]);
   const [subCategories, setSubCategories] = useState<AdminSubCategoryItem[]>([]);
   const [form, setForm] = useState<ProductFormState>(emptyFormState);
@@ -163,13 +168,22 @@ export function AdminProductManager({locale}: {locale: Locale}) {
     setLoadError('');
 
     try {
-      const [productsRes, subCatRes] = await Promise.all([
+      const [productsRes, subCatRes, catRes] = await Promise.all([
         fetch('/api/admin/products', {cache: 'no-store'}),
-        fetch('/api/admin/sub-categories', {cache: 'no-store'})
+        fetch('/api/admin/sub-categories', {cache: 'no-store'}),
+        fetch('/api/admin/categories', {cache: 'no-store'})
       ]);
       
       const data = (await parseResponseJson<{items?: AdminProductItem[]; error?: string}>(productsRes)) || {};
       const subCatData = (await parseResponseJson<{items?: AdminSubCategoryItem[] }>(subCatRes)) || {};
+      const catData = (await parseResponseJson<{items?: AdminCategoryItem[] }>(catRes)) || {};
+
+      if (catData.items) {
+        setCategories(catData.items);
+        if (catData.items.length > 0) {
+          setForm(p => p.category ? p : buildPrefilledFormState(catData.items[0].slug));
+        }
+      }
 
       if (subCatData.items) {
         setSubCategories(subCatData.items);
@@ -216,8 +230,15 @@ export function AdminProductManager({locale}: {locale: Locale}) {
     const handleSubCategoryUpdate = () => {
       void loadProducts();
     };
+    const handleCategoryUpdate = () => {
+      void loadProducts();
+    };
     window.addEventListener('subcategories-updated', handleSubCategoryUpdate);
-    return () => window.removeEventListener('subcategories-updated', handleSubCategoryUpdate);
+    window.addEventListener('categories-updated', handleCategoryUpdate);
+    return () => {
+      window.removeEventListener('subcategories-updated', handleSubCategoryUpdate);
+      window.removeEventListener('categories-updated', handleCategoryUpdate);
+    };
   }, [loadProducts]);
 
   const submitLabel = useMemo(() => (form.id ? '更新產品' : '新增產品'), [form.id]);
@@ -513,9 +534,9 @@ export function AdminProductManager({locale}: {locale: Locale}) {
             value={form.category}
             onChange={(event) => setForm((prev) => ({...prev, category: event.target.value}))}
           >
-            {categoryKeys.map((key) => (
-              <option key={key} value={key}>
-                {key}
+            {categories.map((c) => (
+              <option key={c.id} value={c.slug}>
+                {c.nameZhTw} ({c.slug})
               </option>
             ))}
           </select>
