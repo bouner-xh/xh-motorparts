@@ -16,6 +16,7 @@ interface ProductRow {
   stock_quantity?: number | null;
   is_active?: boolean | null;
   category: CategoryJoinRef | CategoryJoinRef[] | null;
+  sub_category_id?: string | null;
   imagePath?: string;
 }
 
@@ -35,6 +36,7 @@ const productPayloadSchema = z.object({
   specifications: z.array(z.string()).default([]),
   stockQuantity: z.number().int().nonnegative().default(0),
   isActive: z.boolean().default(true),
+  subCategoryId: z.string().uuid(),
   imagePath: z.string().optional().default('')
 });
 
@@ -52,6 +54,7 @@ function toAdminProductItem(item: ProductRow) {
     specifications: item.specifications || [],
     stockQuantity: item.stock_quantity ?? 0,
     isActive: Boolean(item.is_active),
+    subCategoryId: item.sub_category_id || '',
     imagePath: item.imagePath || ''
   };
 }
@@ -222,7 +225,7 @@ export async function GET() {
 
   const {data, error} = await service
     .from('products')
-    .select('id,model_number,name_i18n,specifications,stock_quantity,is_active,category:categories!inner(slug)')
+    .select('id,model_number,name_i18n,specifications,stock_quantity,is_active,category:categories!inner(slug),sub_category_id')
     .order('model_number', {ascending: true});
 
   if (error) {
@@ -290,7 +293,8 @@ export async function POST(request: Request) {
       },
       specifications: payload.specifications,
       stock_quantity: payload.stockQuantity,
-      is_active: payload.isActive
+      is_active: payload.isActive,
+      sub_category_id: payload.subCategoryId
     })
     .select('id')
     .single();
@@ -357,7 +361,8 @@ export async function PUT(request: Request) {
       },
       specifications: payload.specifications,
       stock_quantity: payload.stockQuantity,
-      is_active: payload.isActive
+      is_active: payload.isActive,
+      sub_category_id: payload.subCategoryId
     })
     .eq('id', productId);
 

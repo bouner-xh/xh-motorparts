@@ -13,6 +13,7 @@ interface AdminProductItem {
   specifications: string[];
   stockQuantity: number;
   isActive: boolean;
+  subCategoryId: string;
   imagePath: string;
 }
 
@@ -26,7 +27,15 @@ interface ProductFormState {
   specifications: string;
   stockQuantity: number;
   isActive: boolean;
+  subCategoryId: string;
   imagePath: string;
+}
+
+interface AdminSubCategoryItem {
+  id: string;
+  category: string;
+  slug: string;
+  nameZhTw: string;
 }
 
 type StatusType = 'idle' | 'info' | 'success' | 'error';
@@ -54,6 +63,7 @@ const emptyFormState: ProductFormState = {
   specifications: '',
   stockQuantity: 0,
   isActive: true,
+  subCategoryId: '',
   imagePath: ''
 };
 
@@ -68,12 +78,14 @@ function buildPrefilledFormState(): ProductFormState {
     specifications: 'STD, 47MM',
     stockQuantity: 10,
     isActive: true,
+    subCategoryId: '',
     imagePath: ''
   };
 }
 
 export function AdminProductManager({locale}: {locale: Locale}) {
   const [rows, setRows] = useState<AdminProductItem[]>([]);
+  const [subCategories, setSubCategories] = useState<AdminSubCategoryItem[]>([]);
   const [form, setForm] = useState<ProductFormState>(emptyFormState);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusType, setStatusType] = useState<StatusType>('idle');
@@ -151,20 +163,28 @@ export function AdminProductManager({locale}: {locale: Locale}) {
     setLoadError('');
 
     try {
-      const response = await fetch('/api/admin/products', {cache: 'no-store'});
-      const data =
-        (await parseResponseJson<{items?: AdminProductItem[]; error?: string}>(response)) || {};
+      const [productsRes, subCatRes] = await Promise.all([
+        fetch('/api/admin/products', {cache: 'no-store'}),
+        fetch('/api/admin/sub-categories', {cache: 'no-store'})
+      ]);
+      
+      const data = (await parseResponseJson<{items?: AdminProductItem[]; error?: string}>(productsRes)) || {};
+      const subCatData = (await parseResponseJson<{items?: AdminSubCategoryItem[] }>(subCatRes)) || {};
 
-      if (!response.ok) {
+      if (subCatData.items) {
+        setSubCategories(subCatData.items);
+      }
+
+      if (!productsRes.ok) {
         pushDebugLog({
           at: new Date().toISOString(),
           action: 'load',
           ok: false,
-          status: response.status,
+          status: productsRes.status,
           message: data.error || '載入產品失敗',
-          response: toDebugResponse(response, data)
+          response: toDebugResponse(productsRes, data)
         });
-        throw new Error(data.error || `載入產品失敗（HTTP ${response.status}）`);
+        throw new Error(data.error || `載入產品失敗（HTTP ${productsRes.status}）`);
       }
 
       setRows(data.items || []);
@@ -172,9 +192,9 @@ export function AdminProductManager({locale}: {locale: Locale}) {
         at: new Date().toISOString(),
         action: 'load',
         ok: true,
-        status: response.status,
+        status: productsRes.status,
         message: `載入成功，筆數 ${(data.items || []).length}`,
-        response: toDebugResponse(response, data)
+        response: toDebugResponse(productsRes, data)
       });
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : '載入產品失敗');
@@ -192,6 +212,12 @@ export function AdminProductManager({locale}: {locale: Locale}) {
 
   useEffect(() => {
     void loadProducts();
+
+    const handleSubCategoryUpdate = () => {
+      void loadProducts();
+    };
+    window.addEventListener('subcategories-updated', handleSubCategoryUpdate);
+    return () => window.removeEventListener('subcategories-updated', handleSubCategoryUpdate);
   }, [loadProducts]);
 
   const submitLabel = useMemo(() => (form.id ? '更新產品' : '新增產品'), [form.id]);
@@ -221,6 +247,7 @@ export function AdminProductManager({locale}: {locale: Locale}) {
         .filter(Boolean),
       stockQuantity: Number(form.stockQuantity),
       isActive: form.isActive,
+      subCategoryId: form.subCategoryId,
       imagePath: form.imagePath.trim()
     };
 
@@ -230,6 +257,9 @@ export function AdminProductManager({locale}: {locale: Locale}) {
     const validationErrors: string[] = [];
     if (!payload.modelNumber) {
       validationErrors.push('型號不可為空');
+    }
+    if (!payload.subCategoryId) {
+      validationErrors.push('子分類不可為空（請先建立子分類）');
     }
     if (!payload.nameZhTw) {
       validationErrors.push('名稱（zh-TW）不可為空');
@@ -330,6 +360,7 @@ export function AdminProductManager({locale}: {locale: Locale}) {
       specifications: row.specifications.join(', '),
       stockQuantity: row.stockQuantity,
       isActive: row.isActive,
+      subCategoryId: row.subCategoryId,
       imagePath: row.imagePath
     });
   }
@@ -487,6 +518,24 @@ export function AdminProductManager({locale}: {locale: Locale}) {
                 {key}
               </option>
             ))}
+          </select>
+        </label>
+
+        <label>
+          子分類
+          <select
+            required
+            value={form.subCategoryId}
+            onChange={(event) => setForm((prev) => ({...prev, subCategoryId: event.target.value}))}
+          >
+            <option value="">請選擇子分類</option>
+            {subCategories
+              .filter((sc) => sc.category === form.category)
+              .map((sc) => (
+                <option key={sc.id} value={sc.id}>
+                  {sc.nameZhTw} ({sc.slug})
+                </option>
+              ))}
           </select>
         </label>
 
@@ -664,7 +713,7 @@ export function AdminProductManager({locale}: {locale: Locale}) {
           <thead>
             <tr>
               <th align="left">型號</th>
-              <th align="left">分類</th>
+              <th align="left">大分類</th>
               <th align="left">名稱</th>
               <th align="left">庫存</th>
               <th align="left">上架</th>

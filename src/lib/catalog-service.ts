@@ -86,7 +86,7 @@ export async function getCategorySummaries(locale: Locale): Promise<CategorySumm
   }
 }
 
-export async function getCategoryProducts(category: CategoryKey, locale: Locale = 'zh-TW') {
+export async function getCategoryProducts(category: CategoryKey, subCategoryId: string | null = null, locale: Locale = 'zh-TW') {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -94,12 +94,18 @@ export async function getCategoryProducts(category: CategoryKey, locale: Locale 
   }
 
   try {
-    const {data, error} = await supabase
+    let query = supabase
       .from('products')
       .select('id,model_number,name_i18n,stock_quantity,specifications,category:categories!inner(slug)')
       .eq('category.slug', category)
       .eq('is_active', true)
       .order('model_number', {ascending: true});
+
+    if (subCategoryId) {
+      query = query.eq('sub_category_id', subCategoryId);
+    }
+
+    const {data, error} = await query;
 
     if (error || !data?.length) {
       throw error;
@@ -205,5 +211,58 @@ export async function getCatalogProducts(locale: Locale = 'zh-TW') {
       });
   } catch {
     return getAllProducts();
+  }
+}
+
+export interface SubCategorySummary {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+export async function getSubCategories(category: CategoryKey, locale: Locale = 'zh-TW'): Promise<SubCategorySummary[]> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('sub_categories')
+      .select('id, slug, name_i18n, category:categories!inner(slug)')
+      .eq('category.slug', category)
+      .order('sort_order', { ascending: true });
+
+    if (error || !data) return [];
+
+    return data.map(item => ({
+      id: item.id,
+      slug: item.slug,
+      name: getLocalizedName(item.name_i18n as Record<string, string>, locale, item.slug)
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getSubCategoryBySlug(category: CategoryKey, slug: string, locale: Locale = 'zh-TW'): Promise<SubCategorySummary | null> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('sub_categories')
+      .select('id, slug, name_i18n, category:categories!inner(slug)')
+      .eq('category.slug', category)
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    return {
+      id: data.id,
+      slug: data.slug,
+      name: getLocalizedName(data.name_i18n as Record<string, string>, locale, data.slug)
+    };
+  } catch {
+    return null;
   }
 }

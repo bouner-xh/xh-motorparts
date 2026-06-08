@@ -8,14 +8,10 @@ import {
   type CategoryKey,
   type Locale,
 } from '@/lib/catalog';
-import { getCategoryProducts } from '@/lib/catalog-service';
+import { getSubCategories } from '@/lib/catalog-service';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
-import { ProductCard } from '@/components/products/ProductCard';
-
-export function generateStaticParams() {
-  return locales.flatMap((locale) => categoryKeys.map((category) => ({ locale, category })));
-}
+import Link from 'next/link';
 
 export default async function CategoryPage({
   params,
@@ -29,9 +25,8 @@ export default async function CategoryPage({
 
   const localeValue = locale as Locale;
   const categoryValue = category as CategoryKey;
-  const rows = await getCategoryProducts(categoryValue, localeValue);
+  const subCategories = await getSubCategories(categoryValue, localeValue);
   setRequestLocale(localeValue);
-  const tProducts = await getTranslations({ locale: localeValue, namespace: 'products' });
   const tNav = await getTranslations({ locale: localeValue, namespace: 'nav' });
 
   return (
@@ -55,15 +50,16 @@ export default async function CategoryPage({
         <CategorySidebar locale={localeValue} activeCategory={categoryValue} />
 
         <section className="card-grid">
-          {rows.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              href={`/${localeValue}/products/${categoryValue}/${encodeURIComponent(product.model)}`}
-              specLabel={tProducts('specifications')}
-              detailLabel={tProducts('viewDetail')}
-            />
-          ))}
+          {subCategories.length > 0 ? subCategories.map((sub) => (
+            <Link key={sub.id} className="card" href={`/${localeValue}/products/${categoryValue}/${sub.slug}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ padding: '2rem' }}>
+                <h3 style={{ margin: '0 0 0.5rem 0', color: '#f8fafc', fontSize: '1.4rem' }}>{sub.name}</h3>
+                <p className="muted" style={{ margin: 0 }}>查看相關產品 ➔</p>
+              </div>
+            </Link>
+          )) : (
+            <p className="muted" style={{ gridColumn: '1 / -1', padding: '2rem' }}>目前尚未建立子目錄。</p>
+          )}
         </section>
       </div>
     </main>
