@@ -183,7 +183,8 @@ export function AdminProductManager({locale}: {locale: Locale}) {
       if (catData.items) {
         setCategories(catData.items);
         if (catData.items.length > 0) {
-          setForm(p => p.category ? p : buildPrefilledFormState(catData.items[0].slug));
+          const firstSlug = catData.items[0].slug;
+          setForm(p => p.category ? p : buildPrefilledFormState(firstSlug));
         }
       }
 

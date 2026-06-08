@@ -91,6 +91,7 @@ export async function POST(request: Request) {
           }
           categoryId = catNew.id;
         }
+        if (!categoryId) throw new Error('無法取得或建立大分類 ID');
         categoryCache.set(item.categorySlug, categoryId);
       }
 
@@ -129,6 +130,7 @@ export async function POST(request: Request) {
           }
           subCategoryId = subNew.id;
         }
+        if (!subCategoryId) throw new Error('無法取得或建立子分類 ID');
         subCategoryCache.set(subCatCacheKey, subCategoryId);
       }
 
