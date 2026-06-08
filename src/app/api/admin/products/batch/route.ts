@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+import { revalidateCatalog } from '@/lib/revalidate';
 
 const batchProductSchema = z.object({
   categorySlug: z.string().min(1),
@@ -210,7 +210,7 @@ export async function POST(request: Request) {
     }
   }
 
-  revalidatePath('/', 'layout');
+  revalidateCatalog();
   return Response.json({
     ok: true,
     summary: {

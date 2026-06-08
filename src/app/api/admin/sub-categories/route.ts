@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+import { revalidateCatalog } from '@/lib/revalidate';
 
 const subCategoryPayloadSchema = z.object({
   id: z.string().optional(),
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  revalidatePath('/', 'layout');
+  revalidateCatalog();
   return Response.json({ ok: true, id: inserted.id });
 }
 
@@ -123,7 +123,7 @@ export async function PUT(request: Request) {
     const firstError = results.find(r => r.error);
     if (firstError) return Response.json({ error: firstError.error?.message || 'Update failed' }, { status: 500 });
 
-    revalidatePath('/', 'layout');
+    revalidateCatalog();
     return Response.json({ ok: true });
   }
 
@@ -145,7 +145,7 @@ export async function PUT(request: Request) {
     .eq('id', payload.id);
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  revalidatePath('/', 'layout');
+  revalidateCatalog();
   return Response.json({ ok: true });
 }
 
@@ -163,6 +163,6 @@ export async function DELETE(request: Request) {
   const { error } = await service.from('sub_categories').delete().eq('id', id);
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  revalidatePath('/', 'layout');
+  revalidateCatalog();
   return Response.json({ ok: true });
 }
