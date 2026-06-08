@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import {
@@ -12,6 +13,43 @@ import { getCategoryProducts, getSubCategoryBySlug } from '@/lib/catalog-service
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { ProductCard } from '@/components/products/ProductCard';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; category: string; subCategory: string }>;
+}): Promise<Metadata> {
+  const { locale, category, subCategory } = await params;
+  if (!locales.includes(locale as Locale) || !categoryKeys.includes(category as CategoryKey)) {
+    return {};
+  }
+
+  const localeValue = locale as Locale;
+  const categoryValue = category as CategoryKey;
+  const decoded = decodeURIComponent(subCategory);
+  const subCategoryData = await getSubCategoryBySlug(categoryValue, decoded, localeValue);
+  if (!subCategoryData) return {};
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://xh-motorparts.com';
+  const title = `${subCategoryData.name} | ${categoryNames[localeValue][categoryValue]}`;
+  const description = `${categoryDescriptions[localeValue][categoryValue]} - ${subCategoryData.name}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type: 'website',
+      title,
+      description,
+      url: `${baseUrl}/${locale}/products/${category}/${encodeURIComponent(subCategoryData.slug)}`,
+      locale,
+      siteName: locale === 'en' ? 'Xie Huang Enterprise Co., Ltd.' : '協皇企業有限公司',
+    },
+    alternates: {
+      canonical: `${baseUrl}/${locale}/products/${category}/${encodeURIComponent(subCategoryData.slug)}`,
+    },
+  };
+}
 
 export default async function SubCategoryPage({
   params,
@@ -56,7 +94,7 @@ export default async function SubCategoryPage({
       </div>
 
       <div className="page-grid">
-        <CategorySidebar locale={localeValue} activeCategory={categoryValue} />
+        <CategorySidebar locale={localeValue} activeCategory={categoryValue} activeSubCategory={decodedSubCategory} />
 
         <section className="card-grid">
           {rows.length > 0 ? rows.map((product) => (

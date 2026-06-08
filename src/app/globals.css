@@ -343,6 +343,44 @@ textarea {
   border-color: rgba(248, 113, 113, 0.35);
 }
 
+.category-sidebar__arrow {
+  float: right;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.category-sidebar__sublist {
+  list-style: none;
+  padding: 0.3rem 0 0.1rem 1rem;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-left: 2px solid rgba(248, 113, 113, 0.25);
+  margin-left: 0.95rem;
+  margin-top: 0.3rem;
+}
+
+.category-sidebar__sublink {
+  display: block;
+  padding: 0.5rem 0.8rem;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  color: #cbd5e1;
+  transition: background 0.15s, color 0.15s;
+}
+
+.category-sidebar__sublink:hover {
+  background: rgba(148, 163, 184, 0.1);
+  color: #f8fafc;
+}
+
+.category-sidebar__sublink.is-active {
+  background: rgba(220, 38, 38, 0.12);
+  color: #fca5a5;
+  font-weight: 500;
+}
+
 .product-card {
   overflow: hidden;
   padding: 0;

@@ -1,13 +1,13 @@
 import type { MetadataRoute } from 'next';
-import { getAllProducts } from '@/data/products';
 import { categoryKeys, locales } from '@/lib/catalog';
+import { getAllSubCategories, getCatalogProducts } from '@/lib/catalog-service';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://xh-motorparts.com';
 
   const staticRoutes = ['', '/products', '/about', '/contact', '/legal/privacy'];
-  const products = getAllProducts();
 
+  // 1. 靜態路由（首頁、產品目錄、公司介紹等）
   const localeStaticRoutes = locales.flatMap((locale) =>
     staticRoutes.map((route) => ({
       url: `${baseUrl}/${locale}${route}`,
@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }))
   );
 
+  // 2. 大分類路由
   const categoryRoutes = locales.flatMap((locale) =>
     categoryKeys.map((category) => ({
       url: `${baseUrl}/${locale}/products/${category}`,
@@ -26,6 +27,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }))
   );
 
+  // 3. 子目錄路由（新增：三層架構）
+  const subCategories = await getAllSubCategories();
+  const subCategoryRoutes = locales.flatMap((locale) =>
+    subCategories.map((sub) => ({
+      url: `${baseUrl}/${locale}/products/${sub.categorySlug}/${encodeURIComponent(sub.slug)}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.65,
+    }))
+  );
+
+  // 4. 產品詳細頁路由（更新：包含子目錄層級）
+  const products = await getCatalogProducts();
   const productRoutes = locales.flatMap((locale) =>
     products.map((product) => ({
       url: `${baseUrl}/${locale}/products/${product.category}/${encodeURIComponent(product.model)}`,
@@ -35,5 +49,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }))
   );
 
-  return [...localeStaticRoutes, ...categoryRoutes, ...productRoutes];
+  return [...localeStaticRoutes, ...categoryRoutes, ...subCategoryRoutes, ...productRoutes];
 }
