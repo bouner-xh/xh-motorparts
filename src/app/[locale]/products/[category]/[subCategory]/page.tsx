@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { locales, type Locale } from '@/lib/catalog';
+import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
 import { getCategoryBySlug, getCategoryProducts, getSubCategoryBySlug } from '@/lib/catalog-service';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
@@ -57,22 +57,26 @@ export default async function SubCategoryPage({
   }
 
   const localeValue = locale as Locale;
-  const categoryData = await getCategoryBySlug(category, localeValue);
-  if (!categoryData) {
-    notFound();
-  }
-  
   setRequestLocale(localeValue);
   
   const decodedSubCategory = decodeURIComponent(subCategory);
-  const subCategoryData = await getSubCategoryBySlug(categoryData.slug, decodedSubCategory, localeValue);
-  if (!subCategoryData) {
+  
+  // Parallel fetch category and subcategory info
+  const [categoryData, subCategoryData] = await Promise.all([
+    getCategoryBySlug(category, localeValue),
+    getSubCategoryBySlug(category as CategoryKey, decodedSubCategory, localeValue)
+  ]);
+
+  if (!categoryData || !subCategoryData) {
     notFound();
   }
 
-  const rows = await getCategoryProducts(categoryData.slug, subCategoryData.id, localeValue);
-  const tProducts = await getTranslations({ locale: localeValue, namespace: 'products' });
-  const tNav = await getTranslations({ locale: localeValue, namespace: 'nav' });
+  // Parallel fetch products and translation bundles
+  const [rows, tProducts, tNav] = await Promise.all([
+    getCategoryProducts(categoryData.slug as CategoryKey, subCategoryData.id, localeValue),
+    getTranslations({ locale: localeValue, namespace: 'products' }),
+    getTranslations({ locale: localeValue, namespace: 'nav' })
+  ]);
 
   return (
     <main>

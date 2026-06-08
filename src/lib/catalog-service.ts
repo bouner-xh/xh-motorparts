@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import {getAllProducts, getProductsByCategory, findProduct} from '@/data/products';
 import {categoryDescriptions, categoryKeys, categoryNames, type CategoryKey, type Locale} from '@/lib/catalog';
 import {getSupabaseServerClient} from '@/lib/supabase/server';
@@ -48,7 +49,7 @@ export interface CategorySummary {
   description: string;
 }
 
-export async function getCategorySummaries(locale: Locale): Promise<CategorySummary[]> {
+export const getCategorySummaries = cache(async (locale: Locale): Promise<CategorySummary[]> => {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -70,10 +71,10 @@ export async function getCategorySummaries(locale: Locale): Promise<CategorySumm
     }
 
     return data.map((item) => ({
-      key: item.slug,
-      name: item.name_i18n?.[locale] || categoryNames[locale][item.slug] || item.slug,
+      key: item.slug as CategoryKey,
+      name: item.name_i18n?.[locale] || categoryNames[locale][item.slug as CategoryKey] || item.slug,
       description:
-        item.description_i18n?.[locale] || categoryDescriptions[locale][item.slug] || ''
+        item.description_i18n?.[locale] || categoryDescriptions[locale][item.slug as CategoryKey] || ''
     }));
   } catch {
     return categoryKeys.map((key) => ({
@@ -82,9 +83,9 @@ export async function getCategorySummaries(locale: Locale): Promise<CategorySumm
       description: categoryDescriptions[locale][key] || ''
     }));
   }
-}
+});
 
-export async function getCategoryProducts(category: CategoryKey, subCategoryId: string | null = null, locale: Locale = 'zh-TW') {
+export const getCategoryProducts = cache(async (category: CategoryKey, subCategoryId: string | null = null, locale: Locale = 'zh-TW') => {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -126,9 +127,9 @@ export async function getCategoryProducts(category: CategoryKey, subCategoryId: 
   } catch {
     return getProductsByCategory(category);
   }
-}
+});
 
-export async function getCatalogProduct(category: CategoryKey, modelNumber: string, locale: Locale = 'zh-TW') {
+export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber: string, locale: Locale = 'zh-TW') => {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -162,9 +163,9 @@ export async function getCatalogProduct(category: CategoryKey, modelNumber: stri
   } catch {
     return findProduct(category, modelNumber);
   }
-}
+});
 
-export async function getCatalogProducts(locale: Locale = 'zh-TW') {
+export const getCatalogProducts = cache(async (locale: Locale = 'zh-TW') => {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -205,7 +206,7 @@ export async function getCatalogProducts(locale: Locale = 'zh-TW') {
   } catch {
     return getAllProducts();
   }
-}
+});
 
 export interface SubCategorySummary {
   id: string;
@@ -213,7 +214,7 @@ export interface SubCategorySummary {
   name: string;
 }
 
-export async function getSubCategories(category: CategoryKey, locale: Locale = 'zh-TW'): Promise<SubCategorySummary[]> {
+export const getSubCategories = cache(async (category: CategoryKey, locale: Locale = 'zh-TW'): Promise<SubCategorySummary[]> => {
   const supabase = getSupabaseServerClient();
   if (!supabase) return [];
 
@@ -234,9 +235,9 @@ export async function getSubCategories(category: CategoryKey, locale: Locale = '
   } catch {
     return [];
   }
-}
+});
 
-export async function getSubCategoryBySlug(category: CategoryKey, slug: string, locale: Locale = 'zh-TW'): Promise<SubCategorySummary | null> {
+export const getSubCategoryBySlug = cache(async (category: CategoryKey, slug: string, locale: Locale = 'zh-TW'): Promise<SubCategorySummary | null> => {
   const supabase = getSupabaseServerClient();
   if (!supabase) return null;
 
@@ -258,14 +259,14 @@ export async function getSubCategoryBySlug(category: CategoryKey, slug: string, 
   } catch {
     return null;
   }
-}
+});
 
 export interface SubCategoryWithCategory {
   slug: string;
   categorySlug: string;
 }
 
-export async function getAllSubCategories(): Promise<SubCategoryWithCategory[]> {
+export const getAllSubCategories = cache(async (): Promise<SubCategoryWithCategory[]> => {
   const supabase = getSupabaseServerClient();
   if (!supabase) return [];
 
@@ -287,7 +288,7 @@ export async function getAllSubCategories(): Promise<SubCategoryWithCategory[]> 
   } catch {
     return [];
   }
-}
+});
 
 export interface CategoryDetail {
   slug: string;
@@ -295,7 +296,7 @@ export interface CategoryDetail {
   description: string;
 }
 
-export async function getCategoryBySlug(slug: string, locale: Locale): Promise<CategoryDetail | null> {
+export const getCategoryBySlug = cache(async (slug: string, locale: Locale): Promise<CategoryDetail | null> => {
   const supabase = getSupabaseServerClient();
   const isStaticKey = (categoryKeys as readonly string[]).includes(slug);
 
@@ -350,4 +351,4 @@ export async function getCategoryBySlug(slug: string, locale: Locale): Promise<C
     }
     return null;
   }
-}
+});

@@ -15,12 +15,14 @@ export async function CategorySidebar({
   activeCategory?: CategoryKey;
   activeSubCategory?: string;
 }) {
-  const categories = await getCategorySummaries(locale);
+  const [categories, activeSubs] = await Promise.all([
+    getCategorySummaries(locale),
+    activeCategory ? getSubCategories(activeCategory, locale) : Promise.resolve([])
+  ]);
 
-  // 預先載入當前活躍分類的子目錄
   const subCategoryMap: SubCategoryMap = {};
   if (activeCategory) {
-    subCategoryMap[activeCategory] = await getSubCategories(activeCategory, locale);
+    subCategoryMap[activeCategory] = activeSubs;
   }
 
   return (
