@@ -6,6 +6,7 @@ import {getSupabaseServerAuthClient} from '@/lib/supabase/server';
 import {AdminProductManager} from '@/components/admin/AdminProductManager';
 import {AdminSubCategoryManager} from '@/components/admin/AdminSubCategoryManager';
 import {AdminCategoryManager} from '@/components/admin/AdminCategoryManager';
+import {AdminProductImporter} from '@/components/admin/AdminProductImporter';
 
 export default async function AdminDashboardPage({
   params
@@ -80,6 +81,10 @@ export default async function AdminDashboardPage({
 
       <section className="card" style={{marginTop: '1rem'}}>
         <AdminSubCategoryManager locale={localeValue} />
+      </section>
+
+      <section className="card" style={{marginTop: '1rem'}}>
+        <AdminProductImporter locale={localeValue} />
       </section>
 
       <section className="card" style={{marginTop: '1rem'}}>
