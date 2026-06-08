@@ -676,3 +676,15 @@ textarea {
   cursor: grabbing;
   color: #dc2626;
 }
+
+.footer-privacy-link {
+  color: #64748b;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-privacy-link:hover {
+  color: #ef4444;
+}
+

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {type Locale} from '@/lib/catalog';
 
 const footerCopy: Record<Locale, {copyright: string; slogan: string; author: string}> = {
@@ -27,6 +28,10 @@ export function Footer({locale}: {locale: Locale}) {
       </div>
       <div style={{ borderTop: '1px solid rgba(148, 163, 184, 0.16)', paddingTop: '1.2rem', textAlign: 'center' }}>
         <strong>{footerCopy[locale].copyright}</strong>
+        <span style={{ margin: '0 0.8rem', color: 'rgba(148, 163, 184, 0.3)' }}>|</span>
+        <Link href={`/${locale}/legal/privacy`} className="footer-privacy-link">
+          {locale === 'en' ? 'Privacy Policy' : '隱私政策'}
+        </Link>
       </div>
     </footer>
   );
