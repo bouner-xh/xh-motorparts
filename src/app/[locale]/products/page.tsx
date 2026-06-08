@@ -54,3 +54,9 @@ export default async function ProductsPage({
     </main>
   );
 }
+
+export const revalidate = 300;
+
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
