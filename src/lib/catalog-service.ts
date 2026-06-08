@@ -297,12 +297,15 @@ export interface CategoryDetail {
 
 export async function getCategoryBySlug(slug: string, locale: Locale): Promise<CategoryDetail | null> {
   const supabase = getSupabaseServerClient();
+  const isStaticKey = (categoryKeys as readonly string[]).includes(slug);
+
   if (!supabase) {
-    if (categoryKeys.includes(slug)) {
+    if (isStaticKey) {
+      const k = slug as CategoryKey;
       return {
         slug,
-        name: categoryNames[locale][slug] || slug,
-        description: categoryDescriptions[locale][slug] || '',
+        name: categoryNames[locale][k] || slug,
+        description: categoryDescriptions[locale][k] || '',
       };
     }
     return null;
@@ -311,32 +314,38 @@ export async function getCategoryBySlug(slug: string, locale: Locale): Promise<C
   try {
     const { data, error } = await supabase
       .from('categories')
+      .select('*')
       .eq('slug', slug)
       .maybeSingle();
 
     if (error || !data) {
       // Fallback to static config
-      if (categoryKeys.includes(slug)) {
+      if (isStaticKey) {
+        const k = slug as CategoryKey;
         return {
           slug,
-          name: categoryNames[locale][slug] || slug,
-          description: categoryDescriptions[locale][slug] || '',
+          name: categoryNames[locale][k] || slug,
+          description: categoryDescriptions[locale][k] || '',
         };
       }
       return null;
     }
 
+    const name = data.name_i18n?.[locale] || (isStaticKey ? categoryNames[locale][slug as CategoryKey] : data.slug);
+    const desc = data.description_i18n?.[locale] || (isStaticKey ? categoryDescriptions[locale][slug as CategoryKey] : '');
+
     return {
       slug: data.slug,
-      name: data.name_i18n?.[locale] || categoryNames[locale][data.slug] || data.slug,
-      description: data.description_i18n?.[locale] || categoryDescriptions[locale][data.slug] || '',
+      name,
+      description: desc,
     };
   } catch {
-    if (categoryKeys.includes(slug)) {
+    if (isStaticKey) {
+      const k = slug as CategoryKey;
       return {
         slug,
-        name: categoryNames[locale][slug] || slug,
-        description: categoryDescriptions[locale][slug] || '',
+        name: categoryNames[locale][k] || slug,
+        description: categoryDescriptions[locale][k] || '',
       };
     }
     return null;

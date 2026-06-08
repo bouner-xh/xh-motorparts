@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
-import type { Locale } from '@/lib/catalog';
+import { useState, useRef } from 'react';
 
 interface ParsedProductRow {
   categorySlug: string;
@@ -29,6 +28,20 @@ interface ParsedProductRow {
 
 type StepType = 'excel' | 'images' | 'match' | 'importing' | 'completed';
 
+interface WindowWithLibs extends Window {
+  XLSX?: {
+    read(data: unknown, opts: unknown): { SheetNames: string[]; Sheets: Record<string, unknown> };
+    utils: {
+      sheet_to_json(sheet: unknown): Record<string, unknown>[];
+    };
+  };
+  JSZip?: new () => {
+    loadAsync(data: unknown): Promise<{
+      forEach(callback: (relativePath: string, file: { dir: boolean; async(type: string): Promise<Blob> }) => void): void;
+    }>;
+  };
+}
+
 function loadScript(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (typeof window === 'undefined') {
@@ -48,7 +61,7 @@ function loadScript(url: string): Promise<void> {
   });
 }
 
-export function AdminProductImporter({ locale }: { locale: Locale }) {
+export function AdminProductImporter() {
   const [step, setStep] = useState<StepType>('excel');
   const [parsedRows, setParsedRows] = useState<ParsedProductRow[]>([]);
   const [imageMap, setImageMap] = useState<Map<string, File | Blob>>(new Map());
@@ -75,14 +88,14 @@ export function AdminProductImporter({ locale }: { locale: Locale }) {
       } else {
         // 動態載入 SheetJS XLSX 庫
         await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
-        const XLSX = (window as any).XLSX;
+        const XLSX = (window as unknown as WindowWithLibs).XLSX;
         if (!XLSX) throw new Error('SheetJS XLSX 載入失敗');
 
         const arrayBuffer = await file.arrayBuffer();
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, any>[];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, unknown>[];
         
         parseJsonRows(jsonData);
       }
@@ -101,13 +114,13 @@ export function AdminProductImporter({ locale }: { locale: Locale }) {
     
     // 取得表頭
     const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-    const rows: Record<string, any>[] = [];
+    const rows: Record<string, unknown>[] = [];
 
     for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue;
       // 簡單的 CSV 分割
       const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-      const rowObj: Record<string, any> = {};
+      const rowObj: Record<string, unknown> = {};
       headers.forEach((header, index) => {
         rowObj[header] = values[index] || '';
       });
@@ -116,15 +129,15 @@ export function AdminProductImporter({ locale }: { locale: Locale }) {
     parseJsonRows(rows);
   };
 
-  const parseJsonRows = (jsonData: Record<string, any>[]) => {
-    const tempRows: ParsedProductRow[] = jsonData.map((r, index) => {
+  const parseJsonRows = (jsonData: Record<string, unknown>[]) => {
+    const tempRows: ParsedProductRow[] = jsonData.map((r) => {
       const modelNumber = String(r.model_number || r['型號'] || '').trim();
       if (!modelNumber) return null;
 
       // 規格處理 (可能為逗號分隔字串或陣列)
       const specRaw = r.specifications || r['規格'] || '';
       const specs = Array.isArray(specRaw)
-        ? specRaw
+        ? (specRaw as string[])
         : String(specRaw).split(/[,，]/).map(s => s.trim()).filter(Boolean);
 
       return {
@@ -180,7 +193,7 @@ export function AdminProductImporter({ locale }: { locale: Locale }) {
 
     try {
       await loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
-      const JSZip = (window as any).JSZip;
+      const JSZip = (window as unknown as WindowWithLibs).JSZip;
       if (!JSZip) throw new Error('JSZip 載入失敗');
 
       const zip = new JSZip();
@@ -189,7 +202,7 @@ export function AdminProductImporter({ locale }: { locale: Locale }) {
       const newMap = new Map(imageMap);
       const promises: Promise<void>[] = [];
 
-      contents.forEach((relativePath: string, zipEntry: any) => {
+      contents.forEach((relativePath: string, zipEntry: { dir: boolean; async(type: string): Promise<Blob> }) => {
         if (zipEntry.dir) return; // 略過資料夾
         
         // 取得檔名 (去除路徑字首)
@@ -299,7 +312,7 @@ export function AdminProductImporter({ locale }: { locale: Locale }) {
       // 更新每行的匯入狀態
       const resultMap = new Map<string, { success: boolean; error?: string }>();
       if (resData.results) {
-        resData.results.forEach((r: any) => {
+        resData.results.forEach((r: { modelNumber: string; success: boolean; error?: string }) => {
           resultMap.set(r.modelNumber, r);
         });
       }

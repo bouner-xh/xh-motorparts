@@ -84,7 +84,7 @@ export default async function AdminDashboardPage({
       </section>
 
       <section className="card" style={{marginTop: '1rem'}}>
-        <AdminProductImporter locale={localeValue} />
+        <AdminProductImporter />
       </section>
 
       <section className="card" style={{marginTop: '1rem'}}>
