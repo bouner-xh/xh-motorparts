@@ -1,5 +1,4 @@
 import {z} from 'zod';
-import {categoryKeys} from '@/lib/catalog';
 import {getSupabaseServerAuthClient, getSupabaseServiceRoleClient} from '@/lib/supabase/server';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
@@ -28,7 +27,7 @@ interface ProductImageRow {
 
 const productPayloadSchema = z.object({
   id: z.string().optional(),
-  category: z.enum(categoryKeys),
+  category: z.string().min(1),
   modelNumber: z.string().min(1),
   nameZhTw: z.string().min(1),
   nameZhCn: z.string().min(1),

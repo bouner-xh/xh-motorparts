@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
-import { categoryKeys, locales } from '@/lib/catalog';
-import { getAllSubCategories, getCatalogProducts } from '@/lib/catalog-service';
+import { locales } from '@/lib/catalog';
+import { getCategorySummaries, getAllSubCategories, getCatalogProducts } from '@/lib/catalog-service';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://xh-motorparts.com';
@@ -17,17 +17,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   );
 
-  // 2. 大分類路由
+  // 2. 大分類路由 (動態從資料庫讀取)
+  const categories = await getCategorySummaries('zh-TW');
   const categoryRoutes = locales.flatMap((locale) =>
-    categoryKeys.map((category) => ({
-      url: `${baseUrl}/${locale}/products/${category}`,
+    categories.map((c) => ({
+      url: `${baseUrl}/${locale}/products/${c.key}`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     }))
   );
 
-  // 3. 子目錄路由（新增：三層架構）
+  // 3. 子目錄路由（三層架構）
   const subCategories = await getAllSubCategories();
   const subCategoryRoutes = locales.flatMap((locale) =>
     subCategories.map((sub) => ({
@@ -38,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   );
 
-  // 4. 產品詳細頁路由（更新：包含子目錄層級）
+  // 4. 產品詳細頁路由
   const products = await getCatalogProducts();
   const productRoutes = locales.flatMap((locale) =>
     products.map((product) => ({

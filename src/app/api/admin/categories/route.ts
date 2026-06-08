@@ -1,13 +1,15 @@
 import { z } from 'zod';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 
-const subCategoryPayloadSchema = z.object({
+const categoryPayloadSchema = z.object({
   id: z.string().optional(),
-  category: z.string().min(1),
   slug: z.string().min(1),
   nameZhTw: z.string().min(1),
   nameZhCn: z.string().min(1),
   nameEn: z.string().min(1),
+  descriptionZhTw: z.string().optional().default(''),
+  descriptionZhCn: z.string().optional().default(''),
+  descriptionEn: z.string().optional().default(''),
   sortOrder: z.number().int().default(0),
 });
 
@@ -21,48 +23,39 @@ async function getAuthenticatedUser() {
   return { ok: true, user } as const;
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   const authResult = await getAuthenticatedUser();
   if (!authResult.ok) return Response.json({ error: authResult.error }, { status: 401 });
 
   const service = getSupabaseServiceRoleClient();
   if (!service) return Response.json({ error: 'Missing service role' }, { status: 500 });
 
-  const { searchParams } = new URL(request.url);
-  const categoryFilter = searchParams.get('category');
-
-  let query = service
-    .from('sub_categories')
-    .select('id, slug, name_i18n, sort_order, category:categories!inner(slug)')
+  const { data, error } = await service
+    .from('categories')
+    .select('id, slug, name_i18n, description_i18n, sort_order')
     .order('sort_order', { ascending: true });
 
-  if (categoryFilter) {
-    query = query.eq('category.slug', categoryFilter);
-  }
-
-  const { data, error } = await query;
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  interface SubCategoryQueryRow {
+  interface CategoryQueryRow {
     id: string;
     slug: string;
     name_i18n: Record<string, string> | null;
+    description_i18n: Record<string, string> | null;
     sort_order: number | null;
-    category: { slug?: string } | { slug?: string }[] | null;
   }
 
-  const items = (data as SubCategoryQueryRow[] || []).map((item) => {
-    const cat = Array.isArray(item.category) ? item.category[0]?.slug : item.category?.slug;
-    return {
-      id: item.id,
-      category: cat || 'cylinder',
-      slug: item.slug,
-      nameZhTw: item.name_i18n?.['zh-TW'] || '',
-      nameZhCn: item.name_i18n?.['zh-CN'] || '',
-      nameEn: item.name_i18n?.en || '',
-      sortOrder: item.sort_order ?? 0
-    };
-  });
+  const items = (data as CategoryQueryRow[] || []).map((item) => ({
+    id: item.id,
+    slug: item.slug,
+    nameZhTw: item.name_i18n?.['zh-TW'] || '',
+    nameZhCn: item.name_i18n?.['zh-CN'] || '',
+    nameEn: item.name_i18n?.en || '',
+    descriptionZhTw: item.description_i18n?.['zh-TW'] || '',
+    descriptionZhCn: item.description_i18n?.['zh-CN'] || '',
+    descriptionEn: item.description_i18n?.en || '',
+    sortOrder: item.sort_order ?? 0
+  }));
 
   return Response.json({ items });
 }
@@ -74,20 +67,16 @@ export async function POST(request: Request) {
   const service = getSupabaseServiceRoleClient();
   if (!service) return Response.json({ error: 'Missing service role' }, { status: 500 });
 
-  const parsed = subCategoryPayloadSchema.safeParse(await request.json());
+  const parsed = categoryPayloadSchema.safeParse(await request.json());
   if (!parsed.success) return Response.json({ error: 'Invalid payload' }, { status: 400 });
   const payload = parsed.data;
 
-  // Get category_id
-  const { data: catData } = await service.from('categories').select('id').eq('slug', payload.category).single();
-  if (!catData?.id) return Response.json({ error: 'Category not found' }, { status: 400 });
-
   const { data: inserted, error } = await service
-    .from('sub_categories')
+    .from('categories')
     .insert({
-      category_id: catData.id,
       slug: payload.slug,
       name_i18n: { 'zh-TW': payload.nameZhTw, 'zh-CN': payload.nameZhCn, en: payload.nameEn },
+      description_i18n: { 'zh-TW': payload.descriptionZhTw, 'zh-CN': payload.descriptionZhCn, en: payload.descriptionEn },
       sort_order: payload.sortOrder
     })
     .select('id')
@@ -104,19 +93,16 @@ export async function PUT(request: Request) {
   const service = getSupabaseServiceRoleClient();
   if (!service) return Response.json({ error: 'Missing service role' }, { status: 500 });
 
-  const parsed = subCategoryPayloadSchema.safeParse(await request.json());
+  const parsed = categoryPayloadSchema.safeParse(await request.json());
   if (!parsed.success || !parsed.data.id) return Response.json({ error: 'Invalid payload' }, { status: 400 });
   const payload = parsed.data;
 
-  const { data: catData } = await service.from('categories').select('id').eq('slug', payload.category).single();
-  if (!catData?.id) return Response.json({ error: 'Category not found' }, { status: 400 });
-
   const { error } = await service
-    .from('sub_categories')
+    .from('categories')
     .update({
-      category_id: catData.id,
       slug: payload.slug,
       name_i18n: { 'zh-TW': payload.nameZhTw, 'zh-CN': payload.nameZhCn, en: payload.nameEn },
+      description_i18n: { 'zh-TW': payload.descriptionZhTw, 'zh-CN': payload.descriptionZhCn, en: payload.descriptionEn },
       sort_order: payload.sortOrder
     })
     .eq('id', payload.id);
@@ -136,7 +122,7 @@ export async function DELETE(request: Request) {
   const id = searchParams.get('id');
   if (!id) return Response.json({ error: 'Missing ID' }, { status: 400 });
 
-  const { error } = await service.from('sub_categories').delete().eq('id', id);
+  const { error } = await service.from('categories').delete().eq('id', id);
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   return Response.json({ ok: true });

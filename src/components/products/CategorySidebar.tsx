@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import {categoryKeys, categoryNames, type CategoryKey, type Locale} from '@/lib/catalog';
-import {getSubCategories, type SubCategorySummary} from '@/lib/catalog-service';
+import type { CategoryKey, Locale } from '@/lib/catalog';
+import { getCategorySummaries, getSubCategories, type SubCategorySummary } from '@/lib/catalog-service';
 
 interface SubCategoryMap {
   [category: string]: SubCategorySummary[];
@@ -15,6 +15,8 @@ export async function CategorySidebar({
   activeCategory?: CategoryKey;
   activeSubCategory?: string;
 }) {
+  const categories = await getCategorySummaries(locale);
+
   // 預先載入當前活躍分類的子目錄
   const subCategoryMap: SubCategoryMap = {};
   if (activeCategory) {
@@ -25,7 +27,8 @@ export async function CategorySidebar({
     <aside className="category-sidebar card">
       <p className="category-sidebar__label">Catalog</p>
       <ul className="category-sidebar__list">
-        {categoryKeys.map((category) => {
+        {categories.map((c) => {
+          const category = c.key;
           const isActive = category === activeCategory;
           const subs = subCategoryMap[category] || [];
 
@@ -35,7 +38,7 @@ export async function CategorySidebar({
                 className={isActive ? 'category-sidebar__link is-active' : 'category-sidebar__link'}
                 href={`/${locale}/products/${category}`}
               >
-                {categoryNames[locale][category]}
+                {c.name}
                 {isActive && subs.length > 0 && (
                   <span className="category-sidebar__arrow">▾</span>
                 )}

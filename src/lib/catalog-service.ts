@@ -54,8 +54,8 @@ export async function getCategorySummaries(locale: Locale): Promise<CategorySumm
   if (!supabase) {
     return categoryKeys.map((key) => ({
       key,
-      name: categoryNames[locale][key],
-      description: categoryDescriptions[locale][key]
+      name: categoryNames[locale][key] || key,
+      description: categoryDescriptions[locale][key] || ''
     }));
   }
 
@@ -69,19 +69,17 @@ export async function getCategorySummaries(locale: Locale): Promise<CategorySumm
       throw error;
     }
 
-    return data
-      .filter((item) => categoryKeys.includes(item.slug as CategoryKey))
-      .map((item) => ({
-        key: item.slug as CategoryKey,
-        name: item.name_i18n?.[locale] || categoryNames[locale][item.slug as CategoryKey],
-        description:
-          item.description_i18n?.[locale] || categoryDescriptions[locale][item.slug as CategoryKey]
-      }));
+    return data.map((item) => ({
+      key: item.slug,
+      name: item.name_i18n?.[locale] || categoryNames[locale][item.slug] || item.slug,
+      description:
+        item.description_i18n?.[locale] || categoryDescriptions[locale][item.slug] || ''
+    }));
   } catch {
     return categoryKeys.map((key) => ({
       key,
-      name: categoryNames[locale][key],
-      description: categoryDescriptions[locale][key]
+      name: categoryNames[locale][key] || key,
+      description: categoryDescriptions[locale][key] || ''
     }));
   }
 }
@@ -190,18 +188,13 @@ export async function getCatalogProducts(locale: Locale = 'zh-TW') {
     );
 
     return data
-      .filter((item) => {
-        const categoryRef = item.category as {slug?: string} | Array<{slug?: string}> | null;
-        const categorySlug = getPrimaryCategorySlug(categoryRef);
-        return categoryKeys.includes(categorySlug as CategoryKey);
-      })
       .map((item) => {
         const categoryRef = item.category as {slug?: string} | Array<{slug?: string}> | null;
         const categorySlug = getPrimaryCategorySlug(categoryRef);
 
         return {
         id: item.id,
-        category: categorySlug as CategoryKey,
+        category: (categorySlug || '') as CategoryKey,
         model: item.model_number,
         name: getLocalizedName(item.name_i18n, locale, item.model_number),
         image: imageMap.get(item.id) || defaultImagePath,
@@ -293,5 +286,59 @@ export async function getAllSubCategories(): Promise<SubCategoryWithCategory[]> 
     });
   } catch {
     return [];
+  }
+}
+
+export interface CategoryDetail {
+  slug: string;
+  name: string;
+  description: string;
+}
+
+export async function getCategoryBySlug(slug: string, locale: Locale): Promise<CategoryDetail | null> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) {
+    if (categoryKeys.includes(slug)) {
+      return {
+        slug,
+        name: categoryNames[locale][slug] || slug,
+        description: categoryDescriptions[locale][slug] || '',
+      };
+    }
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (error || !data) {
+      // Fallback to static config
+      if (categoryKeys.includes(slug)) {
+        return {
+          slug,
+          name: categoryNames[locale][slug] || slug,
+          description: categoryDescriptions[locale][slug] || '',
+        };
+      }
+      return null;
+    }
+
+    return {
+      slug: data.slug,
+      name: data.name_i18n?.[locale] || categoryNames[locale][data.slug] || data.slug,
+      description: data.description_i18n?.[locale] || categoryDescriptions[locale][data.slug] || '',
+    };
+  } catch {
+    if (categoryKeys.includes(slug)) {
+      return {
+        slug,
+        name: categoryNames[locale][slug] || slug,
+        description: categoryDescriptions[locale][slug] || '',
+      };
+    }
+    return null;
   }
 }

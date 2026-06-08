@@ -1,15 +1,8 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import {
-  categoryDescriptions,
-  categoryKeys,
-  categoryNames,
-  locales,
-  type CategoryKey,
-  type Locale,
-} from '@/lib/catalog';
-import { getCategoryProducts, getSubCategoryBySlug } from '@/lib/catalog-service';
+import { locales, type Locale } from '@/lib/catalog';
+import { getCategoryBySlug, getCategoryProducts, getSubCategoryBySlug } from '@/lib/catalog-service';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { ProductCard } from '@/components/products/ProductCard';
@@ -20,19 +13,21 @@ export async function generateMetadata({
   params: Promise<{ locale: string; category: string; subCategory: string }>;
 }): Promise<Metadata> {
   const { locale, category, subCategory } = await params;
-  if (!locales.includes(locale as Locale) || !categoryKeys.includes(category as CategoryKey)) {
+  if (!locales.includes(locale as Locale)) {
     return {};
   }
 
   const localeValue = locale as Locale;
-  const categoryValue = category as CategoryKey;
+  const categoryData = await getCategoryBySlug(category, localeValue);
+  if (!categoryData) return {};
+
   const decoded = decodeURIComponent(subCategory);
-  const subCategoryData = await getSubCategoryBySlug(categoryValue, decoded, localeValue);
+  const subCategoryData = await getSubCategoryBySlug(categoryData.slug, decoded, localeValue);
   if (!subCategoryData) return {};
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://xh-motorparts.com';
-  const title = `${subCategoryData.name} | ${categoryNames[localeValue][categoryValue]}`;
-  const description = `${categoryDescriptions[localeValue][categoryValue]} - ${subCategoryData.name}`;
+  const title = `${subCategoryData.name} | ${categoryData.name}`;
+  const description = `${categoryData.description} - ${subCategoryData.name}`;
 
   return {
     title,
@@ -57,21 +52,25 @@ export default async function SubCategoryPage({
   params: Promise<{ locale: string; category: string; subCategory: string }>;
 }) {
   const { locale, category, subCategory } = await params;
-  if (!locales.includes(locale as Locale) || !categoryKeys.includes(category as CategoryKey)) {
+  if (!locales.includes(locale as Locale)) {
     notFound();
   }
 
   const localeValue = locale as Locale;
-  const categoryValue = category as CategoryKey;
+  const categoryData = await getCategoryBySlug(category, localeValue);
+  if (!categoryData) {
+    notFound();
+  }
+  
   setRequestLocale(localeValue);
   
   const decodedSubCategory = decodeURIComponent(subCategory);
-  const subCategoryData = await getSubCategoryBySlug(categoryValue, decodedSubCategory, localeValue);
+  const subCategoryData = await getSubCategoryBySlug(categoryData.slug, decodedSubCategory, localeValue);
   if (!subCategoryData) {
     notFound();
   }
 
-  const rows = await getCategoryProducts(categoryValue, subCategoryData.id, localeValue);
+  const rows = await getCategoryProducts(categoryData.slug, subCategoryData.id, localeValue);
   const tProducts = await getTranslations({ locale: localeValue, namespace: 'products' });
   const tNav = await getTranslations({ locale: localeValue, namespace: 'nav' });
 
@@ -81,7 +80,7 @@ export default async function SubCategoryPage({
         items={[
           { label: tNav('home'), href: `/${localeValue}` },
           { label: tNav('products'), href: `/${localeValue}/products` },
-          { label: categoryNames[localeValue][categoryValue], href: `/${localeValue}/products/${categoryValue}` },
+          { label: categoryData.name, href: `/${localeValue}/products/${categoryData.slug}` },
           { label: subCategoryData.name },
         ]}
       />
@@ -89,19 +88,19 @@ export default async function SubCategoryPage({
       <div className="section-heading">
         <div>
           <h2 className="page-title">{subCategoryData.name}</h2>
-          <p className="muted page-lead">{categoryDescriptions[localeValue][categoryValue]} - {subCategoryData.name}</p>
+          <p className="muted page-lead">{categoryData.description} - {subCategoryData.name}</p>
         </div>
       </div>
 
       <div className="page-grid">
-        <CategorySidebar locale={localeValue} activeCategory={categoryValue} activeSubCategory={decodedSubCategory} />
+        <CategorySidebar locale={localeValue} activeCategory={categoryData.slug} activeSubCategory={decodedSubCategory} />
 
         <section className="card-grid">
           {rows.length > 0 ? rows.map((product) => (
             <ProductCard
               key={product.id}
               product={product}
-              href={`/${localeValue}/products/${categoryValue}/${encodeURIComponent(subCategoryData.slug)}/${encodeURIComponent(product.model)}`}
+              href={`/${localeValue}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}/${encodeURIComponent(product.model)}`}
               specLabel={tProducts('specifications')}
               detailLabel={tProducts('viewDetail')}
             />

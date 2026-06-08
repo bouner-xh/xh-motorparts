@@ -5,6 +5,7 @@ import {locales, type Locale} from '@/lib/catalog';
 import {getSupabaseServerAuthClient} from '@/lib/supabase/server';
 import {AdminProductManager} from '@/components/admin/AdminProductManager';
 import {AdminSubCategoryManager} from '@/components/admin/AdminSubCategoryManager';
+import {AdminCategoryManager} from '@/components/admin/AdminCategoryManager';
 
 export default async function AdminDashboardPage({
   params
@@ -71,6 +72,10 @@ export default async function AdminDashboardPage({
           <h3>{t('inquiriesCardTitle')}</h3>
           <p className="muted">{t('inquiriesCardDescription')}</p>
         </article>
+      </section>
+
+      <section className="card" style={{marginTop: '1rem'}}>
+        <AdminCategoryManager locale={localeValue} />
       </section>
 
       <section className="card" style={{marginTop: '1rem'}}>
