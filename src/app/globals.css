@@ -688,3 +688,117 @@ textarea {
   color: #ef4444;
 }
 
+.privacy-doc-card {
+  max-width: 860px;
+  margin: 2rem auto;
+  padding: 3rem;
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+
+.privacy-last-updated {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+  padding-bottom: 1rem;
+}
+
+.privacy-section {
+  margin-bottom: 2.5rem;
+}
+
+.privacy-section-title {
+  color: #f8fafc;
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.privacy-section-content {
+  color: #cbd5e1;
+  margin-bottom: 1rem;
+}
+
+.privacy-bullets {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+  list-style-type: disc;
+}
+
+.privacy-bullets li {
+  margin-bottom: 0.5rem;
+  color: #cbd5e1;
+}
+
+.privacy-subsection {
+  margin-top: 1.2rem;
+  padding-left: 1rem;
+  border-left: 2px solid #ef4444;
+}
+
+.privacy-subsection-title {
+  color: #f1f5f9;
+  font-size: 1.15rem;
+  margin-bottom: 0.5rem;
+  font-weight: 550;
+}
+
+.privacy-table-wrapper {
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.privacy-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.privacy-table th,
+.privacy-table td {
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.privacy-table th {
+  background: rgba(30, 41, 59, 0.4);
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.privacy-table td {
+  color: #cbd5e1;
+}
+
+.privacy-table tr:last-child td {
+  border-bottom: none;
+}
+
+.privacy-table a {
+  color: #ef4444;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.privacy-table a:hover {
+  color: #f87171;
+}
+
+@media (max-width: 768px) {
+  .privacy-doc-card {
+    padding: 1.5rem;
+    margin: 1rem auto;
+  }
+  
+  .privacy-table th,
+  .privacy-table td {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.85rem;
+  }
+}
+
+
