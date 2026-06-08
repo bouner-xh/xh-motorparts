@@ -78,7 +78,6 @@ export default async function LocaleLayout({
               <Link href={`/${localeValue}/products`}>{t('products')}</Link>
               <Link href={`/${localeValue}/about`}>{t('about')}</Link>
               <Link href={`/${localeValue}/contact`}>{t('contact')}</Link>
-              <Link href={`/${localeValue}/legal/privacy`}>{t('privacy')}</Link>
               <Link href="/zh-TW">繁中</Link>
               <Link href="/zh-CN">简中</Link>
               <Link href="/en">EN</Link>
