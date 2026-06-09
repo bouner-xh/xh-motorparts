@@ -132,7 +132,13 @@ export default async function ProductDetailPage({
               </Link>
             </p>
             <div style={{ marginTop: '-0.4rem' }}>
-              <InquiryForm productModel={product.model} productName={product.name} />
+              <InquiryForm
+                productId={product.id}
+                productModel={product.model}
+                productName={product.name}
+                categorySlug={categoryData.slug}
+                subCategorySlug={subCategoryData.slug}
+              />
             </div>
           </div>
         </div>

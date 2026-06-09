@@ -8,6 +8,8 @@ import { AnalyticsScripts } from '@/components/layout/AnalyticsScripts';
 import { CookieBanner } from '@/components/layout/CookieBanner';
 import { Footer } from '@/components/layout/Footer';
 import { locales, type Locale } from '@/lib/catalog';
+import { CartProvider } from '@/context/CartContext';
+import { CartIndicator } from '@/components/layout/CartIndicator';
 
 const companyByLocale: Record<Locale, string> = {
   'zh-TW': '協皇企業有限公司',
@@ -59,7 +61,7 @@ export default async function LocaleLayout({
 
   return (
     <NextIntlClientProvider locale={localeValue} messages={messages}>
-      <>
+      <CartProvider>
         <AnalyticsScripts />
         <div className="container page-shell">
           <header className="site-header">
@@ -73,7 +75,7 @@ export default async function LocaleLayout({
                 </p>
               </div>
             </div>
-            <nav className="nav">
+            <nav className="nav" style={{ alignItems: 'center' }}>
               <Link href={`/${localeValue}`}>{t('home')}</Link>
               <Link href={`/${localeValue}/products`}>{t('products')}</Link>
               <Link href={`/${localeValue}/about`}>{t('about')}</Link>
@@ -81,13 +83,16 @@ export default async function LocaleLayout({
               <Link href="/zh-TW">繁中</Link>
               <Link href="/zh-CN">简中</Link>
               <Link href="/en">EN</Link>
+              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                <CartIndicator locale={localeValue} />
+              </div>
             </nav>
           </header>
           {children}
           <Footer locale={localeValue} />
           <CookieBanner />
         </div>
-      </>
+      </CartProvider>
     </NextIntlClientProvider>
   );
 }

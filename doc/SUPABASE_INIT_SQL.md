@@ -145,6 +145,70 @@ using (true);
 insert into storage.buckets (id, name, public)
 values ('product-images', 'product-images', true)
 on conflict (id) do update set public = excluded.public;
+
+-- =========================================================
+-- 7) B2B RFQ & CRM tables
+-- =========================================================
+
+create table if not exists public.customers (
+  id uuid primary key default gen_random_uuid(),
+  email text unique not null,
+  name text not null,
+  company_name text,
+  country text,
+  phone text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.inquiry_requests (
+  id uuid primary key default gen_random_uuid(),
+  customer_id uuid references public.customers(id) on delete set null,
+  customer_name text not null,
+  customer_email text not null,
+  company_name text,
+  country text,
+  phone text,
+  message text,
+  items jsonb not null default '[]'::jsonb, -- Array of: { productId, modelNumber, nameZhTw, nameZhCn, nameEn, quantity }
+  status text not null default 'pending', -- 'pending', 'processing', 'replied', 'archived'
+  reply_notes text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_customers_email on public.customers(email);
+create index if not exists idx_inquiries_customer on public.inquiry_requests(customer_id);
+create index if not exists idx_inquiries_status on public.inquiry_requests(status);
+create index if not exists idx_inquiries_created on public.inquiry_requests(created_at desc);
+
+drop trigger if exists trg_customers_updated_at on public.customers;
+create trigger trg_customers_updated_at
+before update on public.customers
+for each row
+execute function public.set_updated_at();
+
+drop trigger if exists trg_inquiry_requests_updated_at on public.inquiry_requests;
+create trigger trg_inquiry_requests_updated_at
+before update on public.inquiry_requests
+for each row
+execute function public.set_updated_at();
+
+alter table public.customers enable row level security;
+alter table public.inquiry_requests enable row level security;
+
+-- Drop existing policies if any
+drop policy if exists "public_insert_customers" on public.customers;
+create policy "public_insert_customers"
+on public.customers
+for insert
+with check (true);
+
+drop policy if exists "public_insert_inquiry_requests" on public.inquiry_requests;
+create policy "public_insert_inquiry_requests"
+on public.inquiry_requests
+for insert
+with check (true);
 ```
 
 ## 檢查是否建置成功
@@ -153,5 +217,7 @@ on conflict (id) do update set public = excluded.public;
 select slug, sort_order from public.categories order by sort_order;
 select count(*) from public.products;
 select count(*) from public.product_images;
+select count(*) from public.customers;
+select count(*) from public.inquiry_requests;
 select id, name, public from storage.buckets where id = 'product-images';
 ```
