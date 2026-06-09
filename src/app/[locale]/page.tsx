@@ -25,11 +25,24 @@ export default async function LocaleHome({
   return (
     <main>
       <section className="hero">
-        <div className="surface hero__panel" style={{ gridColumn: '1 / -1', padding: '3rem 2rem' }}>
-          <span className="hero__eyebrow">{content.hero.eyebrow}</span>
-          <h2 className="hero__title" style={{ whiteSpace: 'pre-line' }}>{content.hero.title}</h2>
-          <p className="muted hero__description">{content.hero.subtitle}</p>
-          <div className="hero__actions">
+        <div className="surface hero__panel" style={{ gridColumn: '1 / -1', padding: '3.5rem 2.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="hero__eyebrow">{content.hero.eyebrow}</span>
+            <div className="hero__badges">
+              <span className="hero__badge">{localeValue === 'en' ? 'Taichung, Taiwan' : '台灣・台中'}</span>
+              <span className="hero__badge">{localeValue === 'en' ? 'Est. 1990' : '創立於 1990 年'}</span>
+              <span className="hero__badge">{localeValue === 'en' ? 'Exported to 20+ Countries' : '出口全球 20+ 國家'}</span>
+            </div>
+          </div>
+          <h2 className="hero__title" style={{ whiteSpace: 'pre-line', marginTop: '1.5rem' }}>{content.hero.title}</h2>
+          <p className="muted hero__description" style={{ marginTop: '1rem' }}>{content.hero.subtitle}</p>
+          
+          <div className="hero__contact-quick">
+            <span>📧 Email: <a href="mailto:bounerchang@gmail.com">bounerchang@gmail.com</a></span>
+            <span>📱 WhatsApp: <a href="https://wa.me/886930797299" target="_blank" rel="noopener noreferrer">+886 930 797 299</a></span>
+          </div>
+
+          <div className="hero__actions" style={{ marginTop: '2rem' }}>
             <Link href={`/${localeValue}/products`}>
               <button type="button">{content.hero.primaryCta}</button>
             </Link>
@@ -37,6 +50,24 @@ export default async function LocaleHome({
               {content.hero.secondaryCta}
             </Link>
           </div>
+        </div>
+      </section>
+
+      <section className="brand-belief-quote">
+        <div className="quote-container">
+          <span className="quote-icon">“</span>
+          <blockquote>
+            <p className="quote-text">
+              {localeValue === 'en' 
+                ? 'Our name won\'t appear on your motorcycle, but our quality will ride with it every mile of the way.'
+                : '我們的名字不會出現在你的摩托車上，但我們的品質，會陪著它跑過每一段路。'}
+            </p>
+            <cite className="quote-author">
+              {localeValue === 'en'
+                ? '— Xie Huang Enterprise, Taiwan, Est. 1990'
+                : '— 協皇企業，台灣，1990 至今'}
+            </cite>
+          </blockquote>
         </div>
       </section>
 
