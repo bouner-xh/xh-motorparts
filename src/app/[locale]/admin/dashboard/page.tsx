@@ -7,6 +7,7 @@ import {AdminProductManager} from '@/components/admin/AdminProductManager';
 import {AdminSubCategoryManager} from '@/components/admin/AdminSubCategoryManager';
 import {AdminCategoryManager} from '@/components/admin/AdminCategoryManager';
 import {AdminProductImporter} from '@/components/admin/AdminProductImporter';
+import {AdminInquiryManager} from '@/components/admin/AdminInquiryManager';
 
 export default async function AdminDashboardPage({
   params
@@ -71,8 +72,12 @@ export default async function AdminDashboardPage({
         </article>
         <article className="card info-card">
           <h3>{t('inquiriesCardTitle')}</h3>
-          <p className="muted">{t('inquiriesCardDescription')}</p>
+          <p className="muted">已啟用整合式 CRM 詢價管理與狀態追蹤面板。</p>
         </article>
+      </section>
+
+      <section className="card" style={{marginTop: '1rem'}}>
+        <AdminInquiryManager />
       </section>
 
       <section className="card" style={{marginTop: '1rem'}}>

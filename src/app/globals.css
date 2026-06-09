@@ -801,4 +801,165 @@ textarea {
   }
 }
 
+/* =========================================================
+   RFQ Cart & Inquiry Page Styles
+   ========================================================= */
+
+/* RFQ Cart Indicator Button */
+.cart-indicator-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+  color: #e2e8f0;
+}
+
+.cart-indicator-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(220, 38, 38, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.cart-icon {
+  font-size: 1.1rem;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: bold;
+  border-radius: 999px;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.5);
+  border: 1px solid #0f172a;
+}
+
+/* Quantity Controls */
+.quantity-control {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.5);
+  overflow: hidden;
+  height: 2.5rem;
+}
+
+.qty-btn {
+  background: transparent;
+  color: #e2e8f0;
+  border: 0;
+  border-radius: 0;
+  width: 2.5rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: none;
+  font-weight: bold;
+  font-size: 1.1rem;
+  transition: background 0.2s ease;
+}
+
+.qty-btn:hover {
+  background: rgba(148, 163, 184, 0.1);
+  transform: none;
+  box-shadow: none;
+}
+
+.qty-input {
+  width: 3.5rem;
+  height: 100%;
+  border: 0 !important;
+  background: transparent !important;
+  text-align: center;
+  font-weight: bold;
+  color: #f8fafc;
+  padding: 0;
+  border-left: 1px solid rgba(148, 163, 184, 0.15) !important;
+  border-right: 1px solid rgba(148, 163, 184, 0.15) !important;
+  border-radius: 0 !important;
+}
+
+/* Chrome, Safari, Edge, Opera: Remove number spinners */
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox: Remove number spinners */
+.qty-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* RFQ Inquiry Page */
+.inquiry-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 968px) {
+  .inquiry-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inquiry-cart-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.inquiry-cart-table th,
+.inquiry-cart-table td {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  text-align: left;
+}
+
+.inquiry-cart-table th {
+  background: rgba(30, 41, 59, 0.4);
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.remove-btn {
+  background: transparent;
+  color: #ef4444;
+  border: 0;
+  box-shadow: none;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.remove-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  transform: none;
+  box-shadow: none;
+}
+
+
 
