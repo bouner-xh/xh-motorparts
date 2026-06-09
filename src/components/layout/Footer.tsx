@@ -36,10 +36,7 @@ export function Footer({locale}: {locale: Locale}) {
           </p>
           <div className="footer-badge-list">
             <span className="footer-trust-badge">
-              🛡️ {isEn ? 'ISO 9001:2015 Certified Quality' : 'ISO 9001:2015 品質認證'}
-            </span>
-            <span className="footer-trust-badge">
-              🇹🇼 {isEn ? 'Made in Taiwan Guarantee' : '台灣在地工廠製造'}
+              🇹🇼 {isEn ? 'Made in Taiwan Quality' : '台灣在地工廠製造'}
             </span>
           </div>
         </div>
