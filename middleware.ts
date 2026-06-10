@@ -2,21 +2,28 @@ import {NextResponse, type NextRequest} from 'next/server';
 import createMiddleware from 'next-intl/middleware';
 import {routing} from '@/i18n/routing';
 import {getSupabaseMiddlewareAuthClient} from '@/lib/supabase/server';
+import {locales} from '@/lib/catalog';
 
 const intlMiddleware = createMiddleware(routing);
+
+// 動態建立語系匹配正則表達式，避免新增或移除語系時遺漏修改此處的硬編碼
+const localesPattern = locales.join('|');
+const adminMatchRegex = new RegExp(`^\\/(${localesPattern})\\/admin(?:\\/.*)?$`);
+const loginPageRegex = new RegExp(`^\\/(${localesPattern})\\/admin\\/login\\/?$`);
+const dashboardPageRegex = new RegExp(`^\\/(${localesPattern})\\/admin\\/dashboard\\/?$`);
 
 export default async function middleware(request: NextRequest) {
   const response = intlMiddleware(request);
   const {pathname} = request.nextUrl;
-  const adminMatch = pathname.match(/^\/(zh-TW|zh-CN|en)\/admin(?:\/.*)?$/);
+  const adminMatch = pathname.match(adminMatchRegex);
 
   if (!adminMatch) {
     return response;
   }
 
   const locale = adminMatch[1];
-  const isLoginPage = /^\/(zh-TW|zh-CN|en)\/admin\/login\/?$/.test(pathname);
-  const isDashboardPage = /^\/(zh-TW|zh-CN|en)\/admin\/dashboard\/?$/.test(pathname);
+  const isLoginPage = loginPageRegex.test(pathname);
+  const isDashboardPage = dashboardPageRegex.test(pathname);
 
   if (isDashboardPage && request.url.endsWith('?')) {
     return NextResponse.redirect(new URL(`/${locale}/admin/login`, request.url));
