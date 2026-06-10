@@ -4,17 +4,11 @@ import { revalidateCatalog } from '@/lib/revalidate';
 
 const batchProductSchema = z.object({
   categorySlug: z.string().min(1),
-  categoryNameZhTw: z.string().optional().default(''),
-  categoryNameZhCn: z.string().optional().default(''),
-  categoryNameEn: z.string().optional().default(''),
+  categoryNameI18n: z.record(z.string(), z.string()).default({}),
   subCategorySlug: z.string().min(1),
-  subCategoryNameZhTw: z.string().optional().default(''),
-  subCategoryNameZhCn: z.string().optional().default(''),
-  subCategoryNameEn: z.string().optional().default(''),
+  subCategoryNameI18n: z.record(z.string(), z.string()).default({}),
   modelNumber: z.string().min(1),
-  nameZhTw: z.string().min(1),
-  nameZhCn: z.string().min(1),
-  nameEn: z.string().min(1),
+  nameI18n: z.record(z.string(), z.string()).default({}),
   specifications: z.array(z.string()).default([]),
   stockQuantity: z.number().int().nonnegative().default(0),
   isActive: z.boolean().default(true),
@@ -72,15 +66,16 @@ export async function POST(request: Request) {
           categoryId = catExisted.id;
         } else {
           // 建立新大分類
-          const nameZhTw = item.categoryNameZhTw || item.categorySlug;
-          const nameZhCn = item.categoryNameZhCn || nameZhTw;
-          const nameEn = item.categoryNameEn || item.categorySlug;
+          const nameI18n = {...item.categoryNameI18n};
+          if (Object.keys(nameI18n).length === 0) {
+            nameI18n['zh-TW'] = item.categorySlug;
+          }
 
           const { data: catNew, error: catErr } = await service
             .from('categories')
             .insert({
               slug: item.categorySlug,
-              name_i18n: { 'zh-TW': nameZhTw, 'zh-CN': nameZhCn, en: nameEn },
+              name_i18n: nameI18n,
               description_i18n: { 'zh-TW': '', 'zh-CN': '', en: '' },
               sort_order: 0
             })
@@ -111,16 +106,17 @@ export async function POST(request: Request) {
           subCategoryId = subExisted.id;
         } else {
           // 建立新子分類
-          const nameZhTw = item.subCategoryNameZhTw || item.subCategorySlug;
-          const nameZhCn = item.subCategoryNameZhCn || nameZhTw;
-          const nameEn = item.subCategoryNameEn || item.subCategorySlug;
+          const nameI18n = {...item.subCategoryNameI18n};
+          if (Object.keys(nameI18n).length === 0) {
+            nameI18n['zh-TW'] = item.subCategorySlug;
+          }
 
           const { data: subNew, error: subErr } = await service
             .from('sub_categories')
             .insert({
               category_id: categoryId,
               slug: item.subCategorySlug,
-              name_i18n: { 'zh-TW': nameZhTw, 'zh-CN': nameZhCn, en: nameEn },
+              name_i18n: nameI18n,
               sort_order: 0
             })
             .select('id')
@@ -151,7 +147,7 @@ export async function POST(request: Request) {
           .update({
             category_id: categoryId,
             sub_category_id: subCategoryId,
-            name_i18n: { 'zh-TW': item.nameZhTw, 'zh-CN': item.nameZhCn, en: item.nameEn },
+            name_i18n: item.nameI18n,
             specifications: item.specifications,
             stock_quantity: item.stockQuantity,
             is_active: item.isActive
@@ -169,7 +165,7 @@ export async function POST(request: Request) {
             category_id: categoryId,
             sub_category_id: subCategoryId,
             model_number: item.modelNumber,
-            name_i18n: { 'zh-TW': item.nameZhTw, 'zh-CN': item.nameZhCn, en: item.nameEn },
+            name_i18n: item.nameI18n,
             specifications: item.specifications,
             stock_quantity: item.stockQuantity,
             is_active: item.isActive

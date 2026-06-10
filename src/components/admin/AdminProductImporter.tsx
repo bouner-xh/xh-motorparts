@@ -4,21 +4,19 @@ import { useState, useRef } from 'react';
 
 interface ParsedProductRow {
   categorySlug: string;
-  categoryNameZhTw: string;
-  categoryNameZhCn: string;
-  categoryNameEn: string;
+  categoryNameI18n: Record<string, string>;
   subCategorySlug: string;
-  subCategoryNameZhTw: string;
-  subCategoryNameZhCn: string;
-  subCategoryNameEn: string;
+  subCategoryNameI18n: Record<string, string>;
   modelNumber: string;
-  nameZhTw: string;
-  nameZhCn: string;
-  nameEn: string;
+  nameI18n: Record<string, string>;
   specifications: string[];
   stockQuantity: number;
   isActive: boolean;
   imageFilename: string;
+  // UI 預覽用
+  nameZhTw: string;
+  categoryNameZhTw: string;
+  subCategoryNameZhTw: string;
   // 以下為處理過程中的狀態
   imageFile?: File | Blob;
   uploadedUrl?: string;
@@ -130,6 +128,36 @@ export function AdminProductImporter() {
   };
 
   const parseJsonRows = (jsonData: Record<string, unknown>[]) => {
+    const langMap: Record<string, string> = {
+      'zh-tw': 'zh-TW',
+      'zh_tw': 'zh-TW',
+      'tw': 'zh-TW',
+      '繁中': 'zh-TW',
+      '繁體': 'zh-TW',
+      '繁體中文': 'zh-TW',
+      
+      'zh-cn': 'zh-CN',
+      'zh_cn': 'zh-CN',
+      'cn': 'zh-CN',
+      '簡中': 'zh-CN',
+      '簡體': 'zh-CN',
+      '簡體中文': 'zh-CN',
+      
+      'en': 'en',
+      '英文': 'en',
+      '英語': 'en',
+      
+      'ja': 'ja',
+      'jp': 'ja',
+      '日文': 'ja',
+      '日語': 'ja',
+      
+      'ko': 'ko',
+      'kr': 'ko',
+      '韓文': 'ko',
+      '韓語': 'ko'
+    };
+
     const tempRows: ParsedProductRow[] = jsonData.map((r) => {
       const modelNumber = String(r.model_number || r['型號'] || '').trim();
       if (!modelNumber) return null;
@@ -140,25 +168,81 @@ export function AdminProductImporter() {
         ? (specRaw as string[])
         : String(specRaw).split(/[,，]/).map(s => s.trim()).filter(Boolean);
 
+      const nameI18n: Record<string, string> = {};
+      const categoryNameI18n: Record<string, string> = {};
+      const subCategoryNameI18n: Record<string, string> = {};
+
+      Object.keys(r).forEach((key) => {
+        const lowerKey = key.toLowerCase();
+        const value = String(r[key] || '').trim();
+        if (!value) return;
+
+        if (lowerKey.startsWith('name_') || lowerKey.startsWith('產品名稱_')) {
+          const suffix = lowerKey.replace(/^(name_|產品名稱_)/, '');
+          const localeCode = langMap[suffix] || suffix;
+          nameI18n[localeCode] = value;
+        }
+
+        if (lowerKey.startsWith('category_name_') || lowerKey.startsWith('大分類名稱_')) {
+          const suffix = lowerKey.replace(/^(category_name_|大分類名稱_)/, '');
+          const localeCode = langMap[suffix] || suffix;
+          categoryNameI18n[localeCode] = value;
+        }
+
+        if (
+          lowerKey.startsWith('subcategory_name_') || 
+          lowerKey.startsWith('sub_category_name_') || 
+          lowerKey.startsWith('子分類名稱_')
+        ) {
+          const suffix = lowerKey.replace(/^(subcategory_name_|sub_category_name_|子分類名稱_)/, '');
+          const localeCode = langMap[suffix] || suffix;
+          subCategoryNameI18n[localeCode] = value;
+        }
+      });
+
+      // 補足舊版欄位/拼寫的支援
+      const legacyNameZhTw = String(r.name_zh_tw || r['產品名稱_繁中'] || '').trim();
+      if (legacyNameZhTw && !nameI18n['zh-TW']) nameI18n['zh-TW'] = legacyNameZhTw;
+      const legacyNameZhCn = String(r.name_zh_cn || r['產品名稱_簡中'] || '').trim();
+      if (legacyNameZhCn && !nameI18n['zh-CN']) nameI18n['zh-CN'] = legacyNameZhCn;
+      const legacyNameEn = String(r.name_en || r['產品名稱_英文'] || '').trim();
+      if (legacyNameEn && !nameI18n['en']) nameI18n['en'] = legacyNameEn;
+
+      const legacyCatZhTw = String(r.category_name_zh_tw || r['大分類名稱_繁中'] || '').trim();
+      if (legacyCatZhTw && !categoryNameI18n['zh-TW']) categoryNameI18n['zh-TW'] = legacyCatZhTw;
+      const legacyCatZhCn = String(r.category_name_zh_cn || r['大分類名稱_簡中'] || '').trim();
+      if (legacyCatZhCn && !categoryNameI18n['zh-CN']) categoryNameI18n['zh-CN'] = legacyCatZhCn;
+      const legacyCatEn = String(r.category_name_en || r['大分類名稱_英文'] || '').trim();
+      if (legacyCatEn && !categoryNameI18n['en']) categoryNameI18n['en'] = legacyCatEn;
+
+      const legacySubCatZhTw = String(r.subcategory_name_zh_tw || r['子分類名稱_繁中'] || '').trim();
+      if (legacySubCatZhTw && !subCategoryNameI18n['zh-TW']) subCategoryNameI18n['zh-TW'] = legacySubCatZhTw;
+      const legacySubCatZhCn = String(r.subcategory_name_zh_cn || r['子分類名稱_簡中'] || '').trim();
+      if (legacySubCatZhCn && !subCategoryNameI18n['zh-CN']) subCategoryNameI18n['zh-CN'] = legacySubCatZhCn;
+      const legacySubCatEn = String(r.subcategory_name_en || r['子分類名稱_英文'] || '').trim();
+      if (legacySubCatEn && !subCategoryNameI18n['en']) subCategoryNameI18n['en'] = legacySubCatEn;
+
+      // 提取 UI 預覽用內容
+      const previewName = nameI18n['zh-TW'] || nameI18n['en'] || Object.values(nameI18n)[0] || '';
+      const previewCat = categoryNameI18n['zh-TW'] || categoryNameI18n['en'] || Object.values(categoryNameI18n)[0] || '';
+      const previewSubCat = subCategoryNameI18n['zh-TW'] || subCategoryNameI18n['en'] || Object.values(subCategoryNameI18n)[0] || '';
+
       return {
         categorySlug: String(r.category_slug || r['大分類代號'] || '').trim().toLowerCase(),
-        categoryNameZhTw: String(r.category_name_zh_tw || r['大分類名稱_繁中'] || '').trim(),
-        categoryNameZhCn: String(r.category_name_zh_cn || r['大分類名稱_簡中'] || '').trim(),
-        categoryNameEn: String(r.category_name_en || r['大分類名稱_英文'] || '').trim(),
-        
+        categoryNameI18n,
         subCategorySlug: String(r.subcategory_slug || r['子分類代號'] || '').trim().toLowerCase(),
-        subCategoryNameZhTw: String(r.subcategory_name_zh_tw || r['子分類名稱_繁中'] || '').trim(),
-        subCategoryNameZhCn: String(r.subcategory_name_zh_cn || r['子分類名稱_簡中'] || '').trim(),
-        subCategoryNameEn: String(r.subcategory_name_en || r['子分類名稱_英文'] || '').trim(),
-
+        subCategoryNameI18n,
         modelNumber,
-        nameZhTw: String(r.name_zh_tw || r['產品名稱_繁中'] || '').trim(),
-        nameZhCn: String(r.name_zh_cn || r['產品名稱_簡中'] || '').trim(),
-        nameEn: String(r.name_en || r['產品名稱_英文'] || '').trim(),
+        nameI18n,
         specifications: specs,
         stockQuantity: Number(r.stock_quantity || r['庫存'] || 0),
         isActive: r.is_active !== undefined ? Boolean(r.is_active) : true,
         imageFilename: String(r.image_filename || r['圖片檔名'] || '').trim(),
+        
+        nameZhTw: previewName,
+        categoryNameZhTw: previewCat,
+        subCategoryNameZhTw: previewSubCat,
+        
         status: 'pending'
       };
     }).filter((r): r is ParsedProductRow => r !== null);
@@ -281,17 +365,11 @@ export function AdminProductImporter() {
     const batchPayload = {
       products: updatedRows.map(row => ({
         categorySlug: row.categorySlug,
-        categoryNameZhTw: row.categoryNameZhTw,
-        categoryNameZhCn: row.categoryNameZhCn,
-        categoryNameEn: row.categoryNameEn,
+        categoryNameI18n: row.categoryNameI18n,
         subCategorySlug: row.subCategorySlug,
-        subCategoryNameZhTw: row.subCategoryNameZhTw,
-        subCategoryNameZhCn: row.subCategoryNameZhCn,
-        subCategoryNameEn: row.subCategoryNameEn,
+        subCategoryNameI18n: row.subCategoryNameI18n,
         modelNumber: row.modelNumber,
-        nameZhTw: row.nameZhTw,
-        nameZhCn: row.nameZhCn,
-        nameEn: row.nameEn,
+        nameI18n: row.nameI18n,
         specifications: row.specifications,
         stockQuantity: row.stockQuantity,
         isActive: row.isActive,
