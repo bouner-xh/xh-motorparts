@@ -53,16 +53,21 @@ function assert(condition, message) {
   console.log(`  ✓ ${message}`);
 }
 
-async function run(name, fn) {
-  console.log(`▶ ${name}`);
-  try {
-    await fn();
-    console.log(`✅ ${name} 通過`);
-  } catch (error) {
-    console.error(`❌ ${name} 失敗`);
-    console.error(error);
-    process.exitCode = 1;
-  }
+// 測試依序執行，避免同時開多個瀏覽器互相干擾
+let queue = Promise.resolve();
+function run(name, fn) {
+  queue = queue.then(async () => {
+    console.log(`▶ ${name}`);
+    try {
+      await fn();
+      console.log(`✅ ${name} 通過`);
+    } catch (error) {
+      console.error(`❌ ${name} 失敗`);
+      console.error(error);
+      process.exitCode = 1;
+    }
+  });
+  return queue;
 }
 
 module.exports = { BASE_URL, sampleCart, withPage, seedCart, fillInquiryForm, assert, run };
