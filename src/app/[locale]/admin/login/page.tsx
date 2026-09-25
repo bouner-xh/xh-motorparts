@@ -56,27 +56,6 @@ export default async function AdminLoginPage({
     redirect(next);
   }
 
-  async function testLoginAction() {
-    'use server';
-
-    const supabase = await getSupabaseServerAuthClient();
-
-    if (!supabase) {
-      redirect(`/${localeValue}/admin/login?error=config`);
-    }
-
-    const {error} = await supabase.auth.signInWithPassword({
-      email: 'jajanuj@gmail.com',
-      password: '***REMOVED***'
-    });
-
-    if (error) {
-      redirect(`/${localeValue}/admin/login?error=invalid`);
-    }
-
-    redirect(nextPath);
-  }
-
   setRequestLocale(localeValue);
   const t = await getTranslations({locale: localeValue, namespace: 'admin'});
   const errorMessage = resolveErrorMessage(query.error);
@@ -88,9 +67,6 @@ export default async function AdminLoginPage({
           <h2 className="page-title">{t('loginTitle')}</h2>
           <p className="muted page-lead">{t('loginDescription')}</p>
         </div>
-        <form action={testLoginAction}>
-          <button type="submit" style={{background: '#0f766e'}}>測試登入</button>
-        </form>
       </div>
 
       <article className="card info-card">
