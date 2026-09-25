@@ -135,6 +135,8 @@ export async function POST(request: Request) {
     // 3) 寫入 Supabase (CRM 客戶關係資料庫)
     const service = getSupabaseServiceRoleClient();
     let customerId: string | null = null;
+    // 已設定資料庫但寫入失敗時為 true，需確保管理員至少收到通知信，否則回報失敗
+    let saveFailed = false;
 
     if (service) {
       // a. 查詢或建立客戶 (以 Email 作為唯一鍵值)
@@ -191,6 +193,7 @@ export async function POST(request: Request) {
         });
 
       if (inqError) {
+        saveFailed = true;
         console.error('Failed to save inquiry to database:', inqError.message);
       }
     } else {
@@ -201,19 +204,37 @@ export async function POST(request: Request) {
     const adminEmail = process.env.RESEND_ADMIN_EMAIL || 'bounerchang@gmail.com';
     const hasResend = Boolean(process.env.RESEND_API_KEY);
 
-    if (hasResend) {
-      await Promise.all([
-        sendEmail({
-          to: adminEmail,
-          subject: sanitizeSubject(`[New RFQ Inquiry] From ${data.country} - ${data.companyName} - ${data.name}`),
-          html: buildAdminMailHtml(data)
-        }),
-        sendEmail({
-          to: data.email,
-          subject: 'Inquiry Received: Xie Huang Enterprise Co., Ltd. (Taiwan)',
-          html: buildCustomerMailHtml(data)
-        })
-      ]);
+    const sendAdminEmail = () =>
+      sendEmail({
+        to: adminEmail,
+        subject: sanitizeSubject(
+          `${saveFailed ? '[NOT SAVED TO CRM] ' : ''}[New RFQ Inquiry] From ${data.country} - ${data.companyName} - ${data.name}`
+        ),
+        html: buildAdminMailHtml(data)
+      });
+    const sendCustomerEmail = () =>
+      sendEmail({
+        to: data.email,
+        subject: 'Inquiry Received: Xie Huang Enterprise Co., Ltd. (Taiwan)',
+        html: buildCustomerMailHtml(data)
+      });
+
+    if (saveFailed) {
+      // 資料庫寫入失敗：管理員通知信是唯一的紀錄，寄送成功才能告訴客戶已收到
+      const adminNotified = hasResend ? await sendAdminEmail() : false;
+      if (!adminNotified) {
+        console.error('Inquiry lost: database save failed and admin email was not sent.', {
+          email: data.email,
+          companyName: data.companyName
+        });
+        return Response.json(
+          { error: '詢價單暫時無法送出，請稍後再試，或直接透過 Email / WhatsApp 與我們聯絡' },
+          { status: 500 }
+        );
+      }
+      await sendCustomerEmail();
+    } else if (hasResend) {
+      await Promise.all([sendAdminEmail(), sendCustomerEmail()]);
     }
 
     return Response.json({
