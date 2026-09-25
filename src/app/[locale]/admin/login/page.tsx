@@ -10,6 +10,16 @@ const loginErrorMessage: Record<string, string> = {
   unknown: '登入時發生錯誤，請稍後再試。'
 };
 
+// 登入後只允許跳轉到本站同語系路徑，避免被導向外部網站（Open Redirect）
+function resolveNextPath(locale: Locale, next?: string | null) {
+  const fallback = `/${locale}/admin/dashboard`;
+  if (!next || !next.startsWith(`/${locale}/`) || next.includes('\\')) {
+    return fallback;
+  }
+
+  return next;
+}
+
 function resolveErrorMessage(errorCode?: string) {
   if (!errorCode) {
     return '';
@@ -32,14 +42,14 @@ export default async function AdminLoginPage({
   }
 
   const localeValue = locale as Locale;
-  const nextPath = query.next && query.next.startsWith(`/${localeValue}/`) ? query.next : `/${localeValue}/admin/dashboard`;
+  const nextPath = resolveNextPath(localeValue, query.next);
 
   async function loginAction(formData: FormData) {
     'use server';
 
     const email = String(formData.get('email') || '').trim();
     const password = String(formData.get('password') || '');
-    const next = String(formData.get('next') || `/${localeValue}/admin/dashboard`);
+    const next = resolveNextPath(localeValue, String(formData.get('next') || ''));
 
     const supabase = await getSupabaseServerAuthClient();
 

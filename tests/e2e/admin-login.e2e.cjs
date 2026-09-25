@@ -11,3 +11,20 @@ run('登入頁沒有免密碼的「測試登入」後門', () =>
     assert((await page.locator('form').count()) === 1, '頁面只有一個登入表單');
   })
 );
+
+run('登入後跳轉路徑只接受本站同語系路徑', () =>
+  withPage(async (page) => {
+    const cases = [
+      ['/zh-TW/admin/dashboard?tab=products', '/zh-TW/admin/dashboard?tab=products'],
+      ['https://evil.example/login', '/zh-TW/admin/dashboard'],
+      ['//evil.example', '/zh-TW/admin/dashboard'],
+      ['/zh-TW/\\evil.example', '/zh-TW/admin/dashboard'],
+      ['/en/admin/dashboard', '/zh-TW/admin/dashboard']
+    ];
+    for (const [input, expected] of cases) {
+      await page.goto(`${BASE_URL}/zh-TW/admin/login?next=${encodeURIComponent(input)}`);
+      const value = await page.locator('input[name="next"]').inputValue();
+      assert(value === expected, `next=${input} → ${value}`);
+    }
+  })
+);
