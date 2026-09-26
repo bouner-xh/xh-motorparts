@@ -1,5 +1,6 @@
 import {getSupabaseServerAuthClient, getSupabaseServiceRoleClient} from '@/lib/supabase/server';
 import {detectImageType} from '@/lib/image-signature';
+import {isAdminEmail} from '@/lib/admin-auth';
 
 function sanitizeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '-').toLowerCase();
@@ -26,6 +27,10 @@ export async function POST(request: Request) {
 
   if (!user) {
     return Response.json({error: '未授權', requestId}, {status: 401});
+  }
+
+  if (!isAdminEmail(user.email)) {
+    return Response.json({error: '沒有後台權限', requestId}, {status: 403});
   }
 
   const service = getSupabaseServiceRoleClient();
