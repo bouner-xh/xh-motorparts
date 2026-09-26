@@ -16,8 +16,8 @@
    - 如果其他服務（Gmail 等）也用同一組密碼，請一併更換
    - 建議檢查 Supabase 後台的 CRM 詢價資料、產品資料有沒有被異動
    - 是否要把 repo 改為私有、或清除 git 歷史紀錄，需要老闆決定（清除歷史紀錄會改寫已推送的 commit）
-2. **改寫 git 歷史**：老闆已同意改寫 `master`、`test`、`claude/quirky-noether-qibs76` 三個分支，把密碼從所有 commit 中移除。
-   待老闆更換密碼、下達「開始執行」後進行。
+2. **（選擇性）請 GitHub Support 清除舊 commit 快取**：git 歷史已改寫，但舊 commit（如 `7c22acd`）仍可用編號開啟，
+   PR #1 也仍指向舊 commit。密碼已更換，實際風險已解除；要徹底清除需以 `bouner-xh` 帳號向 https://support.github.com/request 申請。
 
 ---
 
@@ -43,18 +43,30 @@ Vercel 兩個專案（`xh-motorparts`、`xh-motorparts-uhan`）的 Production �
 
 ## 🔄 進行中
 
-- 無
+| 編號 | 項目 | 狀態 |
+|---|---|---|
+| S2 | 後台限定 `ADMIN_EMAILS` 名單內帳號（`9369ca1`） | 已完成並通過測試，推到 Preview 等老闆以兩個帳號實測後再合併 `master` |
+
+S2 測試：單元測試 4 項；E2E 以模擬 Supabase 驗證名單內可進、名單外登入即被登出、名單外登入狀態打 6 支 API 皆 403、
+未設定名單時一律拒絕（修改前重現失敗 → 修改後通過）。
+
+## ✅ 已完成（2026-09-26）
+
+- 老闆更換外洩密碼、新增第二位管理者、修正 Supabase Site URL、關閉公開註冊
+- 老闆於 Vercel 兩個專案設定 `ADMIN_EMAILS`（Production + Preview）
+- git 歷史改寫：`master`、`test`、`claude/quirky-noether-qibs76` 共 33 個 commit 的密碼替換為 `***REMOVED***`，
+  已強制推送並確認三個分支皆查不到密碼；`master` 程式碼與改寫前完全相同，Vercel 重新部署成功
 
 ## ⏳ 待處理（需要老闆決定後才能動工）
 
 | 編號 | 項目 | 需要決定的事 |
 |---|---|---|
-| S2 | 後台 API 只檢查有沒有登入，沒檢查是不是管理員 | 管理員判斷方式：A. `ADMIN_EMAILS` 環境變數白名單；B. Supabase `app_metadata.role`。另請確認 Supabase 已關閉公開註冊 |
-| S4 | 正式環境缺少 Turnstile / Upstash 設定時自動放行 | 改為「缺設定就停止收詢價單（503）」。**若目前正式站尚未設定這些變數，修改後詢價會停擺**，需先確認 Vercel 環境變數 |
+| S4 | 正式環境缺少 Turnstile / Upstash 設定時自動放行 | 改為「缺設定就停止收詢價單（503）」。`xh-motorparts-uhan` 已有這三個變數，需確認兩個專案都有勾 Production |
 | S6 補充 | 頁尾加「Cookie 設定」讓使用者撤回同意（GDPR） | 屬於新增 UI，需確認位置與文案 |
 | S9 | 個人 Gmail 寫死在首頁與程式碼 | 公司信箱（如 `sales@xh-motorparts.com`）是否已申請 |
 | S10 | CSP 允許 inline script | 改用 nonce 會讓頁面變成動態渲染，需評估效能 |
 | S1 補充 | 詢價欄位長度上限、客戶確認信是否回顯留言 | 會改變 API 可接受的資料，依規範需先確認 |
+| 忘記密碼功能 | 網站沒有重設密碼頁面，目前忘記密碼只能用 Supabase SQL 重設 | 是否需要 |
 | D1–D12 | 使用者體驗與設計項目 | 依報告建議順序，待安全性項目確認後進行 |
 
 ## ⚠️ 遇到的問題
