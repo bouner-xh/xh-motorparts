@@ -1,4 +1,5 @@
 import {getSupabaseServerAuthClient, getSupabaseServiceRoleClient} from '@/lib/supabase/server';
+import {detectImageType} from '@/lib/image-signature';
 
 function sanitizeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '-').toLowerCase();
@@ -54,14 +55,21 @@ export async function POST(request: Request) {
   const objectPath = `products/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}-${safeName}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
+  // 以檔案內容確認真的是圖片，不只相信瀏覽器提供的 file.type
+  const detectedType = detectImageType(buffer);
+  if (!detectedType) {
+    return Response.json({error: '僅支援 JPG / PNG / WEBP', requestId}, {status: 400});
+  }
+
   const {error: uploadError} = await service.storage.from(bucket).upload(objectPath, buffer, {
-    contentType: file.type,
+    contentType: detectedType,
     upsert: false
   });
 
   if (uploadError) {
     logApiError(requestId, 'storage upload failed', uploadError.message);
-    return Response.json({error: uploadError.message, requestId}, {status: 500});
+    // 詳細錯誤只記錄在伺服器 log，避免對外透露儲存空間設定
+    return Response.json({error: '圖片上傳失敗，請稍後再試', requestId}, {status: 500});
   }
 
   const {data: publicData} = service.storage.from(bucket).getPublicUrl(objectPath);

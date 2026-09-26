@@ -3,13 +3,20 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// GA4 與 Clarity 送出資料、載入主程式所需的網域
+// 參考：https://developers.google.com/tag-platform/security/guides/csp
+const analyticsConnectHosts =
+  'https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.clarity.ms https://c.bing.com';
+const analyticsImgHosts =
+  'https://*.google-analytics.com https://*.googletagmanager.com https://*.clarity.ms https://c.bing.com';
+
 const cspScriptSrc = isProduction
-  ? "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com https://www.clarity.ms"
-  : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://challenges.cloudflare.com https://www.clarity.ms";
+  ? "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com https://*.clarity.ms"
+  : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://challenges.cloudflare.com https://*.clarity.ms";
 
 const cspConnectSrc = isProduction
-  ? "connect-src 'self' https://*.supabase.co https://api.resend.com"
-  : "connect-src 'self' ws: wss: http://localhost:* http://127.0.0.1:* https://*.supabase.co https://api.resend.com";
+  ? `connect-src 'self' https://*.supabase.co https://api.resend.com ${analyticsConnectHosts}`
+  : `connect-src 'self' ws: wss: http://localhost:* http://127.0.0.1:* https://*.supabase.co https://api.resend.com ${analyticsConnectHosts}`;
 
 const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
@@ -26,7 +33,7 @@ const securityHeaders = [
       "default-src 'self'",
       cspScriptSrc,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://*.r2.dev https://*.cloudflare.com https://*.supabase.co",
+      `img-src 'self' data: blob: https://*.r2.dev https://*.cloudflare.com https://*.supabase.co ${analyticsImgHosts}`,
       cspConnectSrc,
       "frame-src https://challenges.cloudflare.com",
     ].join('; '),
