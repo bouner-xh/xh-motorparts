@@ -708,7 +708,7 @@ textarea {
 }
 
 .footer-privacy-link {
-  color: #64748b;
+  color: #94a3b8;
   font-size: 0.9rem;
   text-decoration: none;
   transition: color 0.2s ease;
@@ -728,7 +728,7 @@ textarea {
 
 .privacy-last-updated {
   font-size: 0.9rem;
-  color: #64748b;
+  color: #94a3b8;
   margin-bottom: 2rem;
   border-bottom: 1px solid rgba(148, 163, 184, 0.15);
   padding-bottom: 1rem;
@@ -1196,7 +1196,7 @@ textarea {
   padding-top: 1.5rem;
   border-top: 1px solid rgba(148, 163, 184, 0.12);
   font-size: 0.9rem;
-  color: #64748b;
+  color: #94a3b8;
   flex-wrap: wrap;
 }
 
