@@ -10,6 +10,7 @@ import { toProductImageUrl } from '@/lib/assets';
 import { getCatalogProduct, getCategoryBySlug, getSubCategoryBySlug } from '@/lib/catalog-service';
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
 import { getBaseUrl } from '@/lib/site';
+import { localized } from '@/lib/localized-text';
 
 export async function generateMetadata({
   params,
@@ -49,7 +50,7 @@ export async function generateMetadata({
       url: `${baseUrl}/${locale}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`,
       images: [toProductImageUrl(product.image)],
       locale,
-      siteName: locale === 'en' ? 'Xie Huang Enterprise Co., Ltd.' : '協皇企業有限公司'
+      siteName: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' })
     },
     alternates: {
       canonical: `${baseUrl}/${locale}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`,
@@ -110,7 +111,7 @@ export default async function ProductDetailPage({
         </article>
 
         <div className="detail-info card">
-          <h2>{product.model}</h2>
+          <h1 className="product-detail-title">{product.model}</h1>
           <p>{product.name}</p>
           <p className="muted">
             {tProducts('category')}：{categoryData.name}
@@ -129,7 +130,7 @@ export default async function ProductDetailPage({
           <div style={{ marginTop: 'auto' }}>
             <p style={{ margin: 0 }}>
               <Link className="text-link" href={`/${localeValue}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}`}>
-                ← 返回 {subCategoryData.name}
+                ← {localized(localeValue, { 'zh-TW': '返回', 'zh-CN': '返回', en: 'Back to' })} {subCategoryData.name}
               </Link>
             </p>
             <div style={{ marginTop: '-0.4rem' }}>

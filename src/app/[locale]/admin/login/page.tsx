@@ -82,7 +82,7 @@ export default async function AdminLoginPage({
     <main>
       <div className="section-heading">
         <div>
-          <h2 className="page-title">{t('loginTitle')}</h2>
+          <h1 className="page-title">{t('loginTitle')}</h1>
           <p className="muted page-lead">{t('loginDescription')}</p>
         </div>
       </div>

@@ -1,5 +1,14 @@
 # 測試說明
 
+## 一次執行全部測試（建議）
+
+```bash
+bash tests/run-all.sh
+```
+
+會依序在 8 種環境情境下啟動網站並執行全部單元測試與 E2E 測試（約 5～8 分鐘），
+最後顯示「✅ 全部測試通過」或列出失敗的項目。每次修改後、合併進 master 前都應執行一次。
+
 ## 單元測試（tests/security）
 
 使用 Node 內建測試工具，不需要額外套件（Node 22 以上）：
@@ -36,10 +45,17 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `admin-upload.e2e.cjs` | 未登入無法上傳圖片（S8） | `npx next dev -p 3100` |
 | `admin-access.e2e.cjs` | 只有名單內帳號能進後台（S2） | 需先啟動模擬 Supabase，見檔案開頭說明 |
 | `admin-access-no-list.e2e.cjs` | 未設定名單時一律拒絕（S2） | 同上，但不設定 `ADMIN_EMAILS` |
+| `product-card-inquiry.e2e.cjs` | 產品卡片直接加入詢價、預設圖（D1） | 模擬 Supabase |
+| `home-hero-responsive.e2e.cjs` | 首頁 Hero 手機內距（D5） | `npx next dev -p 3100` |
+| `language-switch.e2e.cjs` | 切換語系停留同一頁（D6） | 模擬 Supabase |
+| `locale-text.e2e.cjs` | 簡中無繁體字、英文無中文（D7） | 模擬 Supabase |
+| `text-contrast.e2e.cjs` | 小字對比 4.5:1（D8） | `npx next dev -p 3100` |
+| `page-h1.e2e.cjs` | 每頁一個 H1 且為主標題（D10） | 模擬 Supabase |
+| `no-nested-interactive.e2e.cjs` | 連結內不包按鈕（D11） | `npx next dev -p 3100` |
 
 ### 模擬 Supabase
 
 `mock-supabase.cjs` 是測試用的假 Supabase，只實作登入、取得使用者、登出與空的資料庫回應，
-讓後台權限可以在沒有真實 Supabase 的環境下測試。啟動：`node tests/e2e/mock-supabase.cjs`（port 54321）。
+讓後台權限與產品列表可以在沒有真實 Supabase 的環境下測試。範例資料：1 個分類（cylinder）、1 個子分類（std）、2 個產品。啟動：`node tests/e2e/mock-supabase.cjs`（port 54321）。
 
 可用 `E2E_BASE_URL` 指定其他網址，例如 Vercel Preview。

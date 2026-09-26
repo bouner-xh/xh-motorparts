@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import {type Locale} from '@/lib/catalog';
+import { localized } from '@/lib/localized-text';
 
 const footerCopy: Record<Locale, {copyright: string; slogan: string; author: string}> = {
   'zh-TW': {
@@ -20,41 +21,38 @@ const footerCopy: Record<Locale, {copyright: string; slogan: string; author: str
 };
 
 export function Footer({locale}: {locale: Locale}) {
-  const isEn = locale === 'en';
   return (
     <footer className="site-footer">
       <div className="footer-grid">
         {/* Column 1: Brand & Certification */}
         <div className="footer-col footer-col--brand">
           <h3 className="footer-col__title">
-            {isEn ? 'Xie Huang Enterprise' : '協皇企業有限公司'}
+            {localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise' })}
           </h3>
           <p className="muted footer-col__desc">
-            {isEn 
-              ? 'Taiwan motorcycle parts manufacturer and B2B inquiry partner since 1990. Committed to premium quality and global export service.'
-              : '創立於 1990 年的台灣摩托車零件製造商與 B2B 外銷夥伴。我們三十年來秉持誠實工序，提供全球採購商最穩定、高品質的核心零件供應。'}
+            {localized(locale, { 'zh-TW': '創立於 1990 年的台灣摩托車零件製造商與 B2B 外銷夥伴。我們三十年來秉持誠實工序，提供全球採購商最穩定、高品質的核心零件供應。', 'zh-CN': '创立于 1990 年的台湾摩托车零件制造商与 B2B 外销伙伴。我们三十年来秉持诚实工序，提供全球采购商最稳定、高质量的核心零件供应。', en: 'Taiwan motorcycle parts manufacturer and B2B inquiry partner since 1990. Committed to premium quality and global export service.' })}
           </p>
           <div className="footer-badge-list">
             <span className="footer-trust-badge">
-              🇹🇼 {isEn ? 'Made in Taiwan Quality' : '台灣在地工廠製造'}
+              🇹🇼 {localized(locale, { 'zh-TW': '台灣在地工廠製造', 'zh-CN': '台湾本地工厂制造', en: 'Made in Taiwan Quality' })}
             </span>
           </div>
         </div>
 
         {/* Column 2: Quick Links */}
         <div className="footer-col">
-          <h3 className="footer-col__title">{isEn ? 'Navigation' : '網站導覽'}</h3>
+          <h3 className="footer-col__title">{localized(locale, { 'zh-TW': '網站導覽', 'zh-CN': '网站导览', en: 'Navigation' })}</h3>
           <ul className="footer-links">
-            <li><Link href={`/${locale}`}>{isEn ? 'Home' : '首頁'}</Link></li>
-            <li><Link href={`/${locale}/products`}>{isEn ? 'Products' : '產品目錄'}</Link></li>
-            <li><Link href={`/${locale}/about`}>{isEn ? 'About Us' : '關於我們'}</Link></li>
-            <li><Link href={`/${locale}/contact`}>{isEn ? 'Contact' : '聯絡我們'}</Link></li>
+            <li><Link href={`/${locale}`}>{localized(locale, { 'zh-TW': '首頁', 'zh-CN': '首页', en: 'Home' })}</Link></li>
+            <li><Link href={`/${locale}/products`}>{localized(locale, { 'zh-TW': '產品目錄', 'zh-CN': '产品目录', en: 'Products' })}</Link></li>
+            <li><Link href={`/${locale}/about`}>{localized(locale, { 'zh-TW': '關於我們', 'zh-CN': '关于我们', en: 'About Us' })}</Link></li>
+            <li><Link href={`/${locale}/contact`}>{localized(locale, { 'zh-TW': '聯絡我們', 'zh-CN': '联系我们', en: 'Contact' })}</Link></li>
           </ul>
         </div>
 
         {/* Column 3: Contact Info */}
         <div className="footer-col footer-col--contact">
-          <h3 className="footer-col__title">{isEn ? 'Contact Info' : '聯絡資訊'}</h3>
+          <h3 className="footer-col__title">{localized(locale, { 'zh-TW': '聯絡資訊', 'zh-CN': '联系信息', en: 'Contact Info' })}</h3>
           <ul className="footer-contact-list">
             <li>
               <span className="contact-icon-label">📧</span> 
@@ -67,15 +65,13 @@ export function Footer({locale}: {locale: Locale}) {
             <li>
               <span className="contact-icon-label">📍</span> 
               <span className="muted">
-                {isEn 
-                  ? 'No. 533-2, Sec. 1, Liming Rd., Nantun Dist., Taichung City, Taiwan' 
-                  : '台中市南屯區黎明路一段533-2號'}
+                {localized(locale, { 'zh-TW': '台中市南屯區黎明路一段533-2號', 'zh-CN': '台中市南屯区黎明路一段533-2号', en: 'No. 533-2, Sec. 1, Liming Rd., Nantun Dist., Taichung City, Taiwan' })}
               </span>
             </li>
             <li>
               <span className="contact-icon-label">🕒</span> 
               <span className="muted">
-                {isEn ? 'Mon - Fri / 09:00 - 18:00' : '週一至週五 / 09:00 - 18:00'}
+                {localized(locale, { 'zh-TW': '週一至週五 / 09:00 - 18:00', 'zh-CN': '周一至周五 / 09:00 - 18:00', en: 'Mon - Fri / 09:00 - 18:00' })}
               </span>
             </li>
           </ul>
@@ -86,7 +82,7 @@ export function Footer({locale}: {locale: Locale}) {
         <strong>{footerCopy[locale].copyright}</strong>
         <span className="footer-divider">|</span>
         <Link href={`/${locale}/legal/privacy`} className="footer-privacy-link">
-          {locale === 'en' ? 'Privacy Policy' : '隱私政策'}
+          {localized(locale, { 'zh-TW': '隱私政策', 'zh-CN': '隐私政策', en: 'Privacy Policy' })}
         </Link>
       </div>
     </footer>

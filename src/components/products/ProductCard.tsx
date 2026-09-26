@@ -2,17 +2,25 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type {Product} from '@/data/products';
 import {toProductImageUrl} from '@/lib/assets';
+import type {Locale} from '@/lib/catalog';
+import {ProductCardInquiryButton} from './ProductCardInquiryButton';
 
 export function ProductCard({
   product,
   href,
   specLabel,
-  detailLabel
+  detailLabel,
+  locale,
+  categorySlug,
+  subCategorySlug
 }: {
   product: Product;
   href: string;
   specLabel: string;
   detailLabel: string;
+  locale: Locale;
+  categorySlug: string;
+  subCategorySlug: string;
 }) {
   return (
     <article className="product-card">
@@ -35,6 +43,14 @@ export function ProductCard({
         <Link className="text-link" href={href}>
           {detailLabel}
         </Link>
+        <ProductCardInquiryButton
+          productId={product.id}
+          productModel={product.model}
+          productName={product.name}
+          locale={locale}
+          categorySlug={categorySlug}
+          subCategorySlug={subCategorySlug}
+        />
       </div>
     </article>
   );

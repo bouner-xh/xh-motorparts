@@ -57,7 +57,7 @@ export default async function AdminDashboardPage({
     <main>
       <div className="section-heading">
         <div>
-          <h2 className="page-title">{t('dashboardTitle')}</h2>
+          <h1 className="page-title">{t('dashboardTitle')}</h1>
           <p className="muted page-lead">{t('loginDescription')}</p>
         </div>
         <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>

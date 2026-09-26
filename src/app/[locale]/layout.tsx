@@ -11,6 +11,8 @@ import { locales, type Locale } from '@/lib/catalog';
 import { getBaseUrl } from '@/lib/site';
 import { CartProvider } from '@/context/CartContext';
 import { CartIndicator } from '@/components/layout/CartIndicator';
+import { LanguageLinks } from '@/components/layout/LanguageLinks';
+import { localized } from '@/lib/localized-text';
 
 const companyByLocale: Record<Locale, string> = {
   'zh-TW': '協皇企業有限公司',
@@ -68,11 +70,9 @@ export default async function LocaleLayout({
           <header className="site-header">
             <div className="brand-row">
               <div className="brand-copy">
-                <h1>{companyByLocale[localeValue]}</h1>
+                <div className="brand-name">{companyByLocale[localeValue]}</div>
                 <p>
-                  {localeValue === 'en'
-                    ? 'Motorcycle parts catalog and B2B inquiry platform'
-                    : '摩托車零件產品目錄與商務詢價平台'}
+                  {localized(localeValue, { 'zh-TW': '摩托車零件產品目錄與商務詢價平台', 'zh-CN': '摩托车零件产品目录与商务询价平台', en: 'Motorcycle parts catalog and B2B inquiry platform' })}
                 </p>
               </div>
             </div>
@@ -81,9 +81,7 @@ export default async function LocaleLayout({
               <Link href={`/${localeValue}/products`}>{t('products')}</Link>
               <Link href={`/${localeValue}/about`}>{t('about')}</Link>
               <Link href={`/${localeValue}/contact`}>{t('contact')}</Link>
-              <Link href="/zh-TW">繁中</Link>
-              <Link href="/zh-CN">简中</Link>
-              <Link href="/en">EN</Link>
+              <LanguageLinks />
               <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
                 <CartIndicator locale={localeValue} />
               </div>

@@ -26,7 +26,7 @@ export default async function ProductsPage({
     <main>
       <div className="section-heading">
         <div>
-          <h2 className="page-title">{t('title')}</h2>
+          <h1 className="page-title">{t('title')}</h1>
           <p className="muted page-lead">{t('subtitle')}</p>
         </div>
       </div>

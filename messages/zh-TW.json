@@ -51,6 +51,7 @@
     "error": "送出失敗，請稍後再試。",
     "captchaPending": "驗證服務尚未啟用，送出前請先確認目前環境設定。",
     "addToCart": "加入詢價清單",
+    "addedToCart": "✓ 已加入，點此移除",
     "removeFromCart": "移除",
     "viewCart": "檢視詢價清單",
     "quantity": "需求數量",

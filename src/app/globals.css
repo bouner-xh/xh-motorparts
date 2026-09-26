@@ -98,9 +98,16 @@ textarea {
   gap: 1rem;
 }
 
-.brand-copy h1 {
+.brand-copy .brand-name {
   margin: 0;
   font-size: clamp(1.3rem, 2vw, 1.8rem);
+  font-weight: 700;
+}
+
+/* 產品詳細頁主標題（原為 h2，改為 h1 後維持相同大小與間距） */
+.product-detail-title {
+  margin: 0.83em 0;
+  font-size: 1.5em;
 }
 
 .brand-copy p {
@@ -161,6 +168,11 @@ textarea {
   padding: 1.5rem;
 }
 
+/* 首頁 Hero：內距隨螢幕寬度縮放，桌機維持 3.5rem / 2.5rem，手機縮小以保留文字寬度（D5） */
+.hero__panel--home {
+  padding: clamp(1.5rem, 5vw, 3.5rem) clamp(1.25rem, 4vw, 2.5rem);
+}
+
 .hero__eyebrow {
   display: inline-flex;
   padding: 0.35rem 0.75rem;
@@ -196,6 +208,26 @@ textarea {
   align-items: center;
   gap: 0.35rem;
   color: #f8fafc;
+}
+
+/* 外觀與 button 相同的連結（避免在 <a> 裡再包 <button>）（D11） */
+.button-primary {
+  display: inline-block;
+  align-self: flex-start;
+  background: #dc2626;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  line-height: normal;
+  text-align: center;
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.2);
+  transition: all 0.3s ease;
+}
+
+.button-primary:hover {
+  background: #ef4444;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(239, 68, 68, 0.4);
 }
 
 .button-secondary {
@@ -413,6 +445,26 @@ textarea {
 
 .product-card__specs {
   min-height: 3.2rem;
+}
+
+/* 產品卡片「加入詢價清單」按鈕（D1） */
+.product-card__inquiry {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.9rem;
+  font-weight: 700;
+}
+
+.product-card__inquiry.is-added {
+  background: transparent;
+  border: 1px solid #dc2626;
+  color: #fca5a5;
+  box-shadow: none;
+}
+
+.product-card__inquiry.is-added:hover {
+  background: rgba(220, 38, 38, 0.12);
+  transform: none;
 }
 
 .detail-grid {
@@ -683,7 +735,7 @@ textarea {
 }
 
 .footer-privacy-link {
-  color: #64748b;
+  color: #94a3b8;
   font-size: 0.9rem;
   text-decoration: none;
   transition: color 0.2s ease;
@@ -703,7 +755,7 @@ textarea {
 
 .privacy-last-updated {
   font-size: 0.9rem;
-  color: #64748b;
+  color: #94a3b8;
   margin-bottom: 2rem;
   border-bottom: 1px solid rgba(148, 163, 184, 0.15);
   padding-bottom: 1rem;
@@ -1171,7 +1223,7 @@ textarea {
   padding-top: 1.5rem;
   border-top: 1px solid rgba(148, 163, 184, 0.12);
   font-size: 0.9rem;
-  color: #64748b;
+  color: #94a3b8;
   flex-wrap: wrap;
 }
 

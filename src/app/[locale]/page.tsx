@@ -6,6 +6,7 @@ import { getCategoryCoverUrl } from '@/lib/assets';
 import { getCategorySummaries } from '@/lib/catalog-service';
 import { homeContent } from '@/lib/site-content';
 import { notFound } from 'next/navigation';
+import { localized } from '@/lib/localized-text';
 
 export default async function LocaleHome({
   params,
@@ -25,16 +26,16 @@ export default async function LocaleHome({
   return (
     <main>
       <section className="hero">
-        <div className="surface hero__panel" style={{ gridColumn: '1 / -1', padding: '3.5rem 2.5rem' }}>
+        <div className="surface hero__panel hero__panel--home" style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="hero__eyebrow">{content.hero.eyebrow}</span>
             <div className="hero__badges">
-              <span className="hero__badge">{localeValue === 'en' ? 'Taichung, Taiwan' : '台灣・台中'}</span>
-              <span className="hero__badge">{localeValue === 'en' ? 'Est. 1990' : '創立於 1990 年'}</span>
-              <span className="hero__badge">{localeValue === 'en' ? 'Exported to 20+ Countries' : '出口全球 20+ 國家'}</span>
+              <span className="hero__badge">{localized(localeValue, { 'zh-TW': '台灣・台中', 'zh-CN': '台湾・台中', en: 'Taichung, Taiwan' })}</span>
+              <span className="hero__badge">{localized(localeValue, { 'zh-TW': '創立於 1990 年', 'zh-CN': '创立于 1990 年', en: 'Est. 1990' })}</span>
+              <span className="hero__badge">{localized(localeValue, { 'zh-TW': '出口全球 20+ 國家', 'zh-CN': '出口全球 20+ 国家', en: 'Exported to 20+ Countries' })}</span>
             </div>
           </div>
-          <h2 className="hero__title" style={{ whiteSpace: 'pre-line', marginTop: '1.5rem' }}>{content.hero.title}</h2>
+          <h1 className="hero__title" style={{ whiteSpace: 'pre-line', marginTop: '1.5rem' }}>{content.hero.title}</h1>
           <p className="muted hero__description" style={{ marginTop: '1rem' }}>{content.hero.subtitle}</p>
           
           <div className="hero__contact-quick">
@@ -43,8 +44,8 @@ export default async function LocaleHome({
           </div>
 
           <div className="hero__actions" style={{ marginTop: '2rem' }}>
-            <Link href={`/${localeValue}/products`}>
-              <button type="button">{content.hero.primaryCta}</button>
+            <Link className="button-primary" href={`/${localeValue}/products`}>
+              {content.hero.primaryCta}
             </Link>
             <Link className="button-secondary" href={`/${localeValue}/about`}>
               {content.hero.secondaryCta}
@@ -58,14 +59,10 @@ export default async function LocaleHome({
           <span className="quote-icon">“</span>
           <blockquote>
             <p className="quote-text">
-              {localeValue === 'en' 
-                ? 'Our name won\'t appear on your motorcycle, but our quality will ride with it every mile of the way.'
-                : '我們的名字不會出現在你的摩托車上，但我們的品質，會陪著它跑過每一段路。'}
+              {localized(localeValue, { 'zh-TW': '我們的名字不會出現在你的摩托車上，但我們的品質，會陪著它跑過每一段路。', 'zh-CN': '我们的名字不会出现在你的摩托车上，但我们的质量，会陪着它跑过每一段路。', en: 'Our name won\'t appear on your motorcycle, but our quality will ride with it every mile of the way.' })}
             </p>
             <cite className="quote-author">
-              {localeValue === 'en'
-                ? '— Xie Huang Enterprise, Taiwan, Est. 1990'
-                : '— 協皇企業，台灣，1990 至今'}
+              {localized(localeValue, { 'zh-TW': '— 協皇企業，台灣，1990 至今', 'zh-CN': '— 协皇企业，台湾，1990 至今', en: '— Xie Huang Enterprise, Taiwan, Est. 1990' })}
             </cite>
           </blockquote>
         </div>

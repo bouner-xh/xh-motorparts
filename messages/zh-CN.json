@@ -51,6 +51,7 @@
     "error": "提交失败，请稍后再试。",
     "captchaPending": "验证服务尚未启用，提交前请先确认当前环境设置。",
     "addToCart": "加入询价清单",
+    "addedToCart": "✓ 已加入，点此移除",
     "removeFromCart": "移除",
     "viewCart": "查看询价清单",
     "quantity": "需求数量",

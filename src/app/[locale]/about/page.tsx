@@ -2,6 +2,7 @@ import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {locales, type Locale} from '@/lib/catalog';
 import {aboutContent, sharedStats} from '@/lib/site-content';
+import { localized } from '@/lib/localized-text';
 
 export default async function AboutPage({
   params
@@ -23,7 +24,7 @@ export default async function AboutPage({
       <section className="hero">
         <article className="surface hero__panel">
           <span className="hero__eyebrow">{t('title')}</span>
-          <h2 className="hero__title">{t('intro')}</h2>
+          <h1 className="hero__title">{t('intro')}</h1>
           <p className="muted hero__description">{t('content')}</p>
         </article>
 
@@ -47,7 +48,7 @@ export default async function AboutPage({
           </article>
         ))}
         <article className="card info-card">
-          <h3>{localeValue === 'en' ? 'Key Markets' : '主要市場'}</h3>
+          <h3>{localized(localeValue, { 'zh-TW': '主要市場', 'zh-CN': '主要市场', en: 'Key Markets' })}</h3>
           <p className="muted">{content.markets.join(' · ')}</p>
         </article>
       </section>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
+import { localized } from '@/lib/localized-text';
 
 interface CartIndicatorProps {
   locale: string;
@@ -35,7 +36,7 @@ export function CartIndicator({ locale }: CartIndicatorProps) {
     <Link 
       href={`/${locale}/inquiry`} 
       className="cart-indicator-btn" 
-      title={locale === 'en' ? 'View Inquiry List' : '檢視詢價清單'}
+      title={localized(locale, { 'zh-TW': '檢視詢價清單', 'zh-CN': '查看询价清单', en: 'View Inquiry List' })}
     >
       <span className="cart-icon">📋</span>
       {cartCount > 0 && (

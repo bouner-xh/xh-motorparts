@@ -2,6 +2,7 @@ import {getBaseUrl} from '@/lib/site';
 import type {Product} from '@/data/products';
 import {toProductImageUrl} from '@/lib/assets';
 import {categoryNames, type CategoryKey, type Locale} from '@/lib/catalog';
+import { localized } from '@/lib/localized-text';
 
 export function ProductSchema({
   product,
@@ -24,7 +25,7 @@ export function ProductSchema({
     image: [toProductImageUrl(product.image)],
     brand: {
       '@type': 'Brand',
-      name: locale === 'en' ? 'Xie Huang Enterprise Co., Ltd.' : '協皇企業有限公司'
+      name: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' })
     },
     offers: {
       '@type': 'Offer',

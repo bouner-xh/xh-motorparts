@@ -14,6 +14,34 @@ const USERS = {
   'outsider@example.com': { id: '00000000-0000-4000-8000-000000000002', email: 'outsider@example.com' }
 };
 
+// 範例產品目錄（對應 src/lib/catalog-service.ts 的查詢欄位）
+const i18n = (tw, cn, en) => ({ 'zh-TW': tw, 'zh-CN': cn, en });
+const CYLINDER = { slug: 'cylinder' };
+const TABLES = {
+  categories: [
+    { id: 'cat-cylinder', slug: 'cylinder', sort_order: 1, name_i18n: i18n('汽缸', '汽缸', 'Cylinder'), description_i18n: i18n('汽缸組', '汽缸组', 'Cylinder kits') }
+  ],
+  sub_categories: [
+    { id: 'sub-std', slug: 'std', sort_order: 1, name_i18n: i18n('標準汽缸', '标准汽缸', 'Standard'), category: CYLINDER }
+  ],
+  products: [
+    { id: 'prod-1', model_number: '1HV-11311-00', name_i18n: i18n('汽缸本體', '汽缸本体', 'Cylinder Body'), stock_quantity: 20, specifications: ['STD', '47mm'], is_active: true, sub_category_id: 'sub-std', category: CYLINDER },
+    { id: 'prod-2', model_number: '5TJ-11311-00', name_i18n: i18n('汽缸本體 B', '汽缸本体 B', 'Cylinder Body B'), stock_quantity: 5, specifications: ['STD', '52mm'], is_active: true, sub_category_id: 'sub-std', category: CYLINDER }
+  ],
+  product_images: []
+};
+
+// 支援 PostgREST 的 eq. 篩選（含 category.slug 這類巢狀欄位）
+function filterRows(rows, params) {
+  let result = rows;
+  for (const [key, raw] of params) {
+    if (['select', 'order', 'limit', 'offset'].includes(key) || !raw.startsWith('eq.')) continue;
+    const value = raw.slice(3);
+    result = result.filter((row) => String(key.split('.').reduce((obj, part) => obj?.[part], row)) === value);
+  }
+  return result;
+}
+
 const b64url = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
 
 function makeAccessToken(user) {
@@ -80,9 +108,15 @@ const server = http.createServer((req, res) => {
       return send(res, 204);
     }
 
-    // 資料庫 / 儲存空間：一律回傳空資料
+    // 資料庫：產品目錄相關資料表回傳範例資料，其他資料表回傳空陣列
     if (url.pathname.startsWith('/rest/v1/')) {
-      return send(res, 200, [], { 'Content-Range': '0-0/0' });
+      const table = url.pathname.slice('/rest/v1/'.length);
+      const rows = filterRows(TABLES[table] || [], url.searchParams);
+      const wantsObject = String(req.headers.accept || '').includes('vnd.pgrst.object');
+      if (wantsObject) {
+        return rows.length ? send(res, 200, rows[0]) : send(res, 406, { code: 'PGRST116', message: 'no rows' });
+      }
+      return send(res, 200, rows, { 'Content-Range': `0-${Math.max(rows.length - 1, 0)}/${rows.length}` });
     }
     if (url.pathname.startsWith('/storage/v1/')) {
       return send(res, 200, {});
