@@ -47,18 +47,6 @@
 
 ---
 
-### 4. 如果想看舊版靜態站
-在專案根目錄執行：
-
-`python3 -m http.server 8000`
-
-開啟：
-
-- `http://localhost:8000/index.html`
-- `http://localhost:8000/products.html`
-
----
-
 ## 如何在專案根目錄執行 `npm run build`
 
 ### 方法 A：直接切換到專案目錄

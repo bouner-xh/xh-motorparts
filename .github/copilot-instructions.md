@@ -15,7 +15,7 @@
 - 視覺元件：`src/components/products/ProductCard.tsx`、`src/components/products/CategorySidebar.tsx`、`src/components/layout/Footer.tsx`。
 - 健康檢查：`src/app/api/health/route.ts`（供 UptimeRobot）。
 - 詢價 API：`src/app/api/inquiry/route.ts`（含 Turnstile + Rate Limiting 骨架）。
-- 產品資料抽離：`src/data/products.ts`（由舊版 `js/products.js` 遷移）。
+- 產品資料抽離：`src/data/products.ts`（由舊版 `js/products.js` 遷移，舊版靜態站檔案已於 2026-09-26 移除）。
 - 圖片資產沿用既有 `images/` 來源，並由 Next.js 路由/工具統一存取。
 - i18n 已接入：`next-intl`（`middleware.ts`、`src/i18n/*`）+ `messages/zh-TW.json`、`messages/zh-CN.json`、`messages/en.json`。
 - 商業信任頁骨架：`src/app/[locale]/about/page.tsx`、`src/app/[locale]/contact/page.tsx`、`src/app/[locale]/legal/privacy/page.tsx`。

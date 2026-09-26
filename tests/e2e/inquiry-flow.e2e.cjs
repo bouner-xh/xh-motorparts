@@ -1,4 +1,6 @@
 // E2E：買家送出 RFQ 詢價單（S1 / S5 相關）
+// 請以開發模式執行（npx next dev -p 3100）。正式環境模式若未設定 Turnstile / Upstash，
+// 會依 S4 設計停止收單（503），屬預期行為。
 const { BASE_URL, withPage, seedCart, fillInquiryForm, assert, run } = require('./helpers.cjs');
 
 run('詢價單可正常送出（含 HTML 字元的留言）', () =>
