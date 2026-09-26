@@ -3,6 +3,7 @@ import { Redis } from '@upstash/redis';
 import { z } from 'zod';
 import { getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { buildAdminMailHtml, buildCustomerMailHtml, sanitizeSubject } from '@/lib/inquiry-email';
+import { getMissingProtectionConfig, isProductionDeployment } from '@/lib/inquiry-protection';
 
 // B2B RFQ 詢價車 Payload 驗證 Schema
 const inquirySchema = z.object({
@@ -106,6 +107,18 @@ async function sendEmail({
 }
 
 export async function POST(request: Request) {
+  // 0) 正式環境缺少防護設定時停止收單（fail-closed）
+  if (isProductionDeployment()) {
+    const missing = getMissingProtectionConfig();
+    if (missing.length > 0) {
+      console.error('Inquiry protection is not configured. Missing env:', missing.join(', '));
+      return Response.json(
+        { error: '詢價服務暫時無法使用，請稍後再試，或直接透過 Email / WhatsApp 與我們聯絡' },
+        { status: 503 }
+      );
+    }
+  }
+
   try {
     const body = await request.json();
     const parsed = inquirySchema.safeParse(body);
