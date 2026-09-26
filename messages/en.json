@@ -51,6 +51,7 @@
     "error": "Submission failed. Please try again later.",
     "captchaPending": "Verification service is not enabled yet. Please confirm the environment settings before submitting.",
     "addToCart": "Add to Inquiry List",
+    "addedToCart": "✓ Added — tap to remove",
     "removeFromCart": "Remove",
     "viewCart": "View Inquiry List",
     "quantity": "Quantity",

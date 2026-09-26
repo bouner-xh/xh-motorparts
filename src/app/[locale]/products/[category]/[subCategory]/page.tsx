@@ -108,6 +108,9 @@ export default async function SubCategoryPage({
               href={`/${localeValue}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}/${encodeURIComponent(product.model)}`}
               specLabel={tProducts('specifications')}
               detailLabel={tProducts('viewDetail')}
+              locale={localeValue}
+              categorySlug={categoryData.slug}
+              subCategorySlug={subCategoryData.slug}
             />
           )) : (
             <p className="muted" style={{ gridColumn: '1 / -1', padding: '2rem' }}>此目錄下尚無產品。</p>
