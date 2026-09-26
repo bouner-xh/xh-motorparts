@@ -1,6 +1,6 @@
 # 開發進度（PROGRESS）
 
-- 更新日期：2026-09-25
+- 更新日期：2026-09-26
 - 分支：`claude/quirky-noether-qibs76`
 - 本次主題：安全性修正（依 2026-09-25 網站健檢報告）
 - 功能狀態總表仍以 `doc/IMPLEMENTATION_STATUS.md` 為準；本檔記錄每次 session 的工作進度
@@ -16,8 +16,8 @@
    - 如果其他服務（Gmail 等）也用同一組密碼，請一併更換
    - 建議檢查 Supabase 後台的 CRM 詢價資料、產品資料有沒有被異動
    - 是否要把 repo 改為私有、或清除 git 歷史紀錄，需要老闆決定（清除歷史紀錄會改寫已推送的 commit）
-2. **GitHub 推送權限**：本次 `git push` 回傳 403（Claude 沒有此 repo 的寫入權限），7 個 commit 目前只在雲端工作環境。
-   請到 https://claude.ai/connect-github 重新連結 GitHub，或在 repo 安裝 Claude GitHub App，之後我再推送。
+2. **改寫 git 歷史**：老闆已同意改寫 `master`、`test`、`claude/quirky-noether-qibs76` 三個分支，把密碼從所有 commit 中移除。
+   待老闆更換密碼、下達「開始執行」後進行。
 
 ---
 
@@ -32,6 +32,11 @@
 | S6 | Clarity 需同意 Cookie 才載入；回訪時沿用同意狀態 | `d775973` | E2E 2 組情境：修改前失敗 → 修改後通過 |
 | S7 | 登入 server action 重新驗證跳轉路徑（Open Redirect） | `bfcb3cb` | E2E 5 組輸入 |
 | S8 | 圖片上傳以檔案內容驗證格式、錯誤訊息不外露 | `c0e3c39` | 單元測試 3 項 + E2E |
+
+**2026-09-26 上線**：已透過 [PR #1](https://github.com/bouner-xh/xh-motorparts/pull/1) 合併進 `master`（`6e13b68`），
+Vercel 兩個專案（`xh-motorparts`、`xh-motorparts-uhan`）的 Production 部署皆成功。
+合併前在 Vercel Preview 手動驗證：登入頁已無後門、帳號登入正常進入後台。
+尚未手動驗證：後台上傳圖片、前台送出詢價並收信、Cookie 同意（程式已有自動化測試覆蓋）。
 
 最終驗證（全部通過）：`tsc --noEmit`、`npm run lint`、`npm run build`、單元測試 8/8、E2E 7/7（正式環境建置）。
 測試方式見 `tests/README.md`。
@@ -54,6 +59,8 @@
 
 ## ⚠️ 遇到的問題
 
+- **Vercel 有兩個專案同時部署同一個 repo**（`xh-motorparts`、`xh-motorparts-uhan`），需確認正式網域綁在哪一個，另一個是否可刪除。
+- **GitHub 推送權限**（已解決）：原因是 Claude GitHub App 未安裝在 `bouner-xh`，安裝後已可推送。
 - **`npm ci` 失敗**：`package-lock.json` 與 `package.json` 不同步（缺 `@swc/helpers@0.5.23`），CI 的 `npm ci` 也會失敗。
   本次用 `npm install` 安裝後把 lockfile 還原，沒有提交 lockfile 變更。是否重新產生 lockfile 需老闆確認。
 - **Playwright 未加入專案依賴**：依規範新增套件需先詢問，因此 E2E 使用環境中全域安裝的 playwright 執行。
