@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { Turnstile } from '@marsidev/react-turnstile';
+import { localized } from '@/lib/localized-text';
 
 /**
  * B2B RFQ 詢價車詳情與客戶聯絡資料提交頁面
@@ -81,9 +82,7 @@ export default function InquiryCartPage() {
           <div style={{ fontSize: '3.5rem', color: '#10b981', marginBottom: '1rem' }}>✓</div>
           <h2 style={{ fontSize: '1.75rem', marginBottom: '0.8rem' }}>{t('inquirySuccess')}</h2>
           <p className="muted" style={{ marginBottom: '2rem', lineHeight: '1.6' }}>
-            {locale === 'en'
-              ? 'Thank you for your interest. A confirmation email has been sent to your mailbox. Our sales team will get back to you shortly.'
-              : '感謝您的洽詢，我們已收到您的詢價單，系統已自動發送確認信至您的信箱，協皇業務團隊將儘速與您聯繫。'}
+            {localized(locale, { 'zh-TW': '感謝您的洽詢，我們已收到您的詢價單，系統已自動發送確認信至您的信箱，協皇業務團隊將儘速與您聯繫。', 'zh-CN': '感谢您的洽询，我们已收到您的询价单，系统已自动发送确认信至您的邮箱，协皇业务团队将尽快与您联系。', en: 'Thank you for your interest. A confirmation email has been sent to your mailbox. Our sales team will get back to you shortly.' })}
           </p>
           <Link href={`/${locale}/products`} className="button" style={{ display: 'inline-block', textDecoration: 'none' }}>
             {t('browseProducts')}
@@ -101,9 +100,7 @@ export default function InquiryCartPage() {
           <div style={{ fontSize: '3rem', color: '#94a3b8', marginBottom: '1rem' }}>📋</div>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '0.8rem' }}>{t('cartEmpty')}</h2>
           <p className="muted" style={{ marginBottom: '2rem' }}>
-            {locale === 'en'
-              ? 'Please add motorcycle parts to your inquiry list before submitting.'
-              : '送出詢價前，請先至產品目錄將感興趣的零件型號加入清單。'}
+            {localized(locale, { 'zh-TW': '送出詢價前，請先至產品目錄將感興趣的零件型號加入清單。', 'zh-CN': '提交询价前，请先至产品目录将感兴趣的零件型号加入清单。', en: 'Please add motorcycle parts to your inquiry list before submitting.' })}
           </p>
           <Link href={`/${locale}/products`} className="button" style={{ display: 'inline-block', textDecoration: 'none' }}>
             {t('browseProducts')}
@@ -118,9 +115,7 @@ export default function InquiryCartPage() {
       <div style={{ marginBottom: '1.5rem' }}>
         <h2 style={{ fontSize: '2rem', margin: '0 0 0.5rem 0' }}>{t('inquiryListTitle')}</h2>
         <p className="muted" style={{ margin: 0 }}>
-          {locale === 'en'
-            ? 'Adjust quantities and fill out contact details to request a professional quote.'
-            : '調整零件詢價數量並填寫買家聯絡資訊，一鍵送出以取得專業報價。'}
+          {localized(locale, { 'zh-TW': '調整零件詢價數量並填寫買家聯絡資訊，一鍵送出以取得專業報價。', 'zh-CN': '调整零件询价数量并填写买家联系信息，一键提交以获取专业报价。', en: 'Adjust quantities and fill out contact details to request a professional quote.' })}
         </p>
       </div>
 
@@ -240,9 +235,7 @@ export default function InquiryCartPage() {
                 name="message"
                 rows={4}
                 placeholder={
-                  locale === 'en'
-                    ? 'Please specify motorcycle models, OEM numbers, or packing requirements...'
-                    : '請詳述您適用的摩托車車型、包裝需求或 OEM 特殊規格...'
+                  localized(locale, { 'zh-TW': '請詳述您適用的摩托車車型、包裝需求或 OEM 特殊規格...', 'zh-CN': '请详述您适用的摩托车车型、包装需求或 OEM 特殊规格...', en: 'Please specify motorcycle models, OEM numbers, or packing requirements...' })
                 }
               />
             </label>

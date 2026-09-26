@@ -7,6 +7,7 @@ import { getCategoryBySlug, getCategoryProducts, getSubCategoryBySlug, getCatego
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { ProductCard } from '@/components/products/ProductCard';
+import { localized } from '@/lib/localized-text';
 
 export async function generateMetadata({
   params,
@@ -39,7 +40,7 @@ export async function generateMetadata({
       description,
       url: `${baseUrl}/${locale}/products/${category}/${encodeURIComponent(subCategoryData.slug)}`,
       locale,
-      siteName: locale === 'en' ? 'Xie Huang Enterprise Co., Ltd.' : '協皇企業有限公司',
+      siteName: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' }),
     },
     alternates: {
       canonical: `${baseUrl}/${locale}/products/${category}/${encodeURIComponent(subCategoryData.slug)}`,
@@ -113,7 +114,7 @@ export default async function SubCategoryPage({
               subCategorySlug={subCategoryData.slug}
             />
           )) : (
-            <p className="muted" style={{ gridColumn: '1 / -1', padding: '2rem' }}>此目錄下尚無產品。</p>
+            <p className="muted" style={{ gridColumn: '1 / -1', padding: '2rem' }}>{localized(localeValue, { 'zh-TW': '此目錄下尚無產品。', 'zh-CN': '此目录下暂无产品。', en: 'No products in this category yet.' })}</p>
           )}
         </section>
       </div>

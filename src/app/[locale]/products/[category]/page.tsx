@@ -7,6 +7,7 @@ import { getCategoryBySlug, getSubCategories, getCategorySummaries } from '@/lib
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import Link from 'next/link';
+import { localized } from '@/lib/localized-text';
 
 export async function generateMetadata({
   params,
@@ -21,7 +22,7 @@ export async function generateMetadata({
   if (!categoryData) return {};
 
   const baseUrl = getBaseUrl();
-  const title = `${categoryData.name} | ${locale === 'en' ? 'Products' : '產品系列'}`;
+  const title = `${categoryData.name} | ${localized(locale, { 'zh-TW': '產品系列', 'zh-CN': '产品系列', en: 'Products' })}`;
   const description = categoryData.description;
 
   return {
@@ -33,7 +34,7 @@ export async function generateMetadata({
       description,
       url: `${baseUrl}/${locale}/products/${category}`,
       locale,
-      siteName: locale === 'en' ? 'Xie Huang Enterprise Co., Ltd.' : '協皇企業有限公司',
+      siteName: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' }),
     },
     alternates: {
       canonical: `${baseUrl}/${locale}/products/${category}`,
@@ -89,11 +90,11 @@ export default async function CategoryPage({
             <Link key={sub.id} className="card" href={`/${localeValue}/products/${categoryData.slug}/${sub.slug}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ padding: '2rem' }}>
                 <h3 style={{ margin: '0 0 0.5rem 0', color: '#f8fafc', fontSize: '1.4rem' }}>{sub.name}</h3>
-                <p className="muted" style={{ margin: 0 }}>查看相關產品 ➔</p>
+                <p className="muted" style={{ margin: 0 }}>{localized(localeValue, { 'zh-TW': '查看相關產品', 'zh-CN': '查看相关产品', en: 'View products' })} ➔</p>
               </div>
             </Link>
           )) : (
-            <p className="muted" style={{ gridColumn: '1 / -1', padding: '2rem' }}>目前尚未建立子目錄。</p>
+            <p className="muted" style={{ gridColumn: '1 / -1', padding: '2rem' }}>{localized(localeValue, { 'zh-TW': '目前尚未建立子目錄。', 'zh-CN': '目前尚未建立子目录。', en: 'No sub-categories yet.' })}</p>
           )}
         </section>
       </div>
