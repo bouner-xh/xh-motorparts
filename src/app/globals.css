@@ -161,6 +161,11 @@ textarea {
   padding: 1.5rem;
 }
 
+/* 首頁 Hero：內距隨螢幕寬度縮放，桌機維持 3.5rem / 2.5rem，手機縮小以保留文字寬度（D5） */
+.hero__panel--home {
+  padding: clamp(1.5rem, 5vw, 3.5rem) clamp(1.25rem, 4vw, 2.5rem);
+}
+
 .hero__eyebrow {
   display: inline-flex;
   padding: 0.35rem 0.75rem;

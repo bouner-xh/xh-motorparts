@@ -25,7 +25,7 @@ export default async function LocaleHome({
   return (
     <main>
       <section className="hero">
-        <div className="surface hero__panel" style={{ gridColumn: '1 / -1', padding: '3.5rem 2.5rem' }}>
+        <div className="surface hero__panel hero__panel--home" style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="hero__eyebrow">{content.hero.eyebrow}</span>
             <div className="hero__badges">
