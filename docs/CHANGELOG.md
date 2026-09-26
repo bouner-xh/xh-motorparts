@@ -31,7 +31,7 @@ PR：[#4](https://github.com/bouner-xh/xh-motorparts/pull/4)
 | 編號 | 修改 | 主要檔案 | Commit | 驗證 |
 |---|---|---|---|---|
 | D1 | 產品列表卡片「加入詢價清單」按鈕，加入後變成「✓ 已加入，點此移除」，預設數量 100 | `src/components/products/ProductCardInquiryButton.tsx`、`ProductCard.tsx`、`messages/*.json`（`inquiry.addedToCart`）、`globals.css` | `5752c3a` | `product-card-inquiry.e2e.cjs`（桌機／手機） |
-| — | 補上不存在的產品預設圖，沒有照片的產品不再破圖 | `images/no-image.jpg` | `19c5c4e` | 同上 |
+| D13 | 補上不存在的產品預設圖，沒有照片的產品不再破圖 | `images/no-image.jpg` | `19c5c4e` | 同上 |
 | D5 | 首頁 Hero 內距以 `clamp()` 縮放（桌機不變） | `src/app/[locale]/page.tsx`、`globals.css`（`.hero__panel--home`） | `7d4d078` | `home-hero-responsive.e2e.cjs` |
 | D6 | 切換語系保留目前頁面 | `src/components/layout/LanguageLinks.tsx`、`layout.tsx` | `41cf158` | `language-switch.e2e.cjs` |
 | D7 | 文案改為三語，簡中無繁體字、英文無中文 | `src/lib/localized-text.ts`（`localized()`）與 11 個頁面／元件 | `bfd1246` | `locale-text.e2e.cjs` |
