@@ -9,6 +9,21 @@ bash tests/run-all.sh
 會依序在 8 種環境情境下啟動網站並執行全部單元測試與 E2E 測試（約 5～8 分鐘），
 最後顯示「✅ 全部測試通過」或列出失敗的項目。每次修改後、合併進 master 前都應執行一次。
 
+## 部署後檢查正式網站（唯讀）
+
+```bash
+E2E_BASE_URL=https://www.xh-motorparts.com NODE_PATH=$(npm root -g) node tests/e2e/production-check.e2e.cjs
+```
+
+自動找出一個真實產品，檢查產品卡片加入詢價（只存在瀏覽器）、預設圖、語系切換、每頁 H1、簡中文字與 CSP。
+**不送詢價、不登入後台，不會寫入任何資料。** 也可以用同樣方式對正式網站執行 `site-smoke`、`admin-login`、
+`text-contrast`、`no-nested-interactive`、`home-hero-responsive`、`canonical-url`（這些都是唯讀）。
+
+在 Claude 的雲端工作環境執行時，需要：(1) 環境的 Network access 允許 `xh-motorparts.com`、`www.xh-motorparts.com`；
+(2) 讓測試瀏覽器信任工作環境的代理憑證：
+`certutil -A -d sql:$HOME/.pki/nssdb -n ccr-agent-proxy -t "C,," -i /root/.ccr/agent-proxy-ca.crt`
+（`certutil` 來自系統套件 `libnss3-tools`）。產品照片存放在 Supabase，若網路未允許該網域會無法載入，屬檢查環境限制。
+
 ## 單元測試（tests/security）
 
 使用 Node 內建測試工具，不需要額外套件（Node 22 以上）：
