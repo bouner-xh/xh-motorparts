@@ -8,6 +8,7 @@ import { AnalyticsScripts } from '@/components/layout/AnalyticsScripts';
 import { CookieBanner } from '@/components/layout/CookieBanner';
 import { Footer } from '@/components/layout/Footer';
 import { locales, type Locale } from '@/lib/catalog';
+import { getBaseUrl } from '@/lib/site';
 import { CartProvider } from '@/context/CartContext';
 import { CartIndicator } from '@/components/layout/CartIndicator';
 
@@ -27,7 +28,7 @@ export async function generateMetadata({
     return {};
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://xh-motorparts.com';
+  const baseUrl = getBaseUrl();
   return {
     title: `${companyByLocale[locale as Locale]} - Motorcycle Parts`,
     alternates: {

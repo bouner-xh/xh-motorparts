@@ -1,9 +1,10 @@
 import type { MetadataRoute } from 'next';
 import { locales } from '@/lib/catalog';
+import { getBaseUrl } from '@/lib/site';
 import { getCategorySummaries, getAllSubCategories, getCatalogProducts } from '@/lib/catalog-service';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://xh-motorparts.com';
+  const baseUrl = getBaseUrl();
 
   const staticRoutes = ['', '/products', '/about', '/contact', '/legal/privacy'];
 

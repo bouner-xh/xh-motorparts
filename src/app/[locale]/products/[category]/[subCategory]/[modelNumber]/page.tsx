@@ -9,6 +9,7 @@ import { ProductSchema } from '@/components/products/ProductSchema';
 import { toProductImageUrl } from '@/lib/assets';
 import { getCatalogProduct, getCategoryBySlug, getSubCategoryBySlug } from '@/lib/catalog-service';
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
+import { getBaseUrl } from '@/lib/site';
 
 export async function generateMetadata({
   params,
@@ -35,7 +36,7 @@ export async function generateMetadata({
     return {};
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://xh-motorparts.com';
+  const baseUrl = getBaseUrl();
   const encodedModel = encodeURIComponent(product.model);
 
   return {

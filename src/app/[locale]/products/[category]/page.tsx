@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
+import { getBaseUrl } from '@/lib/site';
 import { getCategoryBySlug, getSubCategories, getCategorySummaries } from '@/lib/catalog-service';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
@@ -19,7 +20,7 @@ export async function generateMetadata({
   const categoryData = await getCategoryBySlug(category, localeValue);
   if (!categoryData) return {};
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://xh-motorparts.com';
+  const baseUrl = getBaseUrl();
   const title = `${categoryData.name} | ${locale === 'en' ? 'Products' : '產品系列'}`;
   const description = categoryData.description;
 
