@@ -25,7 +25,10 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 
 | 檔案 | 驗證內容 | 啟動網站的方式 |
 |---|---|---|
-| `inquiry-flow.e2e.cjs` | 詢價單可正常送出（S1） | `npx next dev -p 3100` |
+| `inquiry-flow.e2e.cjs` | 詢價單可正常送出（S1） | `npx next dev -p 3100`（須為開發模式，見 S4） |
+| `inquiry-protection.e2e.cjs` | 正式環境缺防護設定時停止收單（S4） | 需正式環境建置，見檔案開頭說明 |
+| `canonical-url.e2e.cjs` | 正式網址統一為 www（C4） | `npx next dev -p 3100` |
+| `site-smoke.e2e.cjs` | 主要頁面與本站資源皆能載入 | 開發或正式環境皆可 |
 | `inquiry-save-failure.e2e.cjs` | 資料庫故障時不可顯示成功（S5） | 需模擬資料庫故障，見檔案開頭說明 |
 | `csp-analytics.e2e.cjs` | GA4 / Clarity 未被 CSP 擋下（S3） | 需正式環境建置，見檔案開頭說明 |
 | `cookie-consent.e2e.cjs` | Cookie 同意與 Clarity 載入（S6） | 需設定測試用分析 ID，見檔案開頭說明 |

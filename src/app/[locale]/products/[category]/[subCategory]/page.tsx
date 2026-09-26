@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
+import { getBaseUrl } from '@/lib/site';
 import { getCategoryBySlug, getCategoryProducts, getSubCategoryBySlug, getCategorySummaries, getSubCategories } from '@/lib/catalog-service';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
@@ -25,7 +26,7 @@ export async function generateMetadata({
   const subCategoryData = await getSubCategoryBySlug(categoryData.slug, decoded, localeValue);
   if (!subCategoryData) return {};
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://xh-motorparts.com';
+  const baseUrl = getBaseUrl();
   const title = `${subCategoryData.name} | ${categoryData.name}`;
   const description = `${categoryData.description} - ${subCategoryData.name}`;
 

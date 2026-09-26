@@ -1,0 +1,34 @@
+// E2E：主要頁面冒煙測試——頁面可開啟、本站資源（圖片 / CSS / JS）沒有載入失敗
+// 啟動網站：npx next dev -p 3100 或 next build && next start -p 3100
+const { BASE_URL, withPage, assert, run } = require('./helpers.cjs');
+
+const PAGES = [
+  '/zh-TW', '/zh-CN', '/en',
+  '/zh-TW/products', '/zh-TW/products/cylinder',
+  '/zh-TW/about', '/zh-TW/contact', '/zh-TW/legal/privacy', '/zh-TW/inquiry'
+];
+
+run('主要頁面與本站資源都能正常載入', () =>
+  withPage(async (page) => {
+    for (const path of PAGES) {
+      const failed = [];
+      const onResponse = (res) => {
+        const url = res.url();
+        // Vercel Analytics 腳本只在部署到 Vercel 時存在，本機一律 404，略過
+        if (url.includes('/_vercel/')) return;
+        if (url.startsWith(BASE_URL) && res.status() >= 400) failed.push(`${res.status()} ${url.replace(BASE_URL, '')}`);
+      };
+      page.on('response', onResponse);
+      const res = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'networkidle' });
+      page.off('response', onResponse);
+      assert(res.status() === 200, `${path} 回應 200`);
+      assert(failed.length === 0, `${path} 本站資源沒有載入失敗${failed.length ? '：' + failed.join(', ') : ''}`);
+    }
+
+    await page.goto(`${BASE_URL}/zh-TW`, { waitUntil: 'networkidle' });
+    const covers = await page.locator('img[src*="legacy-assets/covers"], img[src*="covers%2F"]').evaluateAll((imgs) =>
+      imgs.map((img) => ({ src: img.currentSrc || img.src, ok: img.complete && img.naturalWidth > 0 }))
+    );
+    assert(covers.length > 0 && covers.every((c) => c.ok), `首頁分類封面圖 ${covers.length} 張皆正常顯示`);
+  })
+);

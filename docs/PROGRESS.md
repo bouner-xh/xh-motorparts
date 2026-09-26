@@ -45,15 +45,17 @@ Vercel 兩個專案（`xh-motorparts`、`xh-motorparts-uhan`）的 Production �
 
 | 編號 | 項目 | 狀態 |
 |---|---|---|
-| S2 | 後台限定 `ADMIN_EMAILS` 名單內帳號（`9369ca1`） | 已完成並通過測試，推到 Preview 等老闆以兩個帳號實測後再合併 `master` |
-
-S2 測試：單元測試 4 項；E2E 以模擬 Supabase 驗證名單內可進、名單外登入即被登出、名單外登入狀態打 6 支 API 皆 403、
-未設定名單時一律拒絕（修改前重現失敗 → 修改後通過）。
+| C1 | Vercel 重複專案 | 正式網域綁在 `xh-motorparts-uhan`（`www.xh-motorparts.com`，無 www 版本 308 轉址過去）。`xh-motorparts` 已中斷 Git 連結，觀察一週後刪除 |
+| C2 | `sales@xh-motorparts.com` 收不到信 | 已啟用 Cloudflare Email Routing，目的地已驗證；待建立/確認 `sales` 轉寄規則並寄測試信 |
 
 ## ✅ 已完成（2026-09-26）
 
 - 老闆更換外洩密碼、新增第二位管理者、修正 Supabase Site URL、關閉公開註冊
 - 老闆於 Vercel 兩個專案設定 `ADMIN_EMAILS`（Production + Preview）
+- **S2 上線**：[PR #2](https://github.com/bouner-xh/xh-motorparts/pull/2) 合併進 `master`（`f998c10`），兩位管理員於 Preview 實測通過。
+  測試：單元測試 4 項；E2E 以模擬 Supabase 驗證名單內可進、名單外登入即被登出、名單外登入狀態打 6 支 API 皆 403、未設定名單時一律拒絕
+- Cloudflare DNS：移除無效的 Porkbun SPF，Email Routing 的 MX / DKIM / SPF 已鎖定
+- 健檢報告更新為第 2 版（加入各項處理狀態與新發現的 S0、C1–C5）
 - git 歷史改寫：`master`、`test`、`claude/quirky-noether-qibs76` 共 33 個 commit 的密碼替換為 `***REMOVED***`，
   已強制推送並確認三個分支皆查不到密碼；`master` 程式碼與改寫前完全相同，Vercel 重新部署成功
 
@@ -61,17 +63,18 @@ S2 測試：單元測試 4 項；E2E 以模擬 Supabase 驗證名單內可進、
 
 | 編號 | 項目 | 需要決定的事 |
 |---|---|---|
-| S4 | 正式環境缺少 Turnstile / Upstash 設定時自動放行 | 改為「缺設定就停止收詢價單（503）」。`xh-motorparts-uhan` 已有這三個變數，需確認兩個專案都有勾 Production |
+| S4 | 正式環境缺少 Turnstile / Upstash 設定時自動放行 | 改為「缺設定就停止收詢價單（503）」。正式專案 `xh-motorparts-uhan` 已有這三個變數，需確認有勾 Production。同時修正經 Cloudflare 代理時 IP 可偽造的問題（C3） |
+| C3 | 網域經 Cloudflare 代理（橘色雲朵） | 是否改為 DNS only；需先確認 Cloudflare Security / Rules 沒有自訂規則 |
+| C4 | 程式宣告的正式網址（無 www）與實際網址（www）不同 | A：程式改為 www（建議）；B：Vercel 改主網域 |
 | S6 補充 | 頁尾加「Cookie 設定」讓使用者撤回同意（GDPR） | 屬於新增 UI，需確認位置與文案 |
-| S9 | 個人 Gmail 寫死在首頁與程式碼 | 公司信箱（如 `sales@xh-motorparts.com`）是否已申請 |
+| S9 | 個人 Gmail 寫死在首頁與程式碼 | `sales@` 已可收信（C2），是否將首頁改為 `sales@xh-motorparts.com` |
 | S10 | CSP 允許 inline script | 改用 nonce 會讓頁面變成動態渲染，需評估效能 |
 | S1 補充 | 詢價欄位長度上限、客戶確認信是否回顯留言 | 會改變 API 可接受的資料，依規範需先確認 |
-| 忘記密碼功能 | 網站沒有重設密碼頁面，目前忘記密碼只能用 Supabase SQL 重設 | 是否需要 |
+| C5 忘記密碼功能 | 網站沒有重設密碼頁面，目前忘記密碼只能用 Supabase SQL 重設 | 是否需要 |
 | D1–D12 | 使用者體驗與設計項目 | 依報告建議順序，待安全性項目確認後進行 |
 
 ## ⚠️ 遇到的問題
 
-- **Vercel 有兩個專案同時部署同一個 repo**（`xh-motorparts`、`xh-motorparts-uhan`），需確認正式網域綁在哪一個，另一個是否可刪除。
 - **GitHub 推送權限**（已解決）：原因是 Claude GitHub App 未安裝在 `bouner-xh`，安裝後已可推送。
 - **`npm ci` 失敗**：`package-lock.json` 與 `package.json` 不同步（缺 `@swc/helpers@0.5.23`），CI 的 `npm ci` 也會失敗。
   本次用 `npm install` 安裝後把 lockfile 還原，沒有提交 lockfile 變更。是否重新產生 lockfile 需老闆確認。
