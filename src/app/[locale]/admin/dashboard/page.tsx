@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {notFound, redirect} from 'next/navigation';
 import {locales, type Locale} from '@/lib/catalog';
 import {getSupabaseServerAuthClient} from '@/lib/supabase/server';
+import {isAdminEmail} from '@/lib/admin-auth';
 import {AdminProductManager} from '@/components/admin/AdminProductManager';
 import {AdminSubCategoryManager} from '@/components/admin/AdminSubCategoryManager';
 import {AdminCategoryManager} from '@/components/admin/AdminCategoryManager';
@@ -32,6 +33,10 @@ export default async function AdminDashboardPage({
 
   if (!user) {
     redirect(`/${localeValue}/admin/login`);
+  }
+
+  if (!isAdminEmail(user.email)) {
+    redirect(`/${localeValue}/admin/login?error=forbidden`);
   }
 
   async function logoutAction() {

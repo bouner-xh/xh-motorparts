@@ -31,5 +31,12 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `cookie-consent.e2e.cjs` | Cookie 同意與 Clarity 載入（S6） | 需設定測試用分析 ID，見檔案開頭說明 |
 | `admin-login.e2e.cjs` | 登入頁無後門、跳轉路徑驗證（S0 / S7） | `npx next dev -p 3100` |
 | `admin-upload.e2e.cjs` | 未登入無法上傳圖片（S8） | `npx next dev -p 3100` |
+| `admin-access.e2e.cjs` | 只有名單內帳號能進後台（S2） | 需先啟動模擬 Supabase，見檔案開頭說明 |
+| `admin-access-no-list.e2e.cjs` | 未設定名單時一律拒絕（S2） | 同上，但不設定 `ADMIN_EMAILS` |
+
+### 模擬 Supabase
+
+`mock-supabase.cjs` 是測試用的假 Supabase，只實作登入、取得使用者、登出與空的資料庫回應，
+讓後台權限可以在沒有真實 Supabase 的環境下測試。啟動：`node tests/e2e/mock-supabase.cjs`（port 54321）。
 
 可用 `E2E_BASE_URL` 指定其他網址，例如 Vercel Preview。

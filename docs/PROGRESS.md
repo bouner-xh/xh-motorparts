@@ -1,6 +1,6 @@
 # 開發進度（PROGRESS）
 
-- 更新日期：2026-09-25
+- 更新日期：2026-09-26
 - 分支：`claude/quirky-noether-qibs76`
 - 本次主題：安全性修正（依 2026-09-25 網站健檢報告）
 - 功能狀態總表仍以 `doc/IMPLEMENTATION_STATUS.md` 為準；本檔記錄每次 session 的工作進度
@@ -16,8 +16,8 @@
    - 如果其他服務（Gmail 等）也用同一組密碼，請一併更換
    - 建議檢查 Supabase 後台的 CRM 詢價資料、產品資料有沒有被異動
    - 是否要把 repo 改為私有、或清除 git 歷史紀錄，需要老闆決定（清除歷史紀錄會改寫已推送的 commit）
-2. **GitHub 推送權限**：本次 `git push` 回傳 403（Claude 沒有此 repo 的寫入權限），7 個 commit 目前只在雲端工作環境。
-   請到 https://claude.ai/connect-github 重新連結 GitHub，或在 repo 安裝 Claude GitHub App，之後我再推送。
+2. **（選擇性）請 GitHub Support 清除舊 commit 快取**：git 歷史已改寫，但舊 commit（如 `7c22acd`）仍可用編號開啟，
+   PR #1 也仍指向舊 commit。密碼已更換，實際風險已解除；要徹底清除需以 `bouner-xh` 帳號向 https://support.github.com/request 申請。
 
 ---
 
@@ -33,27 +33,46 @@
 | S7 | 登入 server action 重新驗證跳轉路徑（Open Redirect） | `bfcb3cb` | E2E 5 組輸入 |
 | S8 | 圖片上傳以檔案內容驗證格式、錯誤訊息不外露 | `c0e3c39` | 單元測試 3 項 + E2E |
 
+**2026-09-26 上線**：已透過 [PR #1](https://github.com/bouner-xh/xh-motorparts/pull/1) 合併進 `master`（`6e13b68`），
+Vercel 兩個專案（`xh-motorparts`、`xh-motorparts-uhan`）的 Production 部署皆成功。
+合併前在 Vercel Preview 手動驗證：登入頁已無後門、帳號登入正常進入後台。
+尚未手動驗證：後台上傳圖片、前台送出詢價並收信、Cookie 同意（程式已有自動化測試覆蓋）。
+
 最終驗證（全部通過）：`tsc --noEmit`、`npm run lint`、`npm run build`、單元測試 8/8、E2E 7/7（正式環境建置）。
 測試方式見 `tests/README.md`。
 
 ## 🔄 進行中
 
-- 無
+| 編號 | 項目 | 狀態 |
+|---|---|---|
+| S2 | 後台限定 `ADMIN_EMAILS` 名單內帳號（`9369ca1`） | 已完成並通過測試，推到 Preview 等老闆以兩個帳號實測後再合併 `master` |
+
+S2 測試：單元測試 4 項；E2E 以模擬 Supabase 驗證名單內可進、名單外登入即被登出、名單外登入狀態打 6 支 API 皆 403、
+未設定名單時一律拒絕（修改前重現失敗 → 修改後通過）。
+
+## ✅ 已完成（2026-09-26）
+
+- 老闆更換外洩密碼、新增第二位管理者、修正 Supabase Site URL、關閉公開註冊
+- 老闆於 Vercel 兩個專案設定 `ADMIN_EMAILS`（Production + Preview）
+- git 歷史改寫：`master`、`test`、`claude/quirky-noether-qibs76` 共 33 個 commit 的密碼替換為 `***REMOVED***`，
+  已強制推送並確認三個分支皆查不到密碼；`master` 程式碼與改寫前完全相同，Vercel 重新部署成功
 
 ## ⏳ 待處理（需要老闆決定後才能動工）
 
 | 編號 | 項目 | 需要決定的事 |
 |---|---|---|
-| S2 | 後台 API 只檢查有沒有登入，沒檢查是不是管理員 | 管理員判斷方式：A. `ADMIN_EMAILS` 環境變數白名單；B. Supabase `app_metadata.role`。另請確認 Supabase 已關閉公開註冊 |
-| S4 | 正式環境缺少 Turnstile / Upstash 設定時自動放行 | 改為「缺設定就停止收詢價單（503）」。**若目前正式站尚未設定這些變數，修改後詢價會停擺**，需先確認 Vercel 環境變數 |
+| S4 | 正式環境缺少 Turnstile / Upstash 設定時自動放行 | 改為「缺設定就停止收詢價單（503）」。`xh-motorparts-uhan` 已有這三個變數，需確認兩個專案都有勾 Production |
 | S6 補充 | 頁尾加「Cookie 設定」讓使用者撤回同意（GDPR） | 屬於新增 UI，需確認位置與文案 |
 | S9 | 個人 Gmail 寫死在首頁與程式碼 | 公司信箱（如 `sales@xh-motorparts.com`）是否已申請 |
 | S10 | CSP 允許 inline script | 改用 nonce 會讓頁面變成動態渲染，需評估效能 |
 | S1 補充 | 詢價欄位長度上限、客戶確認信是否回顯留言 | 會改變 API 可接受的資料，依規範需先確認 |
+| 忘記密碼功能 | 網站沒有重設密碼頁面，目前忘記密碼只能用 Supabase SQL 重設 | 是否需要 |
 | D1–D12 | 使用者體驗與設計項目 | 依報告建議順序，待安全性項目確認後進行 |
 
 ## ⚠️ 遇到的問題
 
+- **Vercel 有兩個專案同時部署同一個 repo**（`xh-motorparts`、`xh-motorparts-uhan`），需確認正式網域綁在哪一個，另一個是否可刪除。
+- **GitHub 推送權限**（已解決）：原因是 Claude GitHub App 未安裝在 `bouner-xh`，安裝後已可推送。
 - **`npm ci` 失敗**：`package-lock.json` 與 `package.json` 不同步（缺 `@swc/helpers@0.5.23`），CI 的 `npm ci` 也會失敗。
   本次用 `npm install` 安裝後把 lockfile 還原，沒有提交 lockfile 變更。是否重新產生 lockfile 需老闆確認。
 - **Playwright 未加入專案依賴**：依規範新增套件需先詢問，因此 E2E 使用環境中全域安裝的 playwright 執行。

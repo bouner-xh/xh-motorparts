@@ -1,0 +1,99 @@
+// 測試用的模擬 Supabase 伺服器（只實作後台登入測試需要的端點）
+// 用途：在沒有真實 Supabase 的環境下，測試「登入 → 後台權限」的完整流程。
+// 啟動：node tests/e2e/mock-supabase.cjs（預設 port 54321）
+//
+// 可登入帳號（密碼皆為 test-password）：
+//   admin@example.com     —— 測試時放在 ADMIN_EMAILS 名單內
+//   outsider@example.com  —— 帳密正確，但不在名單內
+const http = require('node:http');
+
+const PORT = Number(process.env.MOCK_SUPABASE_PORT || 54321);
+const PASSWORD = 'test-password';
+const USERS = {
+  'admin@example.com': { id: '00000000-0000-4000-8000-000000000001', email: 'admin@example.com' },
+  'outsider@example.com': { id: '00000000-0000-4000-8000-000000000002', email: 'outsider@example.com' }
+};
+
+const b64url = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+
+function makeAccessToken(user) {
+  const now = Math.floor(Date.now() / 1000);
+  const payload = { sub: user.id, email: user.email, aud: 'authenticated', role: 'authenticated', iat: now, exp: now + 3600 };
+  return `${b64url({ alg: 'HS256', typ: 'JWT' })}.${b64url(payload)}.mock-signature`;
+}
+
+function userFromToken(token) {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+    return Object.values(USERS).find((u) => u.id === payload.sub) || null;
+  } catch {
+    return null;
+  }
+}
+
+function toUserResponse(user) {
+  return {
+    ...user,
+    aud: 'authenticated',
+    role: 'authenticated',
+    app_metadata: { provider: 'email' },
+    user_metadata: {},
+    created_at: '2026-01-01T00:00:00Z'
+  };
+}
+
+function send(res, status, body, headers = {}) {
+  res.writeHead(status, { 'Content-Type': 'application/json', ...headers });
+  res.end(body === undefined ? '' : JSON.stringify(body));
+}
+
+const server = http.createServer((req, res) => {
+  let raw = '';
+  req.on('data', (chunk) => (raw += chunk));
+  req.on('end', () => {
+    const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
+    const bearer = (req.headers.authorization || '').replace(/^Bearer /, '');
+
+    if (url.pathname === '/auth/v1/token' && url.searchParams.get('grant_type') === 'password') {
+      const { email, password } = JSON.parse(raw || '{}');
+      const user = USERS[String(email).toLowerCase()];
+      if (!user || password !== PASSWORD) {
+        return send(res, 400, { code: 400, error_code: 'invalid_credentials', msg: 'Invalid login credentials' });
+      }
+      const now = Math.floor(Date.now() / 1000);
+      return send(res, 200, {
+        access_token: makeAccessToken(user),
+        token_type: 'bearer',
+        expires_in: 3600,
+        expires_at: now + 3600,
+        refresh_token: `refresh-${user.id}`,
+        user: toUserResponse(user)
+      });
+    }
+
+    if (url.pathname === '/auth/v1/user') {
+      const user = userFromToken(bearer);
+      return user ? send(res, 200, toUserResponse(user)) : send(res, 401, { code: 401, msg: 'invalid JWT' });
+    }
+
+    if (url.pathname === '/auth/v1/logout') {
+      return send(res, 204);
+    }
+
+    // 資料庫 / 儲存空間：一律回傳空資料
+    if (url.pathname.startsWith('/rest/v1/')) {
+      return send(res, 200, [], { 'Content-Range': '0-0/0' });
+    }
+    if (url.pathname.startsWith('/storage/v1/')) {
+      return send(res, 200, {});
+    }
+
+    return send(res, 404, { msg: `mock: ${req.method} ${url.pathname} not implemented` });
+  });
+});
+
+if (require.main === module) {
+  server.listen(PORT, '127.0.0.1', () => console.log(`mock supabase listening on ${PORT}`));
+}
+
+module.exports = { PASSWORD, makeAccessToken, USERS };

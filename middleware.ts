@@ -3,6 +3,7 @@ import createMiddleware from 'next-intl/middleware';
 import {routing} from '@/i18n/routing';
 import {getSupabaseMiddlewareAuthClient} from '@/lib/supabase/server';
 import {locales} from '@/lib/catalog';
+import {isAdminEmail} from '@/lib/admin-auth';
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -49,7 +50,14 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && isLoginPage) {
+  const isAdmin = Boolean(user) && isAdminEmail(user?.email);
+
+  // 已登入但不在管理員名單內：只能停留在登入頁
+  if (user && !isAdmin && !isLoginPage) {
+    return NextResponse.redirect(new URL(`/${locale}/admin/login?error=forbidden`, request.url));
+  }
+
+  if (isAdmin && isLoginPage) {
     return NextResponse.redirect(new URL(`/${locale}/admin/dashboard`, request.url));
   }
 

@@ -3,10 +3,12 @@ import {notFound} from 'next/navigation';
 import {redirect} from 'next/navigation';
 import {locales, type Locale} from '@/lib/catalog';
 import {getSupabaseServerAuthClient} from '@/lib/supabase/server';
+import {isAdminEmail} from '@/lib/admin-auth';
 
 const loginErrorMessage: Record<string, string> = {
   invalid: '登入失敗，請確認帳號密碼。',
   config: 'Supabase 設定不完整，請先配置環境變數。',
+  forbidden: '此帳號沒有後台權限，請聯絡網站管理員。',
   unknown: '登入時發生錯誤，請稍後再試。'
 };
 
@@ -57,10 +59,16 @@ export default async function AdminLoginPage({
       redirect(`/${localeValue}/admin/login?error=config`);
     }
 
-    const {error} = await supabase.auth.signInWithPassword({email, password});
+    const {data, error} = await supabase.auth.signInWithPassword({email, password});
 
     if (error) {
       redirect(`/${localeValue}/admin/login?error=invalid`);
+    }
+
+    // 帳密正確但不在管理員名單內：立即登出，不保留登入狀態
+    if (!isAdminEmail(data.user?.email)) {
+      await supabase.auth.signOut();
+      redirect(`/${localeValue}/admin/login?error=forbidden`);
     }
 
     redirect(next);

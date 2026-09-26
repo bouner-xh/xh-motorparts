@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
+import { isAdminEmail } from '@/lib/admin-auth';
 import { revalidateCatalog } from '@/lib/revalidate';
 
 const batchProductSchema = z.object({
@@ -25,13 +26,14 @@ async function getAuthenticatedUser() {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Unauthorized' } as const;
+  if (!isAdminEmail(user.email)) return { ok: false, error: 'Forbidden' } as const;
 
   return { ok: true, user } as const;
 }
 
 export async function POST(request: Request) {
   const authResult = await getAuthenticatedUser();
-  if (!authResult.ok) return Response.json({ error: authResult.error }, { status: 401 });
+  if (!authResult.ok) return Response.json({ error: authResult.error }, { status: authResult.error === 'Forbidden' ? 403 : 401 });
 
   const service = getSupabaseServiceRoleClient();
   if (!service) return Response.json({ error: 'Missing service role' }, { status: 500 });

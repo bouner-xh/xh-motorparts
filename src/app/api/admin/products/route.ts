@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import {getSupabaseServerAuthClient, getSupabaseServiceRoleClient} from '@/lib/supabase/server';
+import {isAdminEmail} from '@/lib/admin-auth';
 import {revalidateCatalog} from '@/lib/revalidate';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
@@ -73,6 +74,10 @@ async function getAuthenticatedUser() {
     return {ok: false, error: 'Unauthorized'} as const;
   }
 
+  if (!isAdminEmail(user.email)) {
+    return {ok: false, error: 'Forbidden'} as const;
+  }
+
   return {ok: true, user} as const;
 }
 
@@ -142,7 +147,9 @@ async function buildImageMap(service: ServiceClient, productIds: string[]) {
 }
 
 function toAuthErrorStatus(error: string) {
-  return error === 'Unauthorized' ? 401 : 500;
+  if (error === 'Unauthorized') return 401;
+  if (error === 'Forbidden') return 403;
+  return 500;
 }
 
 function buildRequestId() {
