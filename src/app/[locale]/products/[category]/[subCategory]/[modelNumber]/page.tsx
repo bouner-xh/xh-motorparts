@@ -111,7 +111,7 @@ export default async function ProductDetailPage({
         </article>
 
         <div className="detail-info card">
-          <h2>{product.model}</h2>
+          <h1 className="product-detail-title">{product.model}</h1>
           <p>{product.name}</p>
           <p className="muted">
             {tProducts('category')}：{categoryData.name}

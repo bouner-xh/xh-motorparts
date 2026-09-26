@@ -77,7 +77,7 @@ export default async function CategoryPage({
 
       <div className="section-heading">
         <div>
-          <h2 className="page-title">{categoryData.name}</h2>
+          <h1 className="page-title">{categoryData.name}</h1>
           <p className="muted page-lead">{categoryData.description}</p>
         </div>
       </div>

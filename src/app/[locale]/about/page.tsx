@@ -24,7 +24,7 @@ export default async function AboutPage({
       <section className="hero">
         <article className="surface hero__panel">
           <span className="hero__eyebrow">{t('title')}</span>
-          <h2 className="hero__title">{t('intro')}</h2>
+          <h1 className="hero__title">{t('intro')}</h1>
           <p className="muted hero__description">{t('content')}</p>
         </article>
 

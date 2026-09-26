@@ -35,7 +35,7 @@ export default async function LocaleHome({
               <span className="hero__badge">{localized(localeValue, { 'zh-TW': '出口全球 20+ 國家', 'zh-CN': '出口全球 20+ 国家', en: 'Exported to 20+ Countries' })}</span>
             </div>
           </div>
-          <h2 className="hero__title" style={{ whiteSpace: 'pre-line', marginTop: '1.5rem' }}>{content.hero.title}</h2>
+          <h1 className="hero__title" style={{ whiteSpace: 'pre-line', marginTop: '1.5rem' }}>{content.hero.title}</h1>
           <p className="muted hero__description" style={{ marginTop: '1rem' }}>{content.hero.subtitle}</p>
           
           <div className="hero__contact-quick">

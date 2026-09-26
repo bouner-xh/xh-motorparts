@@ -70,7 +70,7 @@ export default async function LocaleLayout({
           <header className="site-header">
             <div className="brand-row">
               <div className="brand-copy">
-                <h1>{companyByLocale[localeValue]}</h1>
+                <div className="brand-name">{companyByLocale[localeValue]}</div>
                 <p>
                   {localized(localeValue, { 'zh-TW': '摩托車零件產品目錄與商務詢價平台', 'zh-CN': '摩托车零件产品目录与商务询价平台', en: 'Motorcycle parts catalog and B2B inquiry platform' })}
                 </p>

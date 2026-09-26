@@ -98,9 +98,16 @@ textarea {
   gap: 1rem;
 }
 
-.brand-copy h1 {
+.brand-copy .brand-name {
   margin: 0;
   font-size: clamp(1.3rem, 2vw, 1.8rem);
+  font-weight: 700;
+}
+
+/* 產品詳細頁主標題（原為 h2，改為 h1 後維持相同大小與間距） */
+.product-detail-title {
+  margin: 0.83em 0;
+  font-size: 1.5em;
 }
 
 .brand-copy p {

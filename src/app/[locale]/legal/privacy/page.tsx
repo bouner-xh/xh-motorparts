@@ -22,7 +22,7 @@ export default async function PrivacyPage({
     <main>
       <div className="section-heading">
         <div>
-          <h2 className="page-title">{doc.title}</h2>
+          <h1 className="page-title">{doc.title}</h1>
           <p className="muted page-lead">{doc.subtitle}</p>
         </div>
       </div>

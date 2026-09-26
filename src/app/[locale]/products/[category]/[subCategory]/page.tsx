@@ -93,7 +93,7 @@ export default async function SubCategoryPage({
 
       <div className="section-heading">
         <div>
-          <h2 className="page-title">{subCategoryData.name}</h2>
+          <h1 className="page-title">{subCategoryData.name}</h1>
           <p className="muted page-lead">{categoryData.description} - {subCategoryData.name}</p>
         </div>
       </div>
