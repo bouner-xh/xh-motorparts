@@ -44,8 +44,8 @@ export default async function LocaleHome({
           </div>
 
           <div className="hero__actions" style={{ marginTop: '2rem' }}>
-            <Link href={`/${localeValue}/products`}>
-              <button type="button">{content.hero.primaryCta}</button>
+            <Link className="button-primary" href={`/${localeValue}/products`}>
+              {content.hero.primaryCta}
             </Link>
             <Link className="button-secondary" href={`/${localeValue}/about`}>
               {content.hero.secondaryCta}
