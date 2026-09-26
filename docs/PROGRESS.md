@@ -15,6 +15,7 @@
 | 2 | **`sales@` 收信測試**（C2） | 確認 Email Routing 已建立 `sales` 規則，用其他信箱寄測試信給 `sales@xh-motorparts.com`，確認 `bounerchang@gmail.com` 有收到 |
 | 3 | 刪除重複的 Vercel 專案（C1） | `xh-motorparts` 已中斷 Git 連結；觀察一週正常後可刪除 |
 | 4 | （選擇性）GitHub Support 清除舊 commit | 密碼已更換，風險已解除；要徹底清除需以 `bouner-xh` 帳號申請 |
+| 5 | 正式資料庫有測試產品 | 前台「汽缸系列 → 副軸」可以看到料號 `TEST-337980`，建議在後台刪除或設為不公開；另請確認「副軸／主軸」放在汽缸分類下是否正確 |
 
 ---
 
@@ -29,6 +30,9 @@
 | 密碼更換、關閉公開註冊、git 歷史改寫、Vercel 管理員名單、Cloudflare Email Routing | 設定變更（見 CHANGELOG） |
 
 測試：`bash tests/run-all.sh`（單元 16 項、E2E 30 項，8 種環境情境）全部通過。
+
+**2026-09-26 正式網站唯讀檢查**（`production-check` 等 7 支測試）：S0、S3、S7、D1、D5、D6、D7、D8、D10、D11、D13 在正式網站皆確認正常。
+C4 canonical 仍為不帶 www 的網址，確認是 Vercel 的 `NEXT_PUBLIC_BASE_URL` 仍為舊值（見待處理 #1）。
 
 ## 🔄 處理中
 
