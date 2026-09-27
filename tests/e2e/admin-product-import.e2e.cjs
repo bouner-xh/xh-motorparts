@@ -34,7 +34,8 @@ run('Excel＋ZIP 匯入：更新既有產品保留翻譯、FALSE 不上架、圖
     // va.vercel-scripts.com 是 Vercel Analytics 在開發模式才載入的除錯腳本（正式環境從本站載入），與匯入無關
     page.on('console', (m) => {
       const text = m.text();
-      if (/Content Security Policy|Refused to load/.test(text) && !text.includes('va.vercel-scripts.com')) blocked.push(text);
+      // 127.0.0.1:54321 是測試用的模擬 Storage（正式環境圖片來自 *.supabase.co，CSP 已允許）
+      if (/Content Security Policy|Refused to load/.test(text) && !text.includes('va.vercel-scripts.com') && !text.includes('127.0.0.1:54321')) blocked.push(text);
     });
 
     const xlsx = path.join(tmp, 'products.xlsx');

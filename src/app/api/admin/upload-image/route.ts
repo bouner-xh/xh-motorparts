@@ -1,6 +1,7 @@
 import {getSupabaseServerAuthClient, getSupabaseServiceRoleClient} from '@/lib/supabase/server';
 import {detectImageType} from '@/lib/image-signature';
 import {isAdminEmail} from '@/lib/admin-auth';
+import {removeUnreferencedImages} from '@/lib/product-image-cleanup';
 
 function sanitizeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '-').toLowerCase();
@@ -85,4 +86,35 @@ export async function POST(request: Request) {
     objectPath,
     requestId
   });
+}
+
+// 刪除「已上傳但最後沒有存檔」的圖片（A7）：例如換了一張圖、取消編輯
+// 只會刪除本網站儲存空間內、且沒有任何產品使用的檔案
+export async function DELETE(request: Request) {
+  const authClient = await getSupabaseServerAuthClient();
+  if (!authClient) {
+    return Response.json({error: 'Supabase auth 設定不完整'}, {status: 500});
+  }
+  const {
+    data: {user}
+  } = await authClient.auth.getUser();
+  if (!user) {
+    return Response.json({error: '未授權'}, {status: 401});
+  }
+  if (!isAdminEmail(user.email)) {
+    return Response.json({error: '沒有後台權限'}, {status: 403});
+  }
+
+  const service = getSupabaseServiceRoleClient();
+  if (!service) {
+    return Response.json({error: 'Supabase service role 設定不完整'}, {status: 500});
+  }
+
+  const url = new URL(request.url).searchParams.get('url') || '';
+  if (!url || url.length > 1000) {
+    return Response.json({error: '缺少圖片網址'}, {status: 400});
+  }
+
+  await removeUnreferencedImages(service, [url]);
+  return Response.json({ok: true});
 }

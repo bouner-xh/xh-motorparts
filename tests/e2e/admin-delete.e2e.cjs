@@ -69,7 +69,11 @@ run('有產品的大分類／子分類不能刪除，並說明原因', () =>
     await page.getByText('「汽缸」底下還有 2 個產品').waitFor({ timeout: 10000 });
     assert(dialogs.length === 0, '有產品時不跳出確認視窗，直接說明原因');
 
-    const subRow = page.locator('tr', { hasText: '標準汽缸' }).filter({ has: page.getByRole('button', { name: '刪除' }) });
+    // 產品列表也會顯示子分類名稱，排除有「複製」按鈕的產品列
+    const subRow = page
+      .locator('tr', { hasText: '標準汽缸' })
+      .filter({ has: page.getByRole('button', { name: '刪除' }) })
+      .filter({ hasNot: page.getByRole('button', { name: '複製' }) });
     await subRow.getByRole('button', { name: '刪除' }).click();
     await page.getByText('「標準汽缸」底下還有 2 個產品').waitFor({ timeout: 10000 });
 

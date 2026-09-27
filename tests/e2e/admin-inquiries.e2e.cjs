@@ -54,7 +54,7 @@ run('狀態篩選、待處理數量、分頁', () =>
     }
     assert((await rowCount(page)) === 20, '第 1 頁 20 筆');
     await page.getByText('共 25 筆，第 1 / 2 頁').waitFor();
-    await page.getByRole('button', { name: '下一頁' }).click();
+    await page.locator('.admin-crm-panel').getByRole('button', { name: '下一頁' }).click();
     await page.getByText('共 25 筆，第 2 / 2 頁').waitFor();
     assert((await rowCount(page)) === 5, '第 2 頁 5 筆');
 
