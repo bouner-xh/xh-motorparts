@@ -39,7 +39,7 @@ export default async function LocaleHome({
           <p className="muted hero__description" style={{ marginTop: '1rem' }}>{content.hero.subtitle}</p>
           
           <div className="hero__contact-quick">
-            <span>📧 Email: <a href="mailto:bounerchang@gmail.com">bounerchang@gmail.com</a></span>
+            <span>📧 Email: <a href="mailto:sales@xh-motorparts.com">sales@xh-motorparts.com</a></span>
             <span>📱 WhatsApp: <a href="https://wa.me/886930797299" target="_blank" rel="noopener noreferrer">+886 930 797 299</a></span>
           </div>
 
