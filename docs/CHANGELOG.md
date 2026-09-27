@@ -26,7 +26,7 @@
 
 ## 2026-09-27（第九批）：Next.js 安全性升級
 
-PR：（合併後補上）
+PR：[#14](https://github.com/bouner-xh/xh-motorparts/pull/14)
 
 | 編號 | 修改 | 主要檔案 | Commit | 驗證 |
 |---|---|---|---|---|
