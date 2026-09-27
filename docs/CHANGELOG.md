@@ -24,6 +24,20 @@
 
 ---
 
+## 2026-09-27（第九批）：Next.js 安全性升級
+
+PR：（合併後補上）
+
+| 編號 | 修改 | 主要檔案 | Commit | 驗證 |
+|---|---|---|---|---|
+| S11 | next 15.5.19 → 15.5.26（同系列修正版），修補已公告的 2 個嚴重、4 個高與數個中等級漏洞；`npm audit fix`（不含破壞性升級）一併更新 sharp、nanoid | `package.json`、`package-lock.json` | `bd62b3a` | `bash tests/run-all.sh` 全部通過（含正式環境建置）；`npm ci` 正常 |
+
+**剩下的 `npm audit` 警告**：postcss（Next.js 內建，只在建置時處理本站自己的 CSS，沒有外部輸入），要升級到 Next 16 才能消除，暫不處理。
+
+**之後修改時要注意**
+- **不要用 `npm audit fix --omit=dev`**：會把開發用套件從 `node_modules` 移除，之後 `next build` 會自動補裝不同版本並改寫 `package.json`（這次實際發生過）。要檢查請用 `npm audit --omit=dev`，修正用 `npm audit fix`。
+- 建議每季執行一次 `npm audit --omit=dev` 檢查。
+
 ## 2026-09-27（第八批）：後台分類刪除、詢價管理、產品列表與 API 錯誤處理
 
 PR：[#12](https://github.com/bouner-xh/xh-motorparts/pull/12)
