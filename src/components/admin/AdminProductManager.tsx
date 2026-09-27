@@ -215,7 +215,8 @@ export function AdminProductManager({locale}: {locale: Locale}) {
       }
 
       setStatus('success', form.id ? '產品更新成功' : '產品新增成功');
-      setForm(form.id ? emptyFormState : emptyFormState);
+      // 保留剛剛選的分類與子分類，方便連續新增同分類的產品（A3）
+      setForm({...emptyFormState, category: form.category, subCategoryId: form.subCategoryId});
       await loadProducts();
     } catch (error) {
       setStatus('error', error instanceof Error ? error.message : '儲存失敗');
@@ -309,8 +310,12 @@ export function AdminProductManager({locale}: {locale: Locale}) {
           分類
           <select
             value={form.category}
-            onChange={(event) => setForm((prev) => ({...prev, category: event.target.value}))}
+            // 切換大分類時清空子分類，避免產品掛到其他大分類的子分類（A3）
+            onChange={(event) => setForm((prev) => ({...prev, category: event.target.value, subCategoryId: ''}))}
           >
+            <option value="" disabled>
+              請選擇分類
+            </option>
             {categories.map((c) => (
               <option key={c.id} value={c.slug}>
                 {c.nameZhTw} ({c.slug})

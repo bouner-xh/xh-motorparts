@@ -218,6 +218,12 @@ async function ensureCategoryId(service: ServiceClient, slug: string) {
   return {id: inserted.id, error: ''} satisfies EnsureCategoryResult;
 }
 
+// 子分類必須屬於所選的大分類，否則前台會把產品放到錯誤的位置（A3）
+async function checkSubCategoryInCategory(service: ServiceClient, subCategoryId: string, categoryId: string) {
+  const {data} = await service.from('sub_categories').select('category_id').eq('id', subCategoryId).maybeSingle();
+  return data?.category_id === categoryId;
+}
+
 export async function GET() {
   const requestId = buildRequestId();
   const authResult = await getAuthenticatedUser();
@@ -288,6 +294,10 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!(await checkSubCategoryInCategory(service, payload.subCategoryId, categoryResult.id))) {
+    return Response.json({error: '子分類不屬於所選的大分類，請重新選擇子分類', requestId}, {status: 400});
+  }
+
   const {data: inserted, error} = await service
     .from('products')
     .insert({
@@ -355,6 +365,10 @@ export async function PUT(request: Request) {
       {error: normalizeDatabaseError(categoryResult.error || 'Category prepare failed'), requestId},
       {status: 400}
     );
+  }
+
+  if (!(await checkSubCategoryInCategory(service, payload.subCategoryId, categoryResult.id))) {
+    return Response.json({error: '子分類不屬於所選的大分類，請重新選擇子分類', requestId}, {status: 400});
   }
 
   const {error} = await service
