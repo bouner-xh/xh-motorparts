@@ -24,6 +24,18 @@
 
 ---
 
+## 2026-09-27：對外聯絡信箱改為公司信箱
+
+PR：[#8](https://github.com/bouner-xh/xh-motorparts/pull/8)
+
+| 編號 | 修改 | 主要檔案 | Commit | 驗證 |
+|---|---|---|---|---|
+| S9 | 首頁、頁尾、聯絡我們、隱私權政策（三語）的聯絡信箱由個人 Gmail 改為 `sales@xh-motorparts.com` | `src/components/layout/Footer.tsx`、`src/app/[locale]/page.tsx`、`src/lib/privacy-content.ts`、`messages/*.json`（`contact.email`） | `bde143f` | `contact-email.e2e.cjs` |
+
+**之後修改時要注意**
+- `sales@` 是 Cloudflare Email Routing 的轉寄地址，**只能收信**；要更換收信人請到 Cloudflare → Email Routing → Routing rules 修改，不需要改程式。
+- 詢價通知信寄到哪裡由 Vercel 的 `RESEND_ADMIN_EMAIL` 決定，與網站顯示的信箱無關。
+
 ## 2026-09-26（第三批）：產品卡片加入詢價與前台體驗修正
 
 PR：[#4](https://github.com/bouner-xh/xh-motorparts/pull/4)
