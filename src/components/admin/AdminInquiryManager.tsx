@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Icon } from '@/components/ui/Icon';
 
 interface InquiryItem {
   productId: string;
@@ -23,6 +24,25 @@ interface Inquiry {
   status: 'pending' | 'processing' | 'replied' | 'archived';
   reply_notes?: string;
   created_at: string;
+  updated_at?: string;
+}
+
+type StatusFilter = 'all' | Inquiry['status'];
+type Counts = Record<StatusFilter, number>;
+
+const FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: 'all', label: '全部' },
+  { key: 'pending', label: '新詢價' },
+  { key: 'processing', label: '報價中' },
+  { key: 'replied', label: '已回覆' },
+  { key: 'archived', label: '已封存' },
+];
+
+const EMPTY_COUNTS: Counts = { all: 0, pending: 0, processing: 0, replied: 0, archived: 0 };
+
+function formatDateTime(value?: string) {
+  if (!value) return '—';
+  return new Date(value).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
 /**
@@ -31,23 +51,40 @@ interface Inquiry {
 export function AdminInquiryManager() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
+  // 錯誤與操作結果顯示在面板內，不取代整個面板、不用瀏覽器彈窗（A6）
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [editStatus, setEditStatus] = useState<Inquiry['status']>('pending');
   const [editNotes, setEditNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [modalError, setModalError] = useState('');
+  // 篩選、搜尋與分頁（A6）
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [keywordInput, setKeywordInput] = useState('');
+  const [keyword, setKeyword] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    fetchInquiries();
-  }, []);
-
-  async function fetchInquiries() {
+  const fetchInquiries = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
-      const res = await fetch('/api/admin/inquiries');
+      const params = new URLSearchParams({ page: String(page) });
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (keyword) params.set('q', keyword);
+      const res = await fetch(`/api/admin/inquiries?${params}`, { cache: 'no-store' });
       const data = await res.json();
       if (res.ok) {
         setInquiries(data.items || []);
+        setTotal(data.total ?? 0);
+        setTotalPages(data.totalPages ?? 1);
+        setCounts({ ...EMPTY_COUNTS, ...data.counts });
+        if (data.page && data.page !== page) setPage(data.page);
       } else {
         setError(data.error || '無法載入詢價單');
       }
@@ -56,21 +93,50 @@ export function AdminInquiryManager() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, statusFilter, keyword]);
 
-  const handleOpenDetail = (inq: Inquiry) => {
+  useEffect(() => {
+    void fetchInquiries();
+  }, [fetchInquiries]);
+
+  // 輸入關鍵字 0.3 秒後才搜尋，避免每打一個字就查詢一次
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setKeyword(keywordInput.trim());
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [keywordInput]);
+
+  const handleOpenDetail = (inq: Inquiry, opener: HTMLElement) => {
+    openerRef.current = opener;
     setSelectedInquiry(inq);
     setEditStatus(inq.status);
     setEditNotes(inq.reply_notes || '');
+    setModalError('');
   };
 
-  const handleCloseDetail = () => {
+  const handleCloseDetail = useCallback(() => {
     setSelectedInquiry(null);
-  };
+    // 關閉後把焦點還給原本的「檢視」按鈕，鍵盤操作不會跳回頁首
+    openerRef.current?.focus();
+  }, []);
+
+  // 詳情視窗：開啟時移入焦點，按 Esc 關閉（A6）
+  useEffect(() => {
+    if (!selectedInquiry) return;
+    dialogRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') handleCloseDetail();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedInquiry, handleCloseDetail]);
 
   const handleSave = async () => {
     if (!selectedInquiry) return;
     setSaving(true);
+    setModalError('');
     try {
       const res = await fetch('/api/admin/inquiries', {
         method: 'PUT',
@@ -82,40 +148,38 @@ export function AdminInquiryManager() {
         }),
       });
 
+      const d = await res.json().catch(() => ({}));
       if (res.ok) {
-        setInquiries((prev) =>
-          prev.map((i) =>
-            i.id === selectedInquiry.id
-              ? { ...i, status: editStatus, reply_notes: editNotes }
-              : i
-          )
-        );
         handleCloseDetail();
+        setNotice(`已更新 ${selectedInquiry.company_name || selectedInquiry.customer_name} 的詢價單`);
+        // 狀態改變會影響篩選結果與各狀態筆數，重新載入
+        await fetchInquiries();
       } else {
-        const d = await res.json();
-        alert(d.error || '儲存失敗');
+        setModalError(d.error || '儲存失敗');
       }
     } catch {
-      alert('連線失敗');
+      setModalError('連線失敗，請稍後再試');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('您確定要刪除這筆詢價紀錄嗎？此動作無法復原。')) return;
+  const handleDelete = async (inq: Inquiry) => {
+    if (!confirm(`確定要刪除 ${inq.company_name || inq.customer_name} 的詢價紀錄嗎？此動作無法復原。`)) return;
+    setError('');
     try {
-      const res = await fetch(`/api/admin/inquiries?id=${id}`, {
+      const res = await fetch(`/api/admin/inquiries?id=${encodeURIComponent(inq.id)}`, {
         method: 'DELETE',
       });
       if (res.ok) {
-        setInquiries((prev) => prev.filter((i) => i.id !== id));
+        setNotice('詢價紀錄已刪除');
+        await fetchInquiries();
       } else {
-        const d = await res.json();
-        alert(d.error || '刪除失敗');
+        const d = await res.json().catch(() => ({}));
+        setError(d.error || '刪除失敗');
       }
     } catch {
-      alert('刪除時連線失敗');
+      setError('刪除時連線失敗');
     }
   };
 
@@ -132,15 +196,20 @@ export function AdminInquiryManager() {
     }
   };
 
-  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>載入詢價單中...</div>;
-  if (error) return <div style={{ padding: '2rem', color: '#ef4444', textAlign: 'center' }}>{error}</div>;
-
   return (
     <div className="admin-crm-panel" style={{ marginTop: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h3 style={{ margin: 0, fontSize: '1.25rem' }}>詢價管理中心 (CRM)</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+        <h3 style={{ margin: 0, fontSize: '1.25rem' }}>
+          詢價管理中心 (CRM)
+          {counts.pending > 0 ? (
+            <span data-testid="pending-count" style={{ marginLeft: '0.6rem', padding: '0.15rem 0.55rem', borderRadius: '999px', background: '#f59e0b', color: '#111827', fontSize: '0.85rem', verticalAlign: 'middle' }}>
+              {counts.pending} 筆待處理
+            </span>
+          ) : null}
+        </h3>
         <button
-          onClick={fetchInquiries}
+          type="button"
+          onClick={() => void fetchInquiries()}
           style={{
             padding: '0.4rem 0.8rem',
             background: 'rgba(30, 41, 59, 0.6)',
@@ -154,10 +223,64 @@ export function AdminInquiryManager() {
         </button>
       </div>
 
-      {inquiries.length === 0 ? (
+      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
+        <div role="tablist" aria-label="依狀態篩選" style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+          {FILTERS.map((f) => {
+            const active = statusFilter === f.key;
+            return (
+              <button
+                key={f.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => {
+                  setStatusFilter(f.key);
+                  setPage(1);
+                }}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  fontSize: '0.85rem',
+                  borderRadius: '999px',
+                  boxShadow: 'none',
+                  background: active ? '#dc2626' : 'rgba(30, 41, 59, 0.6)',
+                  border: `1px solid ${active ? '#dc2626' : 'rgba(148, 163, 184, 0.2)'}`,
+                  color: '#f8fafc',
+                }}
+              >
+                {f.label} {counts[f.key]}
+              </button>
+            );
+          })}
+        </div>
+        <input
+          type="search"
+          aria-label="搜尋詢價單"
+          placeholder="搜尋公司、聯絡人、Email、國家或型號"
+          value={keywordInput}
+          onChange={(e) => setKeywordInput(e.target.value)}
+          style={{ flex: '1 1 240px', minWidth: 0, padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(148, 163, 184, 0.25)', background: 'rgba(15, 23, 42, 0.75)', color: '#f8fafc' }}
+        />
+      </div>
+
+      {error ? (
+        <div role="alert" style={{ padding: '0.75rem 1rem', marginBottom: '1rem', borderRadius: '8px', border: '1px solid rgba(248, 113, 113, 0.4)', background: 'rgba(127, 29, 29, 0.22)', color: '#fca5a5' }}>
+          {error}
+        </div>
+      ) : null}
+      {notice && !error ? (
+        <div role="status" style={{ padding: '0.75rem 1rem', marginBottom: '1rem', borderRadius: '8px', border: '1px solid rgba(52, 211, 153, 0.45)', background: 'rgba(6, 78, 59, 0.24)' }}>
+          {notice}
+        </div>
+      ) : null}
+
+      {loading ? (
+        <div style={{ padding: '2rem', textAlign: 'center' }}>載入詢價單中...</div>
+      ) : inquiries.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-          <span style={{ fontSize: '2.5rem' }}>📋</span>
-          <p className="muted" style={{ margin: '1rem 0 0' }}>目前尚無任何詢價請求紀錄。</p>
+          <Icon name="clipboard" size={40} />
+          <p className="muted" style={{ margin: '1rem 0 0' }}>
+            {keyword || statusFilter !== 'all' ? '沒有符合條件的詢價單。' : '目前尚無任何詢價請求紀錄。'}
+          </p>
         </div>
       ) : (
         <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid rgba(148, 163, 184, 0.12)' }}>
@@ -174,13 +297,7 @@ export function AdminInquiryManager() {
             <tbody>
               {inquiries.map((inq) => {
                 const badge = getStatusLabel(inq.status);
-                const dateString = new Date(inq.created_at).toLocaleDateString('zh-TW', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                });
+                const dateString = formatDateTime(inq.created_at);
 
                 return (
                   <tr key={inq.id} style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.1)' }}>
@@ -210,7 +327,8 @@ export function AdminInquiryManager() {
                     <td style={{ padding: '1rem', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'end' }}>
                         <button
-                          onClick={() => handleOpenDetail(inq)}
+                          type="button"
+                          onClick={(e) => handleOpenDetail(inq, e.currentTarget)}
                           style={{
                             padding: '0.35rem 0.7rem',
                             fontSize: '0.8rem',
@@ -224,7 +342,8 @@ export function AdminInquiryManager() {
                           檢視
                         </button>
                         <button
-                          onClick={() => handleDelete(inq.id)}
+                          type="button"
+                          onClick={() => void handleDelete(inq)}
                           style={{
                             padding: '0.35rem 0.7rem',
                             fontSize: '0.8rem',
@@ -247,6 +366,20 @@ export function AdminInquiryManager() {
         </div>
       )}
 
+      {!loading && total > 0 ? (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.75rem', fontSize: '0.9rem' }}>
+          <span className="muted">共 {total} 筆，第 {page} / {totalPages} 頁</span>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} style={{ padding: '0.35rem 0.8rem', opacity: page <= 1 ? 0.5 : 1 }}>
+              上一頁
+            </button>
+            <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} style={{ padding: '0.35rem 0.8rem', opacity: page >= totalPages ? 0.5 : 1 }}>
+              下一頁
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Modal 詢價詳情彈出視窗 */}
       {selectedInquiry && (
         <div
@@ -263,8 +396,14 @@ export function AdminInquiryManager() {
           }}
         >
           <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="inquiry-detail-title"
+            tabIndex={-1}
             className="card"
             style={{
+              outline: 'none',
               maxWidth: '700px',
               width: '100%',
               maxHeight: '90vh',
@@ -275,7 +414,10 @@ export function AdminInquiryManager() {
               animation: 'fadeIn 0.25s ease-out',
             }}
           >
-            <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.35rem' }}>詢價單詳情</h3>
+            <h3 id="inquiry-detail-title" style={{ margin: '0 0 0.5rem 0', fontSize: '1.35rem' }}>詢價單詳情</h3>
+            <p className="muted" style={{ margin: '0 0 1.25rem 0', fontSize: '0.85rem' }}>
+              建立：{formatDateTime(selectedInquiry.created_at)}　最後更新：{formatDateTime(selectedInquiry.updated_at)}
+            </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
               <div>
@@ -383,6 +525,12 @@ export function AdminInquiryManager() {
                 />
               </label>
             </div>
+
+            {modalError ? (
+              <p role="alert" style={{ margin: '0 0 1rem', color: '#fca5a5' }}>
+                {modalError}
+              </p>
+            ) : null}
 
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'end' }}>
               <button

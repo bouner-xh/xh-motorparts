@@ -252,6 +252,7 @@ export function AdminProductImporter() {
     // 通知外部元件更新產品列表
     window.dispatchEvent(new Event('subcategories-updated'));
     window.dispatchEvent(new Event('categories-updated'));
+    window.dispatchEvent(new Event('products-updated'));
   };
 
   const resetImporter = () => {

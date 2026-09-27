@@ -13,33 +13,8 @@ const categoryCoverFileNames: Record<CategoryKey, string> = {
   cable: 'cable.jpg'
 };
 
-export function toLegacyAssetUrl(assetPath: string) {
-  return `/${assetPath.replace(/^\/?images\//, 'legacy-assets/')}`;
-}
-
-export function toProductImageUrl(assetPath: string) {
-  if (!assetPath) {
-    return toLegacyAssetUrl('images/no-image.jpg');
-  }
-
-  if (/^https?:\/\//.test(assetPath)) {
-    return assetPath;
-  }
-
-  if (assetPath.startsWith('/legacy-assets/')) {
-    return assetPath;
-  }
-
-  if (assetPath.startsWith('/images/')) {
-    return toLegacyAssetUrl(assetPath.slice(1));
-  }
-
-  if (assetPath.startsWith('images/')) {
-    return toLegacyAssetUrl(assetPath);
-  }
-
-  return assetPath;
-}
+// 圖片網址轉換移到 product-image-url.ts（不依賴 node:path，後台前端元件也能使用）
+export {toLegacyAssetUrl, toProductImageUrl} from '@/lib/product-image-url';
 
 export function getCategoryCoverUrl(category: CategoryKey) {
   const fileName = categoryCoverFileNames[category] || 'no-image.jpg';

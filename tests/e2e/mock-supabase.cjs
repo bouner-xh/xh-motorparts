@@ -46,7 +46,7 @@ const FOREIGN_KEYS = [
   { table: 'products', column: 'sub_category_id', ref: 'sub_categories', onDelete: 'restrict' },
   { table: 'product_images', column: 'product_id', ref: 'products', onDelete: 'cascade' }
 ];
-const UNIQUE = { categories: ['slug'], sub_categories: ['slug'] };
+const UNIQUE = { categories: ['slug'], sub_categories: ['slug'], products: ['model_number'] };
 
 // 解析 select：找出 alias:table!inner(cols) 形式的關聯欄位
 function parseEmbeds(select) {
@@ -180,7 +180,8 @@ function handleRest(req, url, raw) {
       const error = checkUnique(table, { ...row, ...patch }, row.id);
       if (error) return error;
     }
-    for (const row of targets) Object.assign(row, patch);
+    // 模擬資料庫的 updated_at 觸發器
+    for (const row of targets) Object.assign(row, patch, 'updated_at' in row ? { updated_at: now } : {});
     rows = targets.map((r) => expandRow(table, r, select));
   } else if (req.method === 'DELETE') {
     const targets = filterRows(TABLES[table], url.searchParams);
