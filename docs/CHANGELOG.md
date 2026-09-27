@@ -26,7 +26,7 @@
 
 ## 2026-09-27（第七批）：後台產品管理與批量匯入
 
-PR：（合併後補上）
+PR：[#11](https://github.com/bouner-xh/xh-motorparts/pull/11)
 
 | 編號 | 修改 | 主要檔案 | Commit | 驗證 |
 |---|---|---|---|---|

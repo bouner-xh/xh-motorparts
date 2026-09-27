@@ -33,7 +33,7 @@
 | C4 正式網站 canonical 改為 www（老闆刪除 Vercel `NEXT_PUBLIC_BASE_URL` 並重新部署，2026-09-27 確認） | 設定變更 |
 | S6 頁尾「Cookie 設定」可撤回同意（S6 全部完成）、D14 所有公開頁面 canonical 與三語 hreflang（另修正關於／聯絡等頁 canonical 指向首頁） | #10 |
 
-| 後台 A1 Excel／ZIP 匯入、A2 移除測試資料預填與偵錯工具、A3 分類一致、A4 匯入資料處理 | 第七批（見 CHANGELOG） |
+| 後台 A1 Excel／ZIP 匯入、A2 移除測試資料預填與偵錯工具、A3 分類一致、A4 匯入資料處理 | #11 |
 
 測試：`bash tests/run-all.sh`（單元 24 項、E2E 45 項結果，8 種環境情境）全部通過（2026-09-27）。
 
