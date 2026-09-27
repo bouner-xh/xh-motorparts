@@ -1346,3 +1346,22 @@ textarea {
   color: #fca5a5;
   flex-shrink: 0;
 }
+
+/* 線條圖示（D9：取代 emoji） */
+.why-card__icon,
+.contact-icon-label,
+.cart-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.why-card__icon,
+.contact-icon-label,
+.footer-trust-badge__icon {
+  color: #fca5a5;
+}
+
+.cart-icon {
+  color: #e2e8f0;
+}

@@ -71,6 +71,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `home-section-order.e2e.cjs` | 首頁區塊順序、產品分類提前、內容不減少（D3） | `npx next dev -p 3100` |
 | `mobile-menu.e2e.cjs` | 手機 ☰ 選單、桌機導覽列不變（D4） | `npx next dev -p 3100` |
 | `home-hero-cta.e2e.cjs` | 首頁主按鈕聚焦、聯絡資訊在按鈕下方（D2） | `npx next dev -p 3100`（唯讀，也可對正式網站執行） |
+| `no-emoji-icons.e2e.cjs` | 畫面無 emoji、改用線條圖示（D9） | `npx next dev -p 3100`（唯讀，也可對正式網站執行） |
 
 ### 模擬 Supabase
 

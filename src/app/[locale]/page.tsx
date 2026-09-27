@@ -7,6 +7,7 @@ import { getCategorySummaries } from '@/lib/catalog-service';
 import { homeContent } from '@/lib/site-content';
 import { notFound } from 'next/navigation';
 import { localized } from '@/lib/localized-text';
+import { Icon } from '@/components/ui/Icon';
 
 export default async function LocaleHome({
   params,
@@ -49,8 +50,8 @@ export default async function LocaleHome({
 
           <p className="hero__contact-line">
             <span>{localized(localeValue, { 'zh-TW': '或直接聯絡業務', 'zh-CN': '或直接联系业务', en: 'Or contact our sales team' })}</span>
-            <a href="mailto:sales@xh-motorparts.com"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>sales@xh-motorparts.com</a>
-            <a href="https://wa.me/886930797299" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 0 1-13.4 7.9L3 21l1.1-4.6A9 9 0 1 1 21 12Z"/></svg>WhatsApp +886 930 797 299</a>
+            <a href="mailto:sales@xh-motorparts.com"><Icon name="mail" size={16} />sales@xh-motorparts.com</a>
+            <a href="https://wa.me/886930797299" target="_blank" rel="noopener noreferrer"><Icon name="chat" size={16} />WhatsApp +886 930 797 299</a>
           </p>
         </div>
       </section>
@@ -102,7 +103,7 @@ export default async function LocaleHome({
         <div className="why-grid">
           {content.whyChooseUs.items.map((item, idx) => (
             <div key={idx} className="why-card">
-              <span className="why-card__icon">{item.icon}</span>
+              <span className="why-card__icon"><Icon name={item.icon} size={36} /></span>
               <div className="why-card__title">{item.title}</div>
               <div className="why-card__desc">{item.description}</div>
             </div>
