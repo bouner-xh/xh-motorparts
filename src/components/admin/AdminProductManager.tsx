@@ -46,19 +46,8 @@ interface AdminSubCategoryItem {
 
 type StatusType = 'idle' | 'info' | 'success' | 'error';
 
-interface DebugLogEntry {
-  at: string;
-  action: 'load' | 'create' | 'update' | 'delete' | 'upload';
-  ok: boolean;
-  status: number;
-  message: string;
-  payload?: Record<string, unknown>;
-  response?: Record<string, unknown>;
-}
-
-const DEBUG_STORAGE_KEY = 'admin-debug-logs';
-const DEBUG_MAX_ENTRIES = 120;
-const ADMIN_MANAGER_BUILD_MARKER = 'admin-manager-20260607-1';
+// 舊版偵錯面板存在瀏覽器的紀錄（A2 移除偵錯工具時一併清除）
+const LEGACY_DEBUG_STORAGE_KEY = 'admin-debug-logs';
 
 const emptyFormState: ProductFormState = {
   category: '',
@@ -68,26 +57,11 @@ const emptyFormState: ProductFormState = {
   nameEn: '',
   specifications: '',
   stockQuantity: 0,
-  isActive: true,
+  // 預設不上架，確認內容後再勾選，避免誤上架（A2）
+  isActive: false,
   subCategoryId: '',
   imagePath: ''
 };
-
-function buildPrefilledFormState(defaultCategory: string = ''): ProductFormState {
-  const stamp = Date.now().toString().slice(-6);
-  return {
-    category: defaultCategory,
-    modelNumber: `TEST-${stamp}`,
-    nameZhTw: `測試產品-${stamp}`,
-    nameZhCn: `测试产品-${stamp}`,
-    nameEn: `Test Product ${stamp}`,
-    specifications: 'STD, 47MM',
-    stockQuantity: 10,
-    isActive: true,
-    subCategoryId: '',
-    imagePath: ''
-  };
-}
 
 export function AdminProductManager({locale}: {locale: Locale}) {
   const [categories, setCategories] = useState<AdminCategoryItem[]>([]);
@@ -101,9 +75,6 @@ export function AdminProductManager({locale}: {locale: Locale}) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [debugLogs, setDebugLogs] = useState<DebugLogEntry[]>([]);
-  const [showDebugPanel, setShowDebugPanel] = useState(true);
-  const [isClientReady, setIsClientReady] = useState(false);
 
   function setStatus(type: StatusType, message: string) {
     setStatusType(type);
@@ -118,52 +89,13 @@ export function AdminProductManager({locale}: {locale: Locale}) {
     }
   }
 
-  const pushDebugLog = useCallback((entry: DebugLogEntry) => {
-    setDebugLogs((prev) => [entry, ...prev].slice(0, DEBUG_MAX_ENTRIES));
-  }, []);
-
-  function toDebugResponse(response: Response, body: Record<string, unknown> | null) {
-    return {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok,
-      url: response.url,
-      body: body || {}
-    };
-  }
-
-  useEffect(() => {
-    setIsClientReady(true);
-  }, []);
-
-  useEffect(() => {
-    // Avoid hydration mismatch by pre-filling test data only on client after mount.
-    setForm(buildPrefilledFormState());
-  }, []);
-
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(DEBUG_STORAGE_KEY);
-      if (!raw) {
-        return;
-      }
-
-      const parsed = JSON.parse(raw) as DebugLogEntry[];
-      if (Array.isArray(parsed)) {
-        setDebugLogs(parsed.slice(0, DEBUG_MAX_ENTRIES));
-      }
+      window.localStorage.removeItem(LEGACY_DEBUG_STORAGE_KEY);
     } catch {
-      // ignore broken localStorage data
+      // 瀏覽器停用 localStorage 時略過
     }
   }, []);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(DEBUG_STORAGE_KEY, JSON.stringify(debugLogs));
-    } catch {
-      // ignore localStorage write failure
-    }
-  }, [debugLogs]);
 
   const loadProducts = useCallback(async () => {
     setIsLoading(true);
@@ -184,7 +116,7 @@ export function AdminProductManager({locale}: {locale: Locale}) {
         setCategories(catData.items);
         if (catData.items.length > 0) {
           const firstSlug = catData.items[0].slug;
-          setForm(p => p.category ? p : buildPrefilledFormState(firstSlug));
+          setForm((p) => (p.category ? p : {...p, category: firstSlug}));
         }
       }
 
@@ -193,39 +125,16 @@ export function AdminProductManager({locale}: {locale: Locale}) {
       }
 
       if (!productsRes.ok) {
-        pushDebugLog({
-          at: new Date().toISOString(),
-          action: 'load',
-          ok: false,
-          status: productsRes.status,
-          message: data.error || '載入產品失敗',
-          response: toDebugResponse(productsRes, data)
-        });
         throw new Error(data.error || `載入產品失敗（HTTP ${productsRes.status}）`);
       }
 
       setRows(data.items || []);
-      pushDebugLog({
-        at: new Date().toISOString(),
-        action: 'load',
-        ok: true,
-        status: productsRes.status,
-        message: `載入成功，筆數 ${(data.items || []).length}`,
-        response: toDebugResponse(productsRes, data)
-      });
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : '載入產品失敗');
-      pushDebugLog({
-        at: new Date().toISOString(),
-        action: 'load',
-        ok: false,
-        status: 0,
-        message: error instanceof Error ? error.message : '載入產品失敗（前端例外）'
-      });
     } finally {
       setIsLoading(false);
     }
-  }, [pushDebugLog]);
+  }, []);
 
   useEffect(() => {
     void loadProducts();
@@ -246,15 +155,7 @@ export function AdminProductManager({locale}: {locale: Locale}) {
 
   const submitLabel = useMemo(() => (form.id ? '更新產品' : '新增產品'), [form.id]);
 
-  async function submitProduct(source: 'form' | 'button') {
-    pushDebugLog({
-      at: new Date().toISOString(),
-      action: form.id ? 'update' : 'create',
-      ok: true,
-      status: 0,
-      message: `Submit flow entered from ${source}`
-    });
-
+  async function submitProduct() {
     setIsSubmitting(true);
     setStatus('info', form.id ? '更新產品中...' : '新增產品中...');
 
@@ -276,7 +177,6 @@ export function AdminProductManager({locale}: {locale: Locale}) {
     };
 
     const method = form.id ? 'PUT' : 'POST';
-    const action = form.id ? 'update' : 'create';
 
     const validationErrors: string[] = [];
     if (!payload.modelNumber) {
@@ -298,26 +198,9 @@ export function AdminProductManager({locale}: {locale: Locale}) {
     if (validationErrors.length) {
       const message = `表單驗證失敗：${validationErrors.join(' / ')}`;
       setStatus('error', message);
-      pushDebugLog({
-        at: new Date().toISOString(),
-        action,
-        ok: false,
-        status: 400,
-        message,
-        payload
-      });
       setIsSubmitting(false);
       return;
     }
-
-    pushDebugLog({
-      at: new Date().toISOString(),
-      action,
-      ok: true,
-      status: 0,
-      message: `${method} /api/admin/products request started`,
-      payload
-    });
 
     try {
       const response = await fetch('/api/admin/products', {
@@ -328,41 +211,14 @@ export function AdminProductManager({locale}: {locale: Locale}) {
 
       const result = (await parseResponseJson<{error?: string}>(response)) || {};
       if (!response.ok) {
-        pushDebugLog({
-          at: new Date().toISOString(),
-          action,
-          ok: false,
-          status: response.status,
-          message: result.error || '儲存失敗',
-          payload,
-          response: toDebugResponse(response, result)
-        });
         throw new Error(result.error || `儲存失敗（HTTP ${response.status}）`);
       }
-
-      pushDebugLog({
-        at: new Date().toISOString(),
-        action,
-        ok: true,
-        status: response.status,
-        message: form.id ? '更新成功' : '新增成功',
-        payload,
-        response: toDebugResponse(response, result)
-      });
 
       setStatus('success', form.id ? '產品更新成功' : '產品新增成功');
       setForm(form.id ? emptyFormState : emptyFormState);
       await loadProducts();
     } catch (error) {
       setStatus('error', error instanceof Error ? error.message : '儲存失敗');
-      pushDebugLog({
-        at: new Date().toISOString(),
-        action,
-        ok: false,
-        status: 0,
-        message: error instanceof Error ? error.message : '儲存失敗（前端例外）',
-        payload
-      });
     } finally {
       setIsSubmitting(false);
     }
@@ -370,7 +226,7 @@ export function AdminProductManager({locale}: {locale: Locale}) {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await submitProduct('form');
+    await submitProduct();
   }
 
   function startEdit(row: AdminProductItem) {
@@ -404,39 +260,13 @@ export function AdminProductManager({locale}: {locale: Locale}) {
 
       const result = (await parseResponseJson<{error?: string}>(response)) || {};
       if (!response.ok) {
-        pushDebugLog({
-          at: new Date().toISOString(),
-          action: 'delete',
-          ok: false,
-          status: response.status,
-          message: result.error || '刪除失敗',
-          payload: {id},
-          response: toDebugResponse(response, result)
-        });
         throw new Error(result.error || `刪除失敗（HTTP ${response.status}）`);
       }
 
-      pushDebugLog({
-        at: new Date().toISOString(),
-        action: 'delete',
-        ok: true,
-        status: response.status,
-        message: '刪除成功',
-        payload: {id},
-        response: toDebugResponse(response, result)
-      });
       setStatus('success', '產品已刪除');
       await loadProducts();
     } catch (error) {
       setStatus('error', error instanceof Error ? error.message : '刪除失敗');
-      pushDebugLog({
-        at: new Date().toISOString(),
-        action: 'delete',
-        ok: false,
-        status: 0,
-        message: error instanceof Error ? error.message : '刪除失敗（前端例外）',
-        payload: {id}
-      });
     }
   }
 
@@ -456,40 +286,14 @@ export function AdminProductManager({locale}: {locale: Locale}) {
       const result =
         (await parseResponseJson<{imagePath?: string; error?: string}>(response)) || {};
       if (!response.ok || !result.imagePath) {
-        pushDebugLog({
-          at: new Date().toISOString(),
-          action: 'upload',
-          ok: false,
-          status: response.status,
-          message: result.error || '圖片上傳失敗',
-          payload: {fileName: file.name, fileType: file.type, fileSize: file.size},
-          response: toDebugResponse(response, result)
-        });
         throw new Error(result.error || `圖片上傳失敗（HTTP ${response.status}）`);
       }
 
-      pushDebugLog({
-        at: new Date().toISOString(),
-        action: 'upload',
-        ok: true,
-        status: response.status,
-        message: '圖片上傳成功',
-        payload: {fileName: file.name, fileType: file.type, fileSize: file.size},
-        response: toDebugResponse(response, result)
-      });
       setForm((prev) => ({...prev, imagePath: result.imagePath || ''}));
       setSelectedFile(null);
       setStatus('success', '圖片上傳成功，已填入圖片路徑');
     } catch (error) {
       setStatus('error', error instanceof Error ? error.message : '圖片上傳失敗');
-      pushDebugLog({
-        at: new Date().toISOString(),
-        action: 'upload',
-        ok: false,
-        status: 0,
-        message: error instanceof Error ? error.message : '圖片上傳失敗（前端例外）',
-        payload: {fileName: file.name, fileType: file.type, fileSize: file.size}
-      });
     } finally {
       setIsUploading(false);
     }
@@ -499,38 +303,8 @@ export function AdminProductManager({locale}: {locale: Locale}) {
     <div>
       <h3>產品 CRUD 與圖片管理（{locale}）</h3>
       <p className="muted">可新增、編輯、刪除產品，並上傳產品主圖（會綁定為第一張圖片）。</p>
-      <div
-        role="status"
-        aria-live="polite"
-        style={{
-          marginTop: '0.5rem',
-          marginBottom: '0.75rem',
-          padding: '0.6rem 0.8rem',
-          borderRadius: '10px',
-          border: '1px solid rgba(125, 211, 252, 0.45)',
-          background: 'rgba(8, 47, 73, 0.45)',
-          color: '#e0f2fe',
-          fontSize: '0.95rem'
-        }}
-      >
-        <strong>前端狀態:</strong> {isClientReady ? 'Client hydrated' : 'Hydrating...'}
-        <span style={{marginLeft: '0.7rem'}}>Build: {ADMIN_MANAGER_BUILD_MARKER}</span>
-      </div>
 
-      <form
-        className="admin-form"
-        onSubmit={handleSubmit}
-        onSubmitCapture={() => {
-          pushDebugLog({
-            at: new Date().toISOString(),
-            action: form.id ? 'update' : 'create',
-            ok: true,
-            status: 0,
-            message: 'Form submit event captured'
-          });
-        }}
-        noValidate
-      >
+      <form className="admin-form" data-testid="admin-product-form" onSubmit={handleSubmit} noValidate>
         <label>
           分類
           <select
@@ -657,48 +431,8 @@ export function AdminProductManager({locale}: {locale: Locale}) {
         </div>
 
         <div style={{display: 'flex', gap: '0.6rem', flexWrap: 'wrap'}}>
-          <button
-            type="button"
-            disabled={isUploading || isSubmitting}
-            onClick={() => {
-              pushDebugLog({
-                at: new Date().toISOString(),
-                action: form.id ? 'update' : 'create',
-                ok: true,
-                status: 0,
-                message: 'Submit button clicked'
-              });
-              void submitProduct('button');
-            }}
-          >
+          <button type="submit" disabled={isUploading || isSubmitting}>
             {isSubmitting ? '送出中...' : submitLabel}
-          </button>
-          <button
-            type="button"
-            style={{background: '#0e7490'}}
-            onClick={() => {
-              pushDebugLog({
-                at: new Date().toISOString(),
-                action: form.id ? 'update' : 'create',
-                ok: true,
-                status: 0,
-                message: 'Manual debug log button clicked',
-                payload: {
-                  modelNumber: form.modelNumber,
-                  category: form.category,
-                  hasNames: Boolean(form.nameZhTw && form.nameZhCn && form.nameEn)
-                }
-              });
-            }}
-          >
-            測試寫入日志
-          </button>
-          <button
-            type="button"
-            onClick={() => setForm(buildPrefilledFormState())}
-            style={{background: '#334155'}}
-          >
-            填入測試資料
           </button>
           <button type="button" style={{background: '#1d4ed8'}} onClick={() => void loadProducts()}>
             重新載入列表
@@ -786,43 +520,6 @@ export function AdminProductManager({locale}: {locale: Locale}) {
         </table>
       </div>
 
-      <section className="card" style={{marginTop: '1rem'}}>
-        <div style={{display: 'flex', justifyContent: 'space-between', gap: '0.7rem', flexWrap: 'wrap'}}>
-          <h4 style={{margin: 0}}>偵錯面板（前端請求日志）</h4>
-          <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
-            <button type="button" onClick={() => setShowDebugPanel((prev) => !prev)}>
-              {showDebugPanel ? '收合面板' : '展開面板'}
-            </button>
-            <button
-              type="button"
-              style={{background: '#475569'}}
-              onClick={() => {
-                setDebugLogs([]);
-                window.localStorage.removeItem(DEBUG_STORAGE_KEY);
-              }}
-            >
-              清除日志
-            </button>
-          </div>
-        </div>
-
-        {showDebugPanel ? (
-          <div style={{marginTop: '0.8rem', display: 'grid', gap: '0.6rem'}}>
-            {debugLogs.length ? (
-              debugLogs.map((entry, index) => (
-                <details key={`${entry.at}-${index}`} style={{border: '1px solid rgba(148,163,184,0.25)', borderRadius: '10px', padding: '0.55rem 0.7rem'}}>
-                  <summary style={{cursor: 'pointer'}}>
-                    [{entry.at}] {entry.action.toUpperCase()} | HTTP {entry.status || 'N/A'} | {entry.ok ? 'OK' : 'FAIL'} | {entry.message}
-                  </summary>
-                  <pre style={{whiteSpace: 'pre-wrap', marginTop: '0.6rem'}}>{JSON.stringify(entry, null, 2)}</pre>
-                </details>
-              ))
-            ) : (
-              <p className="muted">尚無日志。請先執行新增/上傳/重新載入等操作。</p>
-            )}
-          </div>
-        ) : null}
-      </section>
     </div>
   );
 }
