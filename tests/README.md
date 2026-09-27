@@ -55,7 +55,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `site-smoke.e2e.cjs` | 主要頁面與本站資源皆能載入 | 開發或正式環境皆可 |
 | `inquiry-save-failure.e2e.cjs` | 資料庫故障時不可顯示成功（S5） | 需模擬資料庫故障，見檔案開頭說明 |
 | `csp-analytics.e2e.cjs` | GA4 / Clarity 未被 CSP 擋下（S3） | 需正式環境建置，見檔案開頭說明 |
-| `cookie-consent.e2e.cjs` | Cookie 同意與 Clarity 載入（S6） | 需設定測試用分析 ID，見檔案開頭說明 |
+| `cookie-consent.e2e.cjs` | Cookie 同意與 Clarity 載入、頁尾「Cookie 設定」撤回同意（S6） | 需設定測試用分析 ID，見檔案開頭說明 |
 | `admin-login.e2e.cjs` | 登入頁無後門、跳轉路徑驗證（S0 / S7） | `npx next dev -p 3100` |
 | `admin-upload.e2e.cjs` | 未登入無法上傳圖片（S8） | `npx next dev -p 3100` |
 | `admin-access.e2e.cjs` | 只有名單內帳號能進後台（S2） | 需先啟動模擬 Supabase，見檔案開頭說明 |
@@ -73,6 +73,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `home-hero-cta.e2e.cjs` | 首頁主按鈕聚焦、聯絡資訊在按鈕下方（D2） | `npx next dev -p 3100`（唯讀，也可對正式網站執行） |
 | `no-emoji-icons.e2e.cjs` | 畫面無 emoji、改用線條圖示（D9） | `npx next dev -p 3100`（唯讀，也可對正式網站執行） |
 | `inquiry-mobile-cards.e2e.cjs` | 手機版詢價清單卡片、按鈕 44px、不需左右捲動（D12） | `npx next dev -p 3100` |
+| `hreflang.e2e.cjs` | 每個公開頁面的 canonical 指向自己、有三語 hreflang 與 x-default（D14） | 模擬 Supabase（產品頁需要資料） |
 
 ### 模擬 Supabase
 

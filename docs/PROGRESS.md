@@ -2,7 +2,7 @@
 
 - 更新日期：2026-09-27
 - 本檔只記錄**目前狀態**（已完成／待辦／待決定）；每次修改的細節、檔案、還原方式請看 `docs/CHANGELOG.md`
-- 問題編號對照網站健檢報告（第 3 版，https://claude.ai/artifact/T3ua1poACZmKnfvordc1ps）：S = 資安、C = 網站設定與營運、D = 使用者體驗
+- 問題編號對照網站健檢報告（第 3 版，https://claude.ai/artifact/T3ua1poACZmKnfvordc1ps）：S = 資安、C = 網站設定與營運、D = 使用者體驗、A = 後台（2026-09-27 新增）
 - 功能規劃與原始計畫：`doc/摩托車零件網站現代化重構計畫_v1.6.md`
 
 ---
@@ -11,10 +11,10 @@
 
 | # | 事項 | 說明 |
 |---|---|---|
-| 1 | **Vercel `NEXT_PUBLIC_BASE_URL`** | 正式專案 `xh-motorparts-uhan` 有設定這個變數（值看不到）。若為 `https://xh-motorparts.com`，請改為 `https://www.xh-motorparts.com` 並 Redeploy，C4 才會生效 |
+| 1 | **Vercel `NEXT_PUBLIC_BASE_URL`** | 儲存時出現紅字，是因為它被設成 Secret 類型，而 `NEXT_PUBLIC_` 開頭的變數本來就會公開到瀏覽器。做法：刪除這個變數後重新新增（類型不要選 Secret，值 `https://www.xh-motorparts.com`），或直接刪除（程式預設就是 www）。改完要 Redeploy，C4 才會生效 |
 | 2 | 刪除重複的 Vercel 專案（C1） | `xh-motorparts` 已中斷 Git 連結；觀察一週正常後可刪除 |
 | 3 | （選擇性）GitHub Support 清除舊 commit | 密碼已更換，風險已解除；要徹底清除需以 `bouner-xh` 帳號申請 |
-| 4 | 正式資料庫有測試產品 | 前台「汽缸系列 → 副軸」可以看到料號 `TEST-337980`，建議在後台刪除或設為不公開；另請確認「副軸／主軸」放在汽缸分類下是否正確 |
+| 4 | 正式資料庫有測試產品 | `TEST-337980` 是之前的測試資料，老闆會在正式資料上架時一併調整分類（2026-09-27 確認）。成因見後台 A2 |
 
 ---
 
@@ -30,8 +30,10 @@
 | C2 `sales@xh-motorparts.com` 可收信（2026-09-27 老闆以外部信箱實測，轉寄到負責人信箱） | 設定變更 |
 | S9 對外聯絡信箱改為 `sales@xh-motorparts.com` | #8 |
 | D2 首頁主按鈕聚焦、D3 首頁區塊順序、D4 手機 ☰ 選單、D9 線條圖示、D12 手機版詢價清單卡片 | #9 |
+| C3 Cloudflare 改為 DNS only（正式網站回應已無 `cf-ray`） | 設定變更 |
+| S6 頁尾「Cookie 設定」可撤回同意（S6 全部完成）、D14 所有公開頁面 canonical 與三語 hreflang（另修正關於／聯絡等頁 canonical 指向首頁） | 第六批（見 CHANGELOG） |
 
-測試：`bash tests/run-all.sh`（單元 16 項、E2E 36 項，8 種環境情境）全部通過。
+測試：`bash tests/run-all.sh`（單元 16 項、E2E 36 項結果，8 種環境情境）全部通過（2026-09-27）。
 
 **2026-09-26 正式網站唯讀檢查**（`production-check` 等 7 支測試）：S0、S3、S7、D1、D5、D6、D7、D8、D10、D11、D13 在正式網站皆確認正常。
 C4 canonical 仍為不帶 www 的網址，確認是 Vercel 的 `NEXT_PUBLIC_BASE_URL` 仍為舊值（見待處理 #1）。
@@ -46,18 +48,30 @@ C4 canonical 仍為不帶 www 的網址，確認是 Vercel 的 `NEXT_PUBLIC_BASE
 
 | 編號 | 項目 | 建議 |
 |---|---|---|
-| S6 補充 | 頁尾加「Cookie 設定」連結，可撤回同意（GDPR） | 放在頁尾「隱私政策」旁 |
 | S10 | CSP 改用 nonce | 建議暫緩（會讓全站改為即時產生頁面） |
-| C3 | Cloudflare 代理改為 DNS only | 需先提供 Cloudflare Security／Rules 截圖確認沒有自訂規則 |
 | C5 | 忘記密碼功能 | 建議暫緩（目前只有兩位管理員） |
 | S1 補充 | 詢價欄位長度上限 | 會改變 API 可接受的資料，需確認 |
-| D14 | 產品分類頁、子分類頁、產品頁沒有 hreflang（只有首頁有） | 屬 SEO 補強，可直接進行 |
 | — | 重新產生 `package-lock.json`（目前 `npm ci` 失敗，CI 也會失敗） | 需確認 |
 | — | 將 `@playwright/test` 加入 devDependencies（目前用全域安裝版本） | 需確認 |
+
+## 🛠️ 後台健檢（2026-09-27，待老闆確認後動工）
+
+詳細說明見健檢報告「後台健檢」。建議 **A1–A4 在正式產品資料上架前完成**。
+
+| 編號 | 等級 | 問題 | 備註 |
+|---|---|---|---|
+| A1 | 高 | Excel／ZIP 批量匯入無法使用（CSP 擋掉外部解析程式，已實測） | 需決定是否新增套件（建議安裝 `exceljs` 或 SheetJS 新版＋`jszip`） |
+| A2 | 高 | 產品表單預設填測試資料並勾選上架、偵錯面板上線（已實測） | TEST-337980 很可能由此產生 |
+| A3 | 中 | 新增後子分類選不到、改大分類時子分類不跟著改 | |
+| A4 | 中 | 批量匯入覆蓋翻譯、FALSE 判讀為上架、CSV 解析陽春、大量時可能逾時 | 建議與 A1 一起做 |
+| A5 | 中 | 刪除分類提示與行為不符、刪除產品不刪圖片檔 | |
+| A6 | 中 | 詢價管理缺搜尋、篩選、待處理數量、分頁、匯出 | 建議分兩階段 |
+| A7 | 低 | 產品列表缺搜尋、縮圖；編輯流程不順 | |
+| A8 | 低 | 後台五個區塊直排（頁高約 4,900px）、文字過時 | 會先給示意圖 |
+| A9 | 低 | 管理 API 輸入檢查與錯誤訊息較鬆 | 可隨 A3–A6 順手處理 |
 
 ## ⚠️ 已知問題與注意事項
 
 - **`npm ci` 失敗**：lockfile 與 `package.json` 不同步（缺 `@swc/helpers@0.5.23`）。本機請用 `npm install`，且不要提交 lockfile 變更，除非決定重新產生。
 - **無法在工作環境直接連線正式網站**：正式網站的畫面需由老闆在瀏覽器確認；部署狀態可由 GitHub 的 Vercel 狀態確認。
-- **Cloudflare 代理與流量限制**：網域經 Cloudflare 代理時，Vercel 看到的訪客 IP 可能是 Cloudflare 的 IP，詢價流量限制可能無法正確區分訪客。最乾淨的解法是 C3 改為 DNS only。
 - 文件資料夾：專案原有 `doc/`（計畫書），開發進度與變更紀錄放在 `docs/`。
