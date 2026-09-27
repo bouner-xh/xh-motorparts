@@ -61,7 +61,7 @@ ANALYTICS_ENV=(NEXT_PUBLIC_GA4_MEASUREMENT_ID=G-TEST123 NEXT_PUBLIC_CLARITY_PROJ
 PROTECTION_ENV=(NEXT_PUBLIC_TURNSTILE_SITE_KEY=dummy TURNSTILE_SECRET_KEY=dummy UPSTASH_REDIS_REST_URL=https://dummy.upstash.io UPSTASH_REDIS_REST_TOKEN=dummy)
 
 echo "== 1. 單元測試"
-node --experimental-strip-types --test 'tests/security/*.test.mts' 2>&1 | grep -E '^# (pass|fail)'
+node --experimental-strip-types --test 'tests/security/*.test.mts' 'tests/admin/*.test.mts' 2>&1 | grep -E '^# (pass|fail)'
 [ "${PIPESTATUS[0]}" -eq 0 ] || FAIL=1
 
 echo "== 2. 開發模式（無資料庫）"
@@ -70,7 +70,7 @@ stop_server
 
 echo "== 3. 開發模式 + 模擬 Supabase（管理員名單：admin@example.com）"
 start_mock
-start_server env "${MOCK_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next dev -p $PORT && e2e admin-access product-card-inquiry language-switch locale-text page-h1 hreflang admin-product-form admin-product-category
+start_server env "${MOCK_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next dev -p $PORT && e2e admin-access product-card-inquiry language-switch locale-text page-h1 hreflang admin-product-form admin-product-category admin-product-import
 stop_server
 
 echo "== 4. 開發模式 + 模擬 Supabase（未設定管理員名單）"
