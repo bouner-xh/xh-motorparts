@@ -8,7 +8,7 @@ import { AnalyticsScripts } from '@/components/layout/AnalyticsScripts';
 import { CookieBanner } from '@/components/layout/CookieBanner';
 import { Footer } from '@/components/layout/Footer';
 import { locales, type Locale } from '@/lib/catalog';
-import { getBaseUrl } from '@/lib/site';
+import { localeAlternates } from '@/lib/site';
 import { CartProvider } from '@/context/CartContext';
 import { CartIndicator } from '@/components/layout/CartIndicator';
 import { LanguageLinks } from '@/components/layout/LanguageLinks';
@@ -31,18 +31,9 @@ export async function generateMetadata({
     return {};
   }
 
-  const baseUrl = getBaseUrl();
   return {
     title: `${companyByLocale[locale as Locale]} - Motorcycle Parts`,
-    alternates: {
-      canonical: `${baseUrl}/${locale}`,
-      languages: {
-        'zh-TW': `${baseUrl}/zh-TW`,
-        'zh-CN': `${baseUrl}/zh-CN`,
-        en: `${baseUrl}/en`,
-        'x-default': `${baseUrl}/en`,
-      },
-    },
+    alternates: localeAlternates(locale),
   };
 }
 

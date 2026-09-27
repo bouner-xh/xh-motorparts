@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
-import { getBaseUrl } from '@/lib/site';
+import { getBaseUrl, localeAlternates } from '@/lib/site';
 import { getCategoryBySlug, getCategoryProducts, getSubCategoryBySlug, getCategorySummaries, getSubCategories } from '@/lib/catalog-service';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
@@ -42,9 +42,7 @@ export async function generateMetadata({
       locale,
       siteName: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' }),
     },
-    alternates: {
-      canonical: `${baseUrl}/${locale}/products/${category}/${encodeURIComponent(subCategoryData.slug)}`,
-    },
+    alternates: localeAlternates(locale, `/products/${category}/${encodeURIComponent(subCategoryData.slug)}`),
   };
 }
 

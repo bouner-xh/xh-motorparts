@@ -1,8 +1,16 @@
+import type {Metadata} from 'next';
+import {localeAlternates} from '@/lib/site';
 import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {locales, type Locale} from '@/lib/catalog';
 import {aboutContent, sharedStats} from '@/lib/site-content';
 import { localized } from '@/lib/localized-text';
+
+// canonical 與 hreflang 指向本頁（D14）；標題沿用 layout
+export async function generateMetadata({params}: {params: Promise<{locale: string}>}): Promise<Metadata> {
+  const {locale} = await params;
+  return {alternates: localeAlternates(locale, '/about')};
+}
 
 export default async function AboutPage({
   params

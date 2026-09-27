@@ -9,7 +9,7 @@ import { ProductSchema } from '@/components/products/ProductSchema';
 import { toProductImageUrl } from '@/lib/assets';
 import { getCatalogProduct, getCategoryBySlug, getSubCategoryBySlug } from '@/lib/catalog-service';
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
-import { getBaseUrl } from '@/lib/site';
+import { getBaseUrl, localeAlternates } from '@/lib/site';
 import { localized } from '@/lib/localized-text';
 
 export async function generateMetadata({
@@ -52,9 +52,7 @@ export async function generateMetadata({
       locale,
       siteName: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' })
     },
-    alternates: {
-      canonical: `${baseUrl}/${locale}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`,
-    },
+    alternates: localeAlternates(locale, `/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`),
   };
 }
 
