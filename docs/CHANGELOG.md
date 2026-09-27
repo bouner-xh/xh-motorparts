@@ -94,3 +94,4 @@ PR：[#1](https://github.com/bouner-xh/xh-motorparts/pull/1)（合併 `6f8d849`�
 | 2026-09-26 | Supabase | 更換外洩的管理員密碼、新增第二位管理員、關閉公開註冊、Site URL 改為正式網址 | 老闆 |
 | 2026-09-26 | Vercel | 新增 `ADMIN_EMAILS`（兩個專案）；`xh-motorparts`（無正式網域的重複專案）中斷 Git 連結 | 老闆 |
 | 2026-09-26 | Cloudflare | 刪除無效的 Porkbun SPF；啟用 Email Routing（MX／DKIM／SPF 已鎖定），轉寄目的地已驗證 | 老闆 |
+| 2026-09-27 | Cloudflare | `sales@xh-motorparts.com` 轉寄規則實測成功（外部信箱寄出，負責人信箱收到）（C2 完成） | 老闆 |
