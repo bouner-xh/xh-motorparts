@@ -31,7 +31,7 @@
 | S9 對外聯絡信箱改為 `sales@xh-motorparts.com` | #8 |
 | D2 首頁主按鈕聚焦、D3 首頁區塊順序、D4 手機 ☰ 選單、D9 線條圖示、D12 手機版詢價清單卡片 | #9 |
 | C3 Cloudflare 改為 DNS only（正式網站回應已無 `cf-ray`） | 設定變更 |
-| S6 頁尾「Cookie 設定」可撤回同意（S6 全部完成）、D14 所有公開頁面 canonical 與三語 hreflang（另修正關於／聯絡等頁 canonical 指向首頁） | 第六批（見 CHANGELOG） |
+| S6 頁尾「Cookie 設定」可撤回同意（S6 全部完成）、D14 所有公開頁面 canonical 與三語 hreflang（另修正關於／聯絡等頁 canonical 指向首頁） | #10 |
 
 測試：`bash tests/run-all.sh`（單元 16 項、E2E 36 項結果，8 種環境情境）全部通過（2026-09-27）。
 

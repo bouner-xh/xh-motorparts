@@ -26,7 +26,7 @@
 
 ## 2026-09-27（第六批）：Cookie 撤回與多語 SEO
 
-PR：（合併後補上）
+PR：[#10](https://github.com/bouner-xh/xh-motorparts/pull/10)
 
 | 編號 | 修改 | 主要檔案 | Commit | 驗證 |
 |---|---|---|---|---|
