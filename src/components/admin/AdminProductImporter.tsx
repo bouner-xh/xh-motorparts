@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { Icon } from '@/components/ui/Icon';
 import {
   IMPORT_CHUNK_SIZE,
   buildTemplateCsv,
@@ -269,7 +270,7 @@ export function AdminProductImporter() {
   return (
     <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: '#0f172a', borderRadius: '12px', border: '1px solid #1e293b' }}>
       <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <span>📦</span> 智能批量產品匯入工具
+        <Icon name="package" size={22} /> 智能批量產品匯入工具
       </h3>
       <p className="muted" style={{ fontSize: '0.9rem', marginBottom: '1.5rem' }}>
         透過 Excel/CSV 檔案與產品圖片進行關聯匹配，自動建立缺少的大分類和子目錄，並批量上架產品。
@@ -290,8 +291,7 @@ export function AdminProductImporter() {
 
       {isProcessing && (
         <div style={{ padding: '1rem', background: '#1e293b', color: '#60a5fa', borderRadius: '6px', marginBottom: '1.5rem', textAlign: 'center' }}>
-          <span className="spinner" style={{ marginRight: '0.5rem' }}>⏳</span>
-          {currentProgress}
+                    {currentProgress}
         </div>
       )}
 
@@ -351,7 +351,7 @@ export function AdminProductImporter() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             {/* 軌道 A: ZIP 檔案 */}
             <div style={{ border: '2px dashed #334155', borderRadius: '8px', padding: '2rem', textAlign: 'center' }}>
-              <h4>📦 方案 A: 上傳 ZIP 壓縮檔</h4>
+              <h4>方案 A：上傳 ZIP 壓縮檔</h4>
               <p className="muted" style={{ fontSize: '0.8rem', margin: '0.5rem 0 1.5rem 0' }}>包含所有對應圖片檔名的壓縮檔 (支援 JPG, PNG, WEBP)</p>
               <input
                 type="file"
@@ -368,7 +368,7 @@ export function AdminProductImporter() {
 
             {/* 軌道 B: 瀏覽器多選 */}
             <div style={{ border: '2px dashed #334155', borderRadius: '8px', padding: '2rem', textAlign: 'center' }}>
-              <h4>🖼️ 方案 B: 瀏覽器多選圖片</h4>
+              <h4>方案 B：選取多張圖片</h4>
               <p className="muted" style={{ fontSize: '0.8rem', margin: '0.5rem 0 1.5rem 0' }}>直接選取電腦資料夾內的多張圖片檔案 (支援多選)</p>
               <input
                 type="file"
@@ -440,7 +440,7 @@ export function AdminProductImporter() {
                           hasImage ? (
                             <span style={{ color: '#34d399' }}>✓ 圖片已匹配</span>
                           ) : row.imageFilename ? (
-                            <span style={{ color: '#fbbf24' }}>⚠ 圖片未上傳 (將無圖)</span>
+                            <span style={{ color: '#fbbf24' }}>圖片未上傳（將無圖）</span>
                           ) : (
                             <span className="muted">無指定圖片</span>
                           )
@@ -458,7 +458,7 @@ export function AdminProductImporter() {
       {/* 步驟 4: 匯入完成報告 */}
       {step === 'completed' && importSummary && (
         <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-          <h4 style={{ color: '#10b981', fontSize: '1.4rem', margin: '0 0 0.5rem 0' }}>🎉 批次匯入作業已完成</h4>
+          <h4 style={{ color: '#10b981', fontSize: '1.4rem', margin: '0 0 0.5rem 0' }}>批次匯入作業已完成</h4>
           <p style={{ margin: '0 0 1.5rem 0' }}>
             共處理 <strong style={{ color: '#fff' }}>{importSummary.total}</strong> 筆產品，
             其中成功 <strong style={{ color: '#10b981' }}>{importSummary.success}</strong> 筆，
