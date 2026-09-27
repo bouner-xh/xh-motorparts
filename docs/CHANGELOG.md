@@ -16,13 +16,33 @@
 | `ADMIN_EMAILS` | 後台管理員名單（逗號分隔） | **所有人都無法進後台** | S2 |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`、`TURNSTILE_SECRET_KEY` | 詢價表單機器人驗證 | **正式環境停止收詢價單（503）** | S4 |
 | `UPSTASH_REDIS_REST_URL`、`UPSTASH_REDIS_REST_TOKEN` | 詢價表單流量限制 | **正式環境停止收詢價單（503）** | S4 |
-| `NEXT_PUBLIC_BASE_URL` | 正式網址（canonical、sitemap） | 使用程式預設值 `https://www.xh-motorparts.com` | C4 |
+| `NEXT_PUBLIC_BASE_URL`（2026-09-27 已刪除，不需設定） | 正式網址（canonical、sitemap） | 使用程式預設值 `https://www.xh-motorparts.com`；若要設定，類型不可選 Secret | C4 |
 | `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY` | 資料庫與登入 | 產品改用內建資料、後台無法使用 | — |
 | `RESEND_API_KEY`、`RESEND_FROM_EMAIL`、`RESEND_ADMIN_EMAIL` | 詢價通知信 | 不寄信；資料庫也失敗時詢價回報失敗 | S1、S5 |
 
 修改環境變數後需要到 Vercel → Deployments → 最新部署 → **Redeploy** 才會生效。
 
 ---
+
+## 2026-09-27（第七批）：後台產品管理與批量匯入
+
+PR：（合併後補上）
+
+| 編號 | 修改 | 主要檔案 | Commit | 驗證 |
+|---|---|---|---|---|
+| A2 | 產品表單不再預填 TEST 測試資料，「上架」預設不勾選；移除偵錯面板、Build 標記與測試按鈕，並清除舊版存在瀏覽器的偵錯紀錄 | `src/components/admin/AdminProductManager.tsx` | `4c7eb22` | `admin-product-form.e2e.cjs` |
+| A3 | 新增後保留分類與子分類（可連續新增）；切換大分類時清空子分類；API 檢查子分類屬於所選大分類 | `AdminProductManager.tsx`、`src/app/api/admin/products/route.ts` | `b4beace` | `admin-product-category.e2e.cjs` |
+| A1 | Excel／ZIP 匯入改用隨網站打包的套件（`read-excel-file`、`jszip`），不再從外部網站載入（原本被 CSP 擋下）；不支援舊版 .xls | `AdminProductImporter.tsx`、`package.json` | `3d605b0` | `admin-product-import.e2e.cjs` |
+| A4 | 正式 CSV 解析、FALSE／0／否 判讀為不上架、錯誤列號清單、每 50 筆分批、既有產品只更新有填的語言名稱（規格與庫存沒填保留原值）、範例檔下載 | `src/lib/product-import.ts`（新）、`AdminProductImporter.tsx`、`src/app/api/admin/products/batch/route.ts` | `3d605b0` | `tests/admin/product-import.test.mts`、`admin-product-import.e2e.cjs` |
+
+**新增套件**（老闆 2026-09-27 同意）：`read-excel-file@9.3.10`、`jszip@3.10.2`（皆 MIT 授權；安裝後 `npm audit` 沒有新增警告）。安裝時 `package-lock.json` 一併同步，**`npm ci` 已恢復正常**。
+
+**測試環境**：模擬 Supabase（`tests/e2e/mock-supabase.cjs`）改為可寫入，支援關聯查詢、外鍵限制與 Storage，範例資料 ID 改為 UUID。
+
+**之後修改時要注意**
+- 匯入欄位的解析規則都在 `src/lib/product-import.ts`，改規則時請一併更新單元測試。
+- 後台不要再加入從外部網站載入的程式；需要的套件請安裝進專案。
+- 設定程式以外的變更（2026-09-27）：老闆刪除 Vercel 的 `NEXT_PUBLIC_BASE_URL`（改用程式預設的 www）並重新部署，正式網站 canonical 已為 www（C4 完全生效）。
 
 ## 2026-09-27（第六批）：Cookie 撤回與多語 SEO
 
