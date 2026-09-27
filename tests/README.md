@@ -81,6 +81,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `admin-inquiries.e2e.cjs` | 詢價狀態篩選與筆數、搜尋（含型號）、分頁、Esc 關閉、最後更新時間（A6） | 模擬 Supabase |
 | `admin-product-list.e2e.cjs` | 產品搜尋篩選分頁縮圖、正在編輯與取消、複製、未存檔圖片清除（A7） | 模擬 Supabase |
 | `admin-api-errors.e2e.cjs` | 錯誤訊息為中文說明、長度與 ID 檢查、不自動建立分類（A9） | 模擬 Supabase |
+| `admin-dashboard-tabs.e2e.cjs` | 後台分頁與總覽、網址記住分頁、鍵盤操作、切換不遺失表單、待處理數量同步、手機版、登出（A8） | 模擬 Supabase |
 
 ### 模擬 Supabase
 
@@ -93,3 +94,5 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 
 可讀寫的模擬資料庫與 Storage，後台測試都用它。外鍵與唯一值規則對照 `doc/SUPABASE_INIT_SQL.md`。
 測試輔助端點：`POST /__mock/reset`（重設為範例資料）、`GET /__mock/state`（查看資料與已上傳檔案）、`POST /__mock/seed`（加入資料）。
+
+後台改為分頁後，登入預設在「總覽」；測試要操作某個功能前，先用 `helpers.cjs` 的 `openAdminTab(page, '產品')` 切換分頁。
