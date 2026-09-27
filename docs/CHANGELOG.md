@@ -24,6 +24,19 @@
 
 ---
 
+## 2026-09-27（第六批）：Cookie 撤回與多語 SEO
+
+PR：（合併後補上）
+
+| 編號 | 修改 | 主要檔案 | Commit | 驗證 |
+|---|---|---|---|---|
+| S6 | 頁尾「隱私政策」旁新增「Cookie 設定」（三語）：清除同意紀錄與 GA／Clarity Cookie 後重新載入，橫幅重新出現；手機版公司名稱與連結分兩行 | `src/components/layout/CookieSettingsButton.tsx`（新）、`Footer.tsx`、`globals.css` | `353e6bd` | `cookie-consent.e2e.cjs`（新增撤回情境） |
+| D14 | 所有公開頁面設定自己的 canonical 與 zh-TW／zh-CN／en／x-default hreflang。**另修正**：關於、聯絡、產品目錄、隱私政策、詢價頁原本的 canonical 指向首頁 | `src/lib/site.ts`（`localeAlternates`）、`src/app/[locale]/**/page.tsx`、`inquiry/layout.tsx`（新） | `8a51c2b` | `hreflang.e2e.cjs`（新）、`canonical-url.e2e.cjs` |
+
+**之後修改時要注意**
+- 新增公開頁面時，一定要在 `generateMetadata` 設定 `alternates: localeAlternates(locale, '/路徑')`。Next.js 不會合併 `alternates`：沒設定會沿用首頁的 canonical，只設 canonical 會少了 hreflang。
+- 設定程式以外的變更（2026-09-27）：C3 Cloudflare 兩筆 DNS 紀錄改為 DNS only（已確認沒有自訂 Security 規則；正式網站回應已無 `cf-ray`）。
+
 ## 2026-09-27（第五批）：首頁與手機版體驗
 
 PR：[#9](https://github.com/bouner-xh/xh-motorparts/pull/9)

@@ -12,8 +12,7 @@ run('正式網址統一為 www', () =>
       const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
       assert(canonical && canonical.startsWith(WWW), `${path} canonical = ${canonical}`);
       const alternates = await page.locator('link[rel="alternate"][hreflang]').evaluateAll((els) => els.map((e) => e.href));
-      // 首頁有設定 hreflang；產品分類頁目前只設定 canonical（既有狀況，另列待處理）
-      if (path === '/zh-TW') assert(alternates.length > 0, `${path} 有 hreflang`);
+      assert(alternates.length > 0, `${path} 有 hreflang`);
       assert(alternates.every((h) => h.startsWith(WWW)), `${path} hreflang 共 ${alternates.length} 筆皆為 www`);
     }
 

@@ -1,3 +1,5 @@
+import type {Metadata} from 'next';
+import {localeAlternates} from '@/lib/site';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -6,6 +8,12 @@ import { getCategoryCoverUrl } from '@/lib/assets';
 import { getCategorySummaries } from '@/lib/catalog-service';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { notFound } from 'next/navigation';
+
+// canonical 與 hreflang 指向本頁（D14）；標題沿用 layout
+export async function generateMetadata({params}: {params: Promise<{locale: string}>}): Promise<Metadata> {
+  const {locale} = await params;
+  return {alternates: localeAlternates(locale, '/products')};
+}
 
 export default async function ProductsPage({
   params,

@@ -1,7 +1,15 @@
+import type {Metadata} from 'next';
+import {localeAlternates} from '@/lib/site';
 import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales, type Locale } from '@/lib/catalog';
 import { privacyContent } from '@/lib/privacy-content';
+
+// canonical 與 hreflang 指向本頁（D14）；標題沿用 layout
+export async function generateMetadata({params}: {params: Promise<{locale: string}>}): Promise<Metadata> {
+  const {locale} = await params;
+  return {alternates: localeAlternates(locale, '/legal/privacy')};
+}
 
 export default async function PrivacyPage({
   params
