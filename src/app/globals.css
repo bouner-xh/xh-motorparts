@@ -1365,3 +1365,87 @@ textarea {
 .cart-icon {
   color: #e2e8f0;
 }
+
+/* 詢價清單：桌機維持表格（尺寸由原本的 inline style 移入），640px 以下改為直式卡片（D12） */
+.inquiry-cart-table .quantity-control {
+  height: 2.1rem;
+}
+
+.inquiry-cart-table .qty-btn {
+  width: 2rem;
+}
+
+.inquiry-cart-table .qty-input {
+  width: 3.2rem;
+}
+
+@media (max-width: 640px) {
+  .inquiry-cart-table,
+  .inquiry-cart-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .inquiry-cart-table thead {
+    display: none;
+  }
+
+  .inquiry-cart-table tr.cart-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'model remove'
+      'name name'
+      'qty qty';
+    gap: 0.35rem 0.75rem;
+    padding: 1rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  }
+
+  .inquiry-cart-table tr.cart-row td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .cart-row__model {
+    grid-area: model;
+    align-self: center;
+    font-size: 1.05rem;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+
+  .cart-row__name {
+    grid-area: name;
+    color: #cbd5e1;
+  }
+
+  .cart-row__qty {
+    grid-area: qty;
+    margin-top: 0.4rem;
+  }
+
+  .cart-row__remove {
+    grid-area: remove;
+  }
+
+  .inquiry-cart-table .quantity-control {
+    height: auto;
+  }
+
+  .inquiry-cart-table .qty-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+  }
+
+  .inquiry-cart-table .qty-input {
+    width: 5rem;
+  }
+
+  .inquiry-cart-table .remove-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
