@@ -745,6 +745,39 @@ textarea {
   color: #ef4444;
 }
 
+/* S6：頁尾「Cookie 設定」按鈕，外觀與隱私政策連結一致 */
+.footer-cookie-settings {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.footer-cookie-settings:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+}
+
+.footer-legal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+/* 手機：公司名稱與連結各佔一行，避免分隔線掛在行尾 */
+@media (max-width: 480px) {
+  .footer-bottom > strong {
+    flex-basis: 100%;
+    text-align: center;
+  }
+
+  .footer-divider--lead {
+    display: none;
+  }
+}
+
 .privacy-doc-card {
   max-width: 860px;
   margin: 2rem auto;

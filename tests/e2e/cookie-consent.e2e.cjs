@@ -1,4 +1,4 @@
-// E2E：Cookie 同意後才載入 Clarity，回訪時沿用同意狀態（S6）
+// E2E：Cookie 同意後才載入 Clarity，回訪時沿用同意狀態，頁尾可撤回同意（S6）
 // 需提供測試用分析 ID 啟動網站：
 //   NEXT_PUBLIC_GA4_MEASUREMENT_ID=G-TEST123 NEXT_PUBLIC_CLARITY_PROJECT_ID=testclarity npx next dev -p 3100
 const { chromium } = require('playwright');
@@ -78,6 +78,42 @@ run('拒絕 Cookie：不載入 Clarity，回訪仍維持拒絕', async () => {
     await openHome(page);
     assert((await consentDefault(page)) === 'denied', '回訪時 GA 維持拒絕');
     assert(clarityRequests.length === 0, '回訪時仍不載入 Clarity');
+  } finally {
+    await browser.close();
+  }
+});
+
+run('撤回同意：頁尾「Cookie 設定」清除同意與分析 Cookie，橫幅重新出現', async () => {
+  const browser = await chromium.launch();
+  try {
+    const { context, clarityRequests } = await newTrackedContext(browser);
+    const page = await context.newPage();
+
+    await openHome(page);
+    await page.locator('#rcc-confirm-button').click();
+    await page.waitForTimeout(1000);
+    // 模擬分析服務寫入的 Cookie
+    await page.evaluate(() => {
+      document.cookie = '_ga=GA1.1.123; path=/';
+      document.cookie = '_clck=abc; path=/';
+    });
+
+    const button = page.getByRole('button', { name: 'Cookie Settings' });
+    assert(await button.isVisible(), '頁尾有「Cookie Settings」按鈕');
+    clarityRequests.length = 0;
+    await Promise.all([page.waitForEvent('load'), button.click()]);
+    await page.waitForFunction(() => Array.isArray(window.dataLayer) && window.dataLayer.length > 0);
+    await page.waitForTimeout(1500);
+
+    const names = (await context.cookies()).map((c) => c.name);
+    assert(!names.includes('site-cookie-consent'), '同意紀錄已清除');
+    assert(!names.includes('_ga') && !names.includes('_clck'), 'GA 與 Clarity 的 Cookie 已清除');
+    assert((await consentDefault(page)) === 'denied', '撤回後 GA 回到拒絕');
+    assert(clarityRequests.length === 0, '撤回後不再載入 Clarity');
+    assert(await page.locator('#rcc-confirm-button').isVisible(), 'Cookie 橫幅重新出現');
+
+    await page.goto(`${BASE_URL}/zh-TW`);
+    assert(await page.getByRole('button', { name: 'Cookie 設定' }).isVisible(), '繁中頁尾顯示「Cookie 設定」');
   } finally {
     await browser.close();
   }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {type Locale} from '@/lib/catalog';
 import { localized } from '@/lib/localized-text';
 import { Icon } from '@/components/ui/Icon';
+import { CookieSettingsButton } from './CookieSettingsButton';
 
 const footerCopy: Record<Locale, {copyright: string; slogan: string; author: string}> = {
   'zh-TW': {
@@ -81,10 +82,14 @@ export function Footer({locale}: {locale: Locale}) {
 
       <div className="footer-bottom">
         <strong>{footerCopy[locale].copyright}</strong>
-        <span className="footer-divider">|</span>
-        <Link href={`/${locale}/legal/privacy`} className="footer-privacy-link">
-          {localized(locale, { 'zh-TW': '隱私政策', 'zh-CN': '隐私政策', en: 'Privacy Policy' })}
-        </Link>
+        <span className="footer-divider footer-divider--lead">|</span>
+        <span className="footer-legal">
+          <Link href={`/${locale}/legal/privacy`} className="footer-privacy-link">
+            {localized(locale, { 'zh-TW': '隱私政策', 'zh-CN': '隐私政策', en: 'Privacy Policy' })}
+          </Link>
+          <span className="footer-divider">|</span>
+          <CookieSettingsButton locale={locale} />
+        </span>
       </div>
     </footer>
   );
