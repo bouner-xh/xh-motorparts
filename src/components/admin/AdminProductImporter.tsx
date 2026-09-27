@@ -1,23 +1,18 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import {
+  IMPORT_CHUNK_SIZE,
+  buildTemplateCsv,
+  chunk,
+  parseCsv,
+  parseProductRows,
+  rowsToObjects,
+  type CellValue,
+  type ParsedProductRow
+} from '@/lib/product-import';
 
-interface ParsedProductRow {
-  categorySlug: string;
-  categoryNameI18n: Record<string, string>;
-  subCategorySlug: string;
-  subCategoryNameI18n: Record<string, string>;
-  modelNumber: string;
-  nameI18n: Record<string, string>;
-  specifications: string[];
-  stockQuantity: number;
-  isActive: boolean;
-  imageFilename: string;
-  // UI 預覽用
-  nameZhTw: string;
-  categoryNameZhTw: string;
-  subCategoryNameZhTw: string;
-  // 以下為處理過程中的狀態
+interface ImportRow extends ParsedProductRow {
   imageFile?: File | Blob;
   uploadedUrl?: string;
   status: 'pending' | 'uploading' | 'success' | 'failed';
@@ -26,234 +21,75 @@ interface ParsedProductRow {
 
 type StepType = 'excel' | 'images' | 'match' | 'importing' | 'completed';
 
-interface WindowWithLibs extends Window {
-  XLSX?: {
-    read(data: unknown, opts: unknown): { SheetNames: string[]; Sheets: Record<string, unknown> };
-    utils: {
-      sheet_to_json(sheet: unknown): Record<string, unknown>[];
-    };
-  };
-  JSZip?: new () => {
-    loadAsync(data: unknown): Promise<{
-      forEach(callback: (relativePath: string, file: { dir: boolean; async(type: string): Promise<Blob> }) => void): void;
-    }>;
-  };
+interface BatchResult {
+  modelNumber: string;
+  success: boolean;
+  error?: string;
 }
 
-function loadScript(url: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined') {
-      reject(new Error('Cannot load script on server side'));
-      return;
-    }
-    const existing = document.querySelector(`script[src="${url}"]`);
-    if (existing) {
-      resolve();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = url;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`Failed to load script: ${url}`));
-    document.head.appendChild(script);
-  });
+// 下載範例檔（CSV，Excel 可直接開啟）
+function downloadTemplate() {
+  const blob = new Blob([buildTemplateCsv()], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'product-import-template.csv';
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 export function AdminProductImporter() {
   const [step, setStep] = useState<StepType>('excel');
-  const [parsedRows, setParsedRows] = useState<ParsedProductRow[]>([]);
+  const [parsedRows, setParsedRows] = useState<ImportRow[]>([]);
   const [imageMap, setImageMap] = useState<Map<string, File | Blob>>(new Map());
   const [isProcessing, setIsProcessing] = useState(false);
   const [importSummary, setImportSummary] = useState<{ total: number; success: number; failed: number } | null>(null);
   const [currentProgress, setCurrentProgress] = useState('');
+  // 解析或匯入時的錯誤，顯示在畫面上（取代瀏覽器彈窗）
+  const [errors, setErrors] = useState<string[]>([]);
 
   const excelInputRef = useRef<HTMLInputElement>(null);
   const zipInputRef = useRef<HTMLInputElement>(null);
   const multiImagesInputRef = useRef<HTMLInputElement>(null);
 
-  // 1. 解析 Excel / CSV 檔案
+  // 1. 解析 Excel / CSV 檔案（解析套件隨網站打包，不從外部網站載入，A1）
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsProcessing(true);
-    setCurrentProgress('正在載入解析器...');
+    setErrors([]);
+    setCurrentProgress('正在讀取檔案...');
 
     try {
-      if (file.name.endsWith('.csv')) {
-        const text = await file.text();
-        parseCsv(text);
+      const name = file.name.toLowerCase();
+      let cells: CellValue[][];
+      if (name.endsWith('.csv')) {
+        cells = parseCsv(await file.text());
+      } else if (name.endsWith('.xlsx')) {
+        const { readSheet } = await import('read-excel-file/universal');
+        cells = (await readSheet(await file.arrayBuffer())) as CellValue[][];
       } else {
-        // 動態載入 SheetJS XLSX 庫
-        await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
-        const XLSX = (window as unknown as WindowWithLibs).XLSX;
-        if (!XLSX) throw new Error('SheetJS XLSX 載入失敗');
-
-        const arrayBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, unknown>[];
-        
-        parseJsonRows(jsonData);
+        throw new Error('只支援 .xlsx 或 .csv；舊版 .xls 請在 Excel 選「另存新檔」存成 .xlsx');
       }
+
+      const result = parseProductRows(rowsToObjects(cells));
+      if (result.errors.length) {
+        setErrors(result.errors);
+        return;
+      }
+      setParsedRows(result.rows.map((row) => ({ ...row, status: 'pending' })));
       setStep('images');
     } catch (err) {
-      alert(`解析檔案失敗: ${err instanceof Error ? err.message : '未知錯誤'}`);
+      setErrors([`解析檔案失敗：${err instanceof Error ? err.message : '未知錯誤'}`]);
     } finally {
       setIsProcessing(false);
       setCurrentProgress('');
+      if (excelInputRef.current) excelInputRef.current.value = '';
     }
   };
 
-  const parseCsv = (text: string) => {
-    const lines = text.split(/\r?\n/);
-    if (lines.length < 2) throw new Error('CSV 檔案行數不足');
-    
-    // 取得表頭
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-    const rows: Record<string, unknown>[] = [];
 
-    for (let i = 1; i < lines.length; i++) {
-      if (!lines[i].trim()) continue;
-      // 簡單的 CSV 分割
-      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-      const rowObj: Record<string, unknown> = {};
-      headers.forEach((header, index) => {
-        rowObj[header] = values[index] || '';
-      });
-      rows.push(rowObj);
-    }
-    parseJsonRows(rows);
-  };
-
-  const parseJsonRows = (jsonData: Record<string, unknown>[]) => {
-    const langMap: Record<string, string> = {
-      'zh-tw': 'zh-TW',
-      'zh_tw': 'zh-TW',
-      'tw': 'zh-TW',
-      '繁中': 'zh-TW',
-      '繁體': 'zh-TW',
-      '繁體中文': 'zh-TW',
-      
-      'zh-cn': 'zh-CN',
-      'zh_cn': 'zh-CN',
-      'cn': 'zh-CN',
-      '簡中': 'zh-CN',
-      '簡體': 'zh-CN',
-      '簡體中文': 'zh-CN',
-      
-      'en': 'en',
-      '英文': 'en',
-      '英語': 'en',
-      
-      'ja': 'ja',
-      'jp': 'ja',
-      '日文': 'ja',
-      '日語': 'ja',
-      
-      'ko': 'ko',
-      'kr': 'ko',
-      '韓文': 'ko',
-      '韓語': 'ko'
-    };
-
-    const tempRows: ParsedProductRow[] = jsonData.map((r) => {
-      const modelNumber = String(r.model_number || r['型號'] || '').trim();
-      if (!modelNumber) return null;
-
-      // 規格處理 (可能為逗號分隔字串或陣列)
-      const specRaw = r.specifications || r['規格'] || '';
-      const specs = Array.isArray(specRaw)
-        ? (specRaw as string[])
-        : String(specRaw).split(/[,，]/).map(s => s.trim()).filter(Boolean);
-
-      const nameI18n: Record<string, string> = {};
-      const categoryNameI18n: Record<string, string> = {};
-      const subCategoryNameI18n: Record<string, string> = {};
-
-      Object.keys(r).forEach((key) => {
-        const lowerKey = key.toLowerCase();
-        const value = String(r[key] || '').trim();
-        if (!value) return;
-
-        if (lowerKey.startsWith('name_') || lowerKey.startsWith('產品名稱_')) {
-          const suffix = lowerKey.replace(/^(name_|產品名稱_)/, '');
-          const localeCode = langMap[suffix] || suffix;
-          nameI18n[localeCode] = value;
-        }
-
-        if (lowerKey.startsWith('category_name_') || lowerKey.startsWith('大分類名稱_')) {
-          const suffix = lowerKey.replace(/^(category_name_|大分類名稱_)/, '');
-          const localeCode = langMap[suffix] || suffix;
-          categoryNameI18n[localeCode] = value;
-        }
-
-        if (
-          lowerKey.startsWith('subcategory_name_') || 
-          lowerKey.startsWith('sub_category_name_') || 
-          lowerKey.startsWith('子分類名稱_')
-        ) {
-          const suffix = lowerKey.replace(/^(subcategory_name_|sub_category_name_|子分類名稱_)/, '');
-          const localeCode = langMap[suffix] || suffix;
-          subCategoryNameI18n[localeCode] = value;
-        }
-      });
-
-      // 補足舊版欄位/拼寫的支援
-      const legacyNameZhTw = String(r.name_zh_tw || r['產品名稱_繁中'] || '').trim();
-      if (legacyNameZhTw && !nameI18n['zh-TW']) nameI18n['zh-TW'] = legacyNameZhTw;
-      const legacyNameZhCn = String(r.name_zh_cn || r['產品名稱_簡中'] || '').trim();
-      if (legacyNameZhCn && !nameI18n['zh-CN']) nameI18n['zh-CN'] = legacyNameZhCn;
-      const legacyNameEn = String(r.name_en || r['產品名稱_英文'] || '').trim();
-      if (legacyNameEn && !nameI18n['en']) nameI18n['en'] = legacyNameEn;
-
-      const legacyCatZhTw = String(r.category_name_zh_tw || r['大分類名稱_繁中'] || '').trim();
-      if (legacyCatZhTw && !categoryNameI18n['zh-TW']) categoryNameI18n['zh-TW'] = legacyCatZhTw;
-      const legacyCatZhCn = String(r.category_name_zh_cn || r['大分類名稱_簡中'] || '').trim();
-      if (legacyCatZhCn && !categoryNameI18n['zh-CN']) categoryNameI18n['zh-CN'] = legacyCatZhCn;
-      const legacyCatEn = String(r.category_name_en || r['大分類名稱_英文'] || '').trim();
-      if (legacyCatEn && !categoryNameI18n['en']) categoryNameI18n['en'] = legacyCatEn;
-
-      const legacySubCatZhTw = String(r.subcategory_name_zh_tw || r['子分類名稱_繁中'] || '').trim();
-      if (legacySubCatZhTw && !subCategoryNameI18n['zh-TW']) subCategoryNameI18n['zh-TW'] = legacySubCatZhTw;
-      const legacySubCatZhCn = String(r.subcategory_name_zh_cn || r['子分類名稱_簡中'] || '').trim();
-      if (legacySubCatZhCn && !subCategoryNameI18n['zh-CN']) subCategoryNameI18n['zh-CN'] = legacySubCatZhCn;
-      const legacySubCatEn = String(r.subcategory_name_en || r['子分類名稱_英文'] || '').trim();
-      if (legacySubCatEn && !subCategoryNameI18n['en']) subCategoryNameI18n['en'] = legacySubCatEn;
-
-      // 提取 UI 預覽用內容
-      const previewName = nameI18n['zh-TW'] || nameI18n['en'] || Object.values(nameI18n)[0] || '';
-      const previewCat = categoryNameI18n['zh-TW'] || categoryNameI18n['en'] || Object.values(categoryNameI18n)[0] || '';
-      const previewSubCat = subCategoryNameI18n['zh-TW'] || subCategoryNameI18n['en'] || Object.values(subCategoryNameI18n)[0] || '';
-
-      return {
-        categorySlug: String(r.category_slug || r['大分類代號'] || '').trim().toLowerCase(),
-        categoryNameI18n,
-        subCategorySlug: String(r.subcategory_slug || r['子分類代號'] || '').trim().toLowerCase(),
-        subCategoryNameI18n,
-        modelNumber,
-        nameI18n,
-        specifications: specs,
-        stockQuantity: Number(r.stock_quantity || r['庫存'] || 0),
-        isActive: r.is_active !== undefined ? Boolean(r.is_active) : true,
-        imageFilename: String(r.image_filename || r['圖片檔名'] || '').trim(),
-        
-        nameZhTw: previewName,
-        categoryNameZhTw: previewCat,
-        subCategoryNameZhTw: previewSubCat,
-        
-        status: 'pending'
-      };
-    }).filter((r): r is ParsedProductRow => r !== null);
-
-    if (tempRows.length === 0) {
-      throw new Error('未在檔案中找到任何有效產品行 (請確認包含 model_number 欄位)');
-    }
-    setParsedRows(tempRows);
-  };
-
-  // 2. 雙軌圖片上傳A: 選擇多個圖片檔案
   const handleMultiImagesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -273,20 +109,17 @@ export function AdminProductImporter() {
     if (!file) return;
 
     setIsProcessing(true);
+    setErrors([]);
     setCurrentProgress('正在解壓縮 ZIP 檔案...');
 
     try {
-      await loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
-      const JSZip = (window as unknown as WindowWithLibs).JSZip;
-      if (!JSZip) throw new Error('JSZip 載入失敗');
-
-      const zip = new JSZip();
-      const contents = await zip.loadAsync(file);
+      const { default: JSZip } = await import('jszip');
+      const contents = await JSZip.loadAsync(file);
       
       const newMap = new Map(imageMap);
       const promises: Promise<void>[] = [];
 
-      contents.forEach((relativePath: string, zipEntry: { dir: boolean; async(type: string): Promise<Blob> }) => {
+      contents.forEach((relativePath, zipEntry) => {
         if (zipEntry.dir) return; // 略過資料夾
         
         // 取得檔名 (去除路徑字首)
@@ -294,7 +127,7 @@ export function AdminProductImporter() {
         if (!fileName) return;
 
         if (/\.(jpe?g|png|webp)$/i.test(fileName)) {
-          const p = zipEntry.async('blob').then((blob: Blob) => {
+          const p = zipEntry.async('blob').then((blob) => {
             const fileObj = new File([blob], fileName, { type: getMimeType(fileName) });
             newMap.set(fileName, fileObj);
           });
@@ -306,7 +139,7 @@ export function AdminProductImporter() {
       setImageMap(newMap);
       setStep('match');
     } catch (err) {
-      alert(`解壓 ZIP 失敗: ${err instanceof Error ? err.message : '未知錯誤'}`);
+      setErrors([`解壓 ZIP 失敗：${err instanceof Error ? err.message : '未知錯誤'}`]);
     } finally {
       setIsProcessing(false);
       setCurrentProgress('');
@@ -358,73 +191,67 @@ export function AdminProductImporter() {
       }
     }
 
-    setCurrentProgress('正在寫入資料庫...');
-    
-    // 分批將產品資料寫入資料庫
-    // 我們可以將所有產品整合成一個 batch 請求傳送給 `/api/admin/products/batch`
-    const batchPayload = {
-      products: updatedRows.map(row => ({
-        categorySlug: row.categorySlug,
-        categoryNameI18n: row.categoryNameI18n,
-        subCategorySlug: row.subCategorySlug,
-        subCategoryNameI18n: row.subCategoryNameI18n,
-        modelNumber: row.modelNumber,
-        nameI18n: row.nameI18n,
-        specifications: row.specifications,
-        stockQuantity: row.stockQuantity,
-        isActive: row.isActive,
-        imagePath: row.uploadedUrl || ''
-      }))
-    };
-
-    try {
-      const res = await fetch('/api/admin/products/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(batchPayload)
-      });
-
-      const resData = await res.json();
-      if (!res.ok) throw new Error(resData.error || '批次匯入失敗');
-
-      // 更新每行的匯入狀態
-      const resultMap = new Map<string, { success: boolean; error?: string }>();
-      if (resData.results) {
-        resData.results.forEach((r: { modelNumber: string; success: boolean; error?: string }) => {
-          resultMap.set(r.modelNumber, r);
+    // 分批寫入資料庫：每批 IMPORT_CHUNK_SIZE 筆，避免一次太多筆超過伺服器執行時間（A4）
+    // 某一批失敗時只標記該批，其他批次繼續
+    const resultMap = new Map<string, BatchResult>();
+    const batches = chunk(updatedRows, IMPORT_CHUNK_SIZE);
+    for (let b = 0; b < batches.length; b++) {
+      const batch = batches[b];
+      const done = b * IMPORT_CHUNK_SIZE;
+      setCurrentProgress(`正在寫入資料庫（${done + 1}–${done + batch.length} / ${updatedRows.length}）...`);
+      try {
+        const res = await fetch('/api/admin/products/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            products: batch.map((row) => ({
+              categorySlug: row.categorySlug,
+              categoryNameI18n: row.categoryNameI18n,
+              subCategorySlug: row.subCategorySlug,
+              subCategoryNameI18n: row.subCategoryNameI18n,
+              modelNumber: row.modelNumber,
+              nameI18n: row.nameI18n,
+              specifications: row.specifications,
+              stockQuantity: row.stockQuantity,
+              isActive: row.isActive,
+              imagePath: row.uploadedUrl || ''
+            }))
+          })
         });
+        const resData = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(resData.error || `HTTP ${res.status}`);
+        (resData.results as BatchResult[] | undefined)?.forEach((r) => resultMap.set(r.modelNumber, r));
+      } catch (err) {
+        const message = `這一批寫入失敗：${err instanceof Error ? err.message : '未知錯誤'}`;
+        batch.forEach((row) => resultMap.set(row.modelNumber, { modelNumber: row.modelNumber, success: false, error: message }));
       }
-
-      updatedRows.forEach(row => {
-        const r = resultMap.get(row.modelNumber);
-        if (r?.success) {
-          row.status = 'success';
-          successCount++;
-        } else {
-          row.status = 'failed';
-          row.message = r?.error || '匯入失敗';
-          failedCount++;
-        }
-      });
-
-      setImportSummary({
-        total: updatedRows.length,
-        success: successCount,
-        failed: failedCount
-      });
-      setParsedRows(updatedRows);
-      setStep('completed');
-      
-      // 通知外部元件更新產品列表
-      window.dispatchEvent(new Event('subcategories-updated'));
-      window.dispatchEvent(new Event('categories-updated'));
-    } catch (err) {
-      alert(`批次寫入資料庫失敗: ${err instanceof Error ? err.message : '未知錯誤'}`);
-      setStep('match');
-    } finally {
-      setIsProcessing(false);
-      setCurrentProgress('');
     }
+
+    updatedRows.forEach((row) => {
+      const r = resultMap.get(row.modelNumber);
+      if (r?.success) {
+        row.status = 'success';
+        successCount++;
+      } else {
+        row.status = 'failed';
+        row.message = [row.message, r?.error || '匯入失敗'].filter(Boolean).join('；');
+        failedCount++;
+      }
+    });
+
+    setImportSummary({
+      total: updatedRows.length,
+      success: successCount,
+      failed: failedCount
+    });
+    setParsedRows(updatedRows);
+    setStep('completed');
+    setIsProcessing(false);
+    setCurrentProgress('');
+
+    // 通知外部元件更新產品列表
+    window.dispatchEvent(new Event('subcategories-updated'));
+    window.dispatchEvent(new Event('categories-updated'));
   };
 
   const resetImporter = () => {
@@ -432,6 +259,7 @@ export function AdminProductImporter() {
     setParsedRows([]);
     setImageMap(new Map());
     setImportSummary(null);
+    setErrors([]);
     if (excelInputRef.current) excelInputRef.current.value = '';
     if (zipInputRef.current) zipInputRef.current.value = '';
     if (multiImagesInputRef.current) multiImagesInputRef.current.value = '';
@@ -466,21 +294,37 @@ export function AdminProductImporter() {
         </div>
       )}
 
+      {errors.length > 0 && (
+        <div role="alert" data-testid="import-errors" style={{ padding: '1rem', background: 'rgba(127, 29, 29, 0.25)', border: '1px solid rgba(248, 113, 113, 0.4)', borderRadius: '6px', marginBottom: '1.5rem' }}>
+          <p style={{ margin: '0 0 0.5rem 0', color: '#fca5a5', fontWeight: 'bold' }}>請修正以下問題後重新上傳：</p>
+          <ul style={{ paddingLeft: '1.2rem', margin: 0, maxHeight: '180px', overflowY: 'auto' }}>
+            {errors.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* 步驟 1: 上傳對照表 */}
       {step === 'excel' && (
         <div style={{ border: '2px dashed #334155', borderRadius: '8px', padding: '2.5rem', textAlign: 'center' }}>
-          <p style={{ margin: '0 0 1rem 0' }}>請選擇產品對照表 (.xlsx, .xls 或 .csv)</p>
+          <p style={{ margin: '0 0 1rem 0' }}>請選擇產品對照表（.xlsx 或 .csv）</p>
           <input
             type="file"
             ref={excelInputRef}
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.csv"
             onChange={handleExcelUpload}
             disabled={isProcessing}
             style={{ display: 'none' }}
           />
-          <button type="button" onClick={() => excelInputRef.current?.click()} disabled={isProcessing}>
-            選擇試算表檔案
-          </button>
+          <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button type="button" onClick={() => excelInputRef.current?.click()} disabled={isProcessing}>
+              選擇試算表檔案
+            </button>
+            <button type="button" onClick={downloadTemplate} style={{ background: '#334155' }}>
+              下載範例檔
+            </button>
+          </div>
           
           <div style={{ marginTop: '1.5rem', textAlign: 'left', background: '#1e293b', padding: '1rem', borderRadius: '6px', fontSize: '0.8rem' }}>
             <strong style={{ color: '#fff' }}>欄位名稱參考說明：</strong>
@@ -489,7 +333,10 @@ export function AdminProductImporter() {
               <li><code>name_zh_tw</code>, <code>name_zh_cn</code>, <code>name_en</code> (產品語系名稱)</li>
               <li><code>category_slug</code>, <code>category_name_zh_tw</code> (大分類代號及名稱 - 不存在時會自動新增)</li>
               <li><code>subcategory_slug</code>, <code>subcategory_name_zh_tw</code> (子分類代號及名稱 - 不存在時會自動新增)</li>
+              <li><code>specifications</code> (規格，以逗號分隔，如 <code>STD, 47MM</code>)、<code>stock_quantity</code> (庫存，0 以上整數)</li>
+              <li><code>is_active</code> (上架：TRUE／FALSE，空白視為上架)</li>
               <li><code>image_filename</code> (圖片檔名 - 用於與上傳的圖片進行比對匹配，如 <code>cyl-001.jpg</code>)</li>
+              <li>已存在的型號會更新資料；名稱只更新有填寫的語言，沒填的語言保留原本內容</li>
             </ul>
           </div>
         </div>

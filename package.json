@@ -15,11 +15,13 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^2.0.1",
+    "jszip": "3.10.2",
     "next": "^15.0.0",
     "next-intl": "^4.13.0",
     "react": "^19.0.0",
     "react-cookie-consent": "^10.0.1",
     "react-dom": "^19.0.0",
+    "read-excel-file": "9.3.10",
     "zod": "^4.4.3"
   },
   "devDependencies": {

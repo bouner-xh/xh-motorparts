@@ -29,7 +29,7 @@ E2E_BASE_URL=https://www.xh-motorparts.com NODE_PATH=$(npm root -g) node tests/e
 使用 Node 內建測試工具，不需要額外套件（Node 22 以上）：
 
 ```bash
-node --experimental-strip-types --test 'tests/security/*.test.mts'
+node --experimental-strip-types --test 'tests/security/*.test.mts' 'tests/admin/*.test.mts'
 ```
 
 ## E2E 測試（tests/e2e）
@@ -74,6 +74,9 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `no-emoji-icons.e2e.cjs` | 畫面無 emoji、改用線條圖示（D9） | `npx next dev -p 3100`（唯讀，也可對正式網站執行） |
 | `inquiry-mobile-cards.e2e.cjs` | 手機版詢價清單卡片、按鈕 44px、不需左右捲動（D12） | `npx next dev -p 3100` |
 | `hreflang.e2e.cjs` | 每個公開頁面的 canonical 指向自己、有三語 hreflang 與 x-default（D14） | 模擬 Supabase（產品頁需要資料） |
+| `admin-product-form.e2e.cjs` | 產品表單不預填測試資料、預設不上架、沒有偵錯工具；手動新增可儲存（A2） | 模擬 Supabase |
+| `admin-product-category.e2e.cjs` | 連續新增保留分類、切換大分類清空子分類、API 拒絕分類不符（A3） | 模擬 Supabase |
+| `admin-product-import.e2e.cjs` | Excel＋ZIP 匯入、保留翻譯、FALSE 不上架、錯誤列表、120 筆分 3 批、範例檔（A1、A4） | 模擬 Supabase |
 
 ### 模擬 Supabase
 

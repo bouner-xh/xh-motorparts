@@ -10,14 +10,16 @@ const batchProductSchema = z.object({
   subCategoryNameI18n: z.record(z.string(), z.string()).default({}),
   modelNumber: z.string().min(1),
   nameI18n: z.record(z.string(), z.string()).default({}),
-  specifications: z.array(z.string()).default([]),
-  stockQuantity: z.number().int().nonnegative().default(0),
+  // 沒填（null／未提供）時：新產品用預設值，既有產品保留原本內容（A4）
+  specifications: z.array(z.string()).nullish(),
+  stockQuantity: z.number().int().nonnegative().nullish(),
   isActive: z.boolean().default(true),
   imagePath: z.string().optional().default('')
 });
 
+// 每次最多 100 筆；前端每 50 筆送一次（src/lib/product-import.ts 的 IMPORT_CHUNK_SIZE），避免超過伺服器執行時間
 const batchImportPayloadSchema = z.object({
-  products: z.array(batchProductSchema)
+  products: z.array(batchProductSchema).min(1).max(100)
 });
 
 async function getAuthenticatedUser() {
@@ -136,24 +138,25 @@ export async function POST(request: Request) {
       // 3. Upsert 產品資訊 (以 model_number 作為唯一鍵)
       const { data: prodExisted } = await service
         .from('products')
-        .select('id')
+        .select('id, name_i18n')
         .eq('model_number', item.modelNumber)
         .maybeSingle();
 
       let productId = '';
       if (prodExisted?.id) {
-        // 更新
+        // 更新：名稱只覆蓋有填寫的語言，規格與庫存沒填時保留原值（A4）
         productId = prodExisted.id;
+        const update: Record<string, unknown> = {
+          category_id: categoryId,
+          sub_category_id: subCategoryId,
+          name_i18n: { ...(prodExisted.name_i18n || {}), ...item.nameI18n },
+          is_active: item.isActive
+        };
+        if (item.specifications != null) update.specifications = item.specifications;
+        if (item.stockQuantity != null) update.stock_quantity = item.stockQuantity;
         const { error: updateErr } = await service
           .from('products')
-          .update({
-            category_id: categoryId,
-            sub_category_id: subCategoryId,
-            name_i18n: item.nameI18n,
-            specifications: item.specifications,
-            stock_quantity: item.stockQuantity,
-            is_active: item.isActive
-          })
+          .update(update)
           .eq('id', productId);
 
         if (updateErr) {
@@ -161,6 +164,9 @@ export async function POST(request: Request) {
         }
       } else {
         // 新增
+        if (Object.keys(item.nameI18n).length === 0) {
+          throw new Error('新產品至少要填寫一個語言的名稱');
+        }
         const { data: prodNew, error: createErr } = await service
           .from('products')
           .insert({
@@ -168,8 +174,8 @@ export async function POST(request: Request) {
             sub_category_id: subCategoryId,
             model_number: item.modelNumber,
             name_i18n: item.nameI18n,
-            specifications: item.specifications,
-            stock_quantity: item.stockQuantity,
+            specifications: item.specifications ?? [],
+            stock_quantity: item.stockQuantity ?? 0,
             is_active: item.isActive
           })
           .select('id')
