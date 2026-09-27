@@ -180,7 +180,8 @@ function handleRest(req, url, raw) {
       const error = checkUnique(table, { ...row, ...patch }, row.id);
       if (error) return error;
     }
-    for (const row of targets) Object.assign(row, patch);
+    // 模擬資料庫的 updated_at 觸發器
+    for (const row of targets) Object.assign(row, patch, 'updated_at' in row ? { updated_at: now } : {});
     rows = targets.map((r) => expandRow(table, r, select));
   } else if (req.method === 'DELETE') {
     const targets = filterRows(TABLES[table], url.searchParams);
