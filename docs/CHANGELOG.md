@@ -24,9 +24,21 @@
 
 ---
 
-## 2026-09-27（第九批）：Next.js 安全性升級
+## 2026-09-27（第十批）：後台分頁與總覽
 
 PR：（合併後補上）
+
+| 編號 | 修改 | 主要檔案 | Commit | 驗證 |
+|---|---|---|---|---|
+| A8 | 後台改為上方分頁（總覽／詢價／產品／分類／批量匯入），網址記住分頁；總覽顯示待處理詢價、產品與分類筆數、最新 5 筆詢價；標頭顯示登入帳號、前往網站、登出；移除過時文字；手機版分頁可左右滑動 | `src/app/[locale]/admin/dashboard/page.tsx`、`src/components/admin/AdminDashboardTabs.tsx`（新）、`AdminOverview.tsx`（新）、`globals.css`、`messages/*.json` | `5478515` | `admin-dashboard-tabs.e2e.cjs`；依老闆確認的示意圖實作，桌機與手機截圖比對 |
+
+**之後修改時要注意**
+- 新增後台功能時，在 `AdminDashboardTabs.tsx` 的 `TABS` 加一個分頁，並用 `panel()` 放入內容。
+- 各分頁的元件都保持掛載（只是隱藏），元件之間用瀏覽器事件同步；詢價新增了 `inquiries-updated` 事件，總覽與詢價分頁的待處理數量會跟著更新。
+
+## 2026-09-27（第九批）：Next.js 安全性升級
+
+PR：[#14](https://github.com/bouner-xh/xh-motorparts/pull/14)
 
 | 編號 | 修改 | 主要檔案 | Commit | 驗證 |
 |---|---|---|---|---|

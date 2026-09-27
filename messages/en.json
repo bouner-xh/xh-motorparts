@@ -74,10 +74,6 @@
     "loginTitle": "Admin login",
     "loginDescription": "Sign in with an admin account to manage catalog and inquiry data.",
     "loginButton": "Login",
-    "dashboardTitle": "Admin dashboard",
-    "productsCardTitle": "Product management",
-    "productsCardDescription": "Product CRUD, image upload and category management will be connected next.",
-    "inquiriesCardTitle": "Inquiry management",
-    "inquiriesCardDescription": "RFQ / CRM / reply history will be connected next."
+    "dashboardTitle": "Admin dashboard"
   }
 }

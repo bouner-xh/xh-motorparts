@@ -3,7 +3,7 @@
 //   node tests/e2e/mock-supabase.cjs &
 //   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=anon \
 //   SUPABASE_SERVICE_ROLE_KEY=service ADMIN_EMAILS=admin@example.com npx next dev -p 3100
-const { BASE_URL, withPage, assert, run } = require('./helpers.cjs');
+const { BASE_URL, withPage, assert, run, openAdminTab } = require('./helpers.cjs');
 const { PASSWORD, MOCK_URL } = require('./mock-supabase.cjs');
 
 const resetMock = () => fetch(`${MOCK_URL}/__mock/reset`, { method: 'POST' });
@@ -14,6 +14,7 @@ async function loginAdmin(page) {
   await page.fill('input[name="email"]', 'admin@example.com');
   await page.fill('input[name="password"]', PASSWORD);
   await Promise.all([page.waitForURL(/\/admin\/dashboard/, { timeout: 60000 }), page.click('form button[type="submit"]')]);
+  await openAdminTab(page, '產品');
 }
 
 run('產品表單預設空白、不預設上架，沒有偵錯工具', () =>

@@ -74,10 +74,6 @@
     "loginTitle": "管理員登入",
     "loginDescription": "請使用管理員帳號登入後台以管理產品與詢價資料。",
     "loginButton": "登入",
-    "dashboardTitle": "管理後台",
-    "productsCardTitle": "產品管理",
-    "productsCardDescription": "後續將接上產品 CRUD、圖片上傳與分類管理。",
-    "inquiriesCardTitle": "詢價管理",
-    "inquiriesCardDescription": "後續將接上 RFQ / CRM / 回覆紀錄。"
+    "dashboardTitle": "管理後台"
   }
 }

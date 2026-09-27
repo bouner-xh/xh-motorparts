@@ -74,10 +74,6 @@
     "loginTitle": "管理员登录",
     "loginDescription": "请使用管理员账号登录后台以管理产品与询价资料。",
     "loginButton": "登录",
-    "dashboardTitle": "管理后台",
-    "productsCardTitle": "产品管理",
-    "productsCardDescription": "后续将接入产品 CRUD、图片上传与分类管理。",
-    "inquiriesCardTitle": "询价管理",
-    "inquiriesCardDescription": "后续将接入 RFQ / CRM / 回复记录。"
+    "dashboardTitle": "管理后台"
   }
 }

@@ -17,10 +17,11 @@ const sampleCart = [
   }
 ];
 
-async function withPage(fn) {
+// contextOptions：可指定視窗大小等，例如 { viewport: { width: 390, height: 844 } }
+async function withPage(fn, contextOptions = {}) {
   const browser = await chromium.launch();
   try {
-    const context = await browser.newContext();
+    const context = await browser.newContext(contextOptions);
     const page = await context.newPage();
     await fn(page, context);
   } finally {
@@ -70,4 +71,12 @@ function run(name, fn) {
   return queue;
 }
 
-module.exports = { BASE_URL, sampleCart, withPage, seedCart, fillInquiryForm, assert, run };
+// 後台：切換到指定分頁（A8 起後台改為分頁，登入後預設在「總覽」）
+async function openAdminTab(page, label) {
+  const tab = page.getByRole('tab', { name: new RegExp(`^${label}`) });
+  await tab.click();
+  const panelId = await tab.getAttribute('aria-controls');
+  await page.locator(`#${panelId}`).waitFor({ state: 'visible' });
+}
+
+module.exports = { BASE_URL, sampleCart, withPage, seedCart, fillInquiryForm, assert, run, openAdminTab };

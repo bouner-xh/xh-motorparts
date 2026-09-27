@@ -4,11 +4,7 @@ import {notFound, redirect} from 'next/navigation';
 import {locales, type Locale} from '@/lib/catalog';
 import {getSupabaseServerAuthClient} from '@/lib/supabase/server';
 import {isAdminEmail} from '@/lib/admin-auth';
-import {AdminProductManager} from '@/components/admin/AdminProductManager';
-import {AdminSubCategoryManager} from '@/components/admin/AdminSubCategoryManager';
-import {AdminCategoryManager} from '@/components/admin/AdminCategoryManager';
-import {AdminProductImporter} from '@/components/admin/AdminProductImporter';
-import {AdminInquiryManager} from '@/components/admin/AdminInquiryManager';
+import {AdminDashboardTabs} from '@/components/admin/AdminDashboardTabs';
 
 export default async function AdminDashboardPage({
   params
@@ -54,52 +50,24 @@ export default async function AdminDashboardPage({
   const t = await getTranslations({locale: localeValue, namespace: 'admin'});
 
   return (
-    <main>
-      <div className="section-heading">
-        <div>
-          <h1 className="page-title">{t('dashboardTitle')}</h1>
-          <p className="muted page-lead">{t('loginDescription')}</p>
-        </div>
-        <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
-          <Link href={`/${localeValue}/admin/login`} className="button-secondary">
-            前往登入頁
+    <main className="admin-dashboard">
+      <div className="admin-dashboard__header">
+        <h1 className="page-title">{t('dashboardTitle')}</h1>
+        <div className="admin-dashboard__account">
+          <span className="admin-hide-mobile">{user.email}</span>
+          <Link href={`/${localeValue}`} className="button-secondary">
+            前往網站
           </Link>
           <form action={logoutAction}>
-            <button type="submit">Logout</button>
+            <button type="submit" className="button-secondary">
+              登出
+            </button>
           </form>
         </div>
       </div>
 
-      <section className="card-grid">
-        <article className="card info-card">
-          <h3>{t('productsCardTitle')}</h3>
-          <p className="muted">{t('productsCardDescription')}</p>
-        </article>
-        <article className="card info-card">
-          <h3>{t('inquiriesCardTitle')}</h3>
-          <p className="muted">已啟用整合式 CRM 詢價管理與狀態追蹤面板。</p>
-        </article>
-      </section>
-
-      <section className="card" style={{marginTop: '1rem'}}>
-        <AdminInquiryManager />
-      </section>
-
-      <section className="card" style={{marginTop: '1rem'}}>
-        <AdminCategoryManager locale={localeValue} />
-      </section>
-
-      <section className="card" style={{marginTop: '1rem'}}>
-        <AdminSubCategoryManager locale={localeValue} />
-      </section>
-
-      <section className="card" style={{marginTop: '1rem'}}>
-        <AdminProductImporter />
-      </section>
-
-      <section className="card" style={{marginTop: '1rem'}}>
-        <AdminProductManager locale={localeValue} />
-      </section>
+      {/* 後台分頁：總覽／詢價／產品／分類／批量匯入（A8） */}
+      <AdminDashboardTabs locale={localeValue} />
     </main>
   );
 }
