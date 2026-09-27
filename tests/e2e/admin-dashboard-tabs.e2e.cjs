@@ -57,6 +57,9 @@ run('登入後預設總覽：分頁、待處理數量、產品與分類筆數、
     const body = await page.locator('body').innerText();
     assert(!body.includes('前往登入頁') && !body.includes('Logout') && !body.includes('後續將接上'), '移除過時文字與英文登出');
     assert(await page.getByRole('button', { name: '登出' }).isVisible(), '有中文「登出」');
+    // 後台所有分頁（含隱藏的）都不使用 emoji 當圖示（D9、A8）
+    const emoji = await page.evaluate(() => (document.querySelector('main').textContent.match(/[\u{1F300}-\u{1FAFF}\u{23F3}\u{26A0}\u{2705}\u{274C}\u{2B50}]/gu) || []).join(' '));
+    assert(emoji === '', `後台沒有 emoji（${emoji}）`);
     const height = await page.evaluate(() => document.documentElement.scrollHeight);
     assert(height < 2000, `頁面高度大幅縮短（${height}px）`);
   })
