@@ -68,6 +68,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `page-h1.e2e.cjs` | 每頁一個 H1 且為主標題（D10） | 模擬 Supabase |
 | `no-nested-interactive.e2e.cjs` | 連結內不包按鈕（D11） | `npx next dev -p 3100` |
 | `contact-email.e2e.cjs` | 對外聯絡信箱為 sales@（S9） | `npx next dev -p 3100`（唯讀，也可對正式網站執行） |
+| `home-section-order.e2e.cjs` | 首頁區塊順序、產品分類提前、內容不減少（D3） | `npx next dev -p 3100` |
 
 ### 模擬 Supabase
 
