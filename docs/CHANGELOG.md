@@ -24,6 +24,22 @@
 
 ---
 
+## 2026-09-27（第五批）：首頁與手機版體驗
+
+PR：[#9](https://github.com/bouner-xh/xh-motorparts/pull/9)
+
+| 編號 | 修改 | 主要檔案 | Commit | 驗證 |
+|---|---|---|---|---|
+| D3 | 首頁順序改為 Hero → 產品分類 → 詢價步驟 → 選擇理由 → 品牌故事（名言與品牌理念合併）；第一個產品分類位置桌機 1972 → 930px、手機 2379 → 1233px | `src/app/[locale]/page.tsx` | `3ac23ed` | `home-section-order.e2e.cjs` |
+| D4 | 768px 以下標頭收合為 ☰ 選單（標頭高度約 310 → 68px），換頁自動收合；桌機不變 | `src/components/layout/SiteHeader.tsx`、`layout.tsx`、`globals.css` | `10d95f2` | `mobile-menu.e2e.cjs`、桌機截圖逐像素相同 |
+| D2 | 依示意圖：主按鈕放大加粗、「公司資訊」改外框按鈕、聯絡資訊縮為按鈕下方一行（三語「或直接聯絡業務」） | `src/app/[locale]/page.tsx`、`globals.css` | `123a817` | `home-hero-cta.e2e.cjs` |
+| D9 | emoji 改為自繪線條圖示（選擇理由、頁尾、詢價清單按鈕、空清單頁） | `src/components/ui/Icon.tsx`、`src/lib/site-content.ts`、`Footer.tsx`、`CartIndicator.tsx` | `791dc9c` | `no-emoji-icons.e2e.cjs` |
+| D12 | 640px 以下詢價清單改為直式卡片（不需左右捲動、按鈕 44px、料號一行）；桌機不變 | `src/app/[locale]/inquiry/page.tsx`、`globals.css` | `ff055a3` | `inquiry-mobile-cards.e2e.cjs`、桌機截圖逐像素相同 |
+
+**之後修改時要注意**
+- 新增圖示請在 `src/components/ui/Icon.tsx` 加一個名稱，不要再使用 emoji。
+- 標頭改由 `SiteHeader` 元件組成；新增導覽連結請在 `src/app/[locale]/layout.tsx` 的 `links` 裡加入，桌機與手機選單會同時出現。
+
 ## 2026-09-27：對外聯絡信箱改為公司信箱
 
 PR：[#8](https://github.com/bouner-xh/xh-motorparts/pull/8)
