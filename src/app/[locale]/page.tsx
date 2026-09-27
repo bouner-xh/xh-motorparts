@@ -7,6 +7,7 @@ import { getCategorySummaries } from '@/lib/catalog-service';
 import { homeContent } from '@/lib/site-content';
 import { notFound } from 'next/navigation';
 import { localized } from '@/lib/localized-text';
+import { Icon } from '@/components/ui/Icon';
 
 export default async function LocaleHome({
   params,
@@ -38,41 +39,21 @@ export default async function LocaleHome({
           <h1 className="hero__title" style={{ whiteSpace: 'pre-line', marginTop: '1.5rem' }}>{content.hero.title}</h1>
           <p className="muted hero__description" style={{ marginTop: '1rem' }}>{content.hero.subtitle}</p>
           
-          <div className="hero__contact-quick">
-            <span>📧 Email: <a href="mailto:sales@xh-motorparts.com">sales@xh-motorparts.com</a></span>
-            <span>📱 WhatsApp: <a href="https://wa.me/886930797299" target="_blank" rel="noopener noreferrer">+886 930 797 299</a></span>
-          </div>
-
           <div className="hero__actions" style={{ marginTop: '2rem' }}>
-            <Link className="button-primary" href={`/${localeValue}/products`}>
+            <Link className="button-primary button-primary--hero" href={`/${localeValue}/products`}>
               {content.hero.primaryCta}
             </Link>
-            <Link className="button-secondary" href={`/${localeValue}/about`}>
+            <Link className="button-outline" href={`/${localeValue}/about`}>
               {content.hero.secondaryCta}
             </Link>
           </div>
-        </div>
-      </section>
 
-      <section className="brand-belief-quote">
-        <div className="quote-container">
-          <span className="quote-icon">“</span>
-          <blockquote>
-            <p className="quote-text">
-              {localized(localeValue, { 'zh-TW': '我們的名字不會出現在你的摩托車上，但我們的品質，會陪著它跑過每一段路。', 'zh-CN': '我们的名字不会出现在你的摩托车上，但我们的质量，会陪着它跑过每一段路。', en: 'Our name won\'t appear on your motorcycle, but our quality will ride with it every mile of the way.' })}
-            </p>
-            <cite className="quote-author">
-              {localized(localeValue, { 'zh-TW': '— 協皇企業，台灣，1990 至今', 'zh-CN': '— 协皇企业，台湾，1990 至今', en: '— Xie Huang Enterprise, Taiwan, Est. 1990' })}
-            </cite>
-          </blockquote>
+          <p className="hero__contact-line">
+            <span>{localized(localeValue, { 'zh-TW': '或直接聯絡業務', 'zh-CN': '或直接联系业务', en: 'Or contact our sales team' })}</span>
+            <a href="mailto:sales@xh-motorparts.com"><Icon name="mail" size={16} />sales@xh-motorparts.com</a>
+            <a href="https://wa.me/886930797299" target="_blank" rel="noopener noreferrer"><Icon name="chat" size={16} />WhatsApp +886 930 797 299</a>
+          </p>
         </div>
-      </section>
-
-      <section className="brand-belief">
-        <h2>{content.brandBelief.title}</h2>
-        {content.brandBelief.body.map((line, idx) => (
-          <p key={idx}>{line}</p>
-        ))}
       </section>
 
       <section className="section-heading">
@@ -97,21 +78,6 @@ export default async function LocaleHome({
         ))}
       </section>
 
-      <section style={{ marginTop: '4rem' }}>
-        <div className="section-heading">
-          <h2>{content.whyChooseUs.title}</h2>
-        </div>
-        <div className="why-grid">
-          {content.whyChooseUs.items.map((item, idx) => (
-            <div key={idx} className="why-card">
-              <span className="why-card__icon">{item.icon}</span>
-              <div className="why-card__title">{item.title}</div>
-              <div className="why-card__desc">{item.description}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section className="flow-container">
         <div className="section-heading" style={{ justifyContent: 'center', marginTop: 0 }}>
           <h2 style={{ textAlign: 'center' }}>{content.inquiryFlow.title}</h2>
@@ -127,6 +93,44 @@ export default async function LocaleHome({
         </div>
         <div className="flow-conclusion">
           {content.inquiryFlow.conclusion}
+        </div>
+      </section>
+
+      <section style={{ marginTop: '4rem' }}>
+        <div className="section-heading">
+          <h2>{content.whyChooseUs.title}</h2>
+        </div>
+        <div className="why-grid">
+          {content.whyChooseUs.items.map((item, idx) => (
+            <div key={idx} className="why-card">
+              <span className="why-card__icon"><Icon name={item.icon} size={36} /></span>
+              <div className="why-card__title">{item.title}</div>
+              <div className="why-card__desc">{item.description}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 品牌故事：名言與品牌理念（D3：移到頁面最後，讓產品分類提前出現） */}
+      <section className="brand-story">
+        <div className="brand-belief-quote">
+          <div className="quote-container">
+            <span className="quote-icon">“</span>
+            <blockquote>
+              <p className="quote-text">
+                {localized(localeValue, { 'zh-TW': '我們的名字不會出現在你的摩托車上，但我們的品質，會陪著它跑過每一段路。', 'zh-CN': '我们的名字不会出现在你的摩托车上，但我们的质量，会陪着它跑过每一段路。', en: 'Our name won\'t appear on your motorcycle, but our quality will ride with it every mile of the way.' })}
+              </p>
+              <cite className="quote-author">
+                {localized(localeValue, { 'zh-TW': '— 協皇企業，台灣，1990 至今', 'zh-CN': '— 协皇企业，台湾，1990 至今', en: '— Xie Huang Enterprise, Taiwan, Est. 1990' })}
+              </cite>
+            </blockquote>
+          </div>
+        </div>
+        <div className="brand-belief">
+          <h2>{content.brandBelief.title}</h2>
+          {content.brandBelief.body.map((line, idx) => (
+            <p key={idx}>{line}</p>
+          ))}
         </div>
       </section>
     </main>

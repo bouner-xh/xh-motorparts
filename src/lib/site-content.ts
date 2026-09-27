@@ -1,4 +1,5 @@
 import {type Locale} from '@/lib/catalog';
+import type { IconName } from '@/components/ui/Icon';
 
 export const homeContent: Record<Locale, {
   hero: {
@@ -18,7 +19,7 @@ export const homeContent: Record<Locale, {
   };
   whyChooseUs: {
     title: string;
-    items: Array<{ icon: string; title: string; description: string }>;
+    items: Array<{ icon: IconName; title: string; description: string }>;
   };
   inquiryFlow: {
     title: string;
@@ -55,12 +56,12 @@ export const homeContent: Record<Locale, {
     whyChooseUs: {
       title: '全球採購商選擇協皇的理由，不是因為我們最便宜。',
       items: [
-        { icon: '🏭', title: '台灣製造', description: '自有工廠生產，品質直接管控，非貿易商轉手' },
-        { icon: '📋', title: '規格透明', description: '每款產品提供完整技術規格書與材質報告' },
-        { icon: '🔧', title: 'OEM 支援', description: '接受圖面打樣與客製化訂單，彈性配合需求' },
-        { icon: '🌍', title: '出口經驗', description: '長期供應東南亞、中東、南美等市場' },
-        { icon: '💬', title: '溝通效率', description: '業務團隊具備英語能力，24 小時內回覆詢價' },
-        { icon: '📦', title: '小量試單', description: '新客戶友善，支援小批量試單驗證品質' }
+        { icon: 'factory', title: '台灣製造', description: '自有工廠生產，品質直接管控，非貿易商轉手' },
+        { icon: 'clipboard', title: '規格透明', description: '每款產品提供完整技術規格書與材質報告' },
+        { icon: 'wrench', title: 'OEM 支援', description: '接受圖面打樣與客製化訂單，彈性配合需求' },
+        { icon: 'globe', title: '出口經驗', description: '長期供應東南亞、中東、南美等市場' },
+        { icon: 'chat', title: '溝通效率', description: '業務團隊具備英語能力，24 小時內回覆詢價' },
+        { icon: 'package', title: '小量試單', description: '新客戶友善，支援小批量試單驗證品質' }
       ]
     },
     inquiryFlow: {
@@ -102,12 +103,12 @@ export const homeContent: Record<Locale, {
     whyChooseUs: {
       title: '全球采购商选择协皇的理由，不是因为我们最便宜。',
       items: [
-        { icon: '🏭', title: '台湾制造', description: '自有工厂生产，质量直接管控，非贸易商转手' },
-        { icon: '📋', title: '规格透明', description: '每款产品提供完整技术规格书与材质报告' },
-        { icon: '🔧', title: 'OEM 支持', description: '接受图面打样与定制化订单，弹性配合需求' },
-        { icon: '🌍', title: '出口经验', description: '长期供应东南亚、中东、南美等市场' },
-        { icon: '💬', title: '沟通效率', description: '业务团队具备英语能力，24 小时内回复询价' },
-        { icon: '📦', title: '小量试单', description: '新客户友善，支持小批量试单验证质量' }
+        { icon: 'factory', title: '台湾制造', description: '自有工厂生产，质量直接管控，非贸易商转手' },
+        { icon: 'clipboard', title: '规格透明', description: '每款产品提供完整技术规格书与材质报告' },
+        { icon: 'wrench', title: 'OEM 支持', description: '接受图面打样与定制化订单，弹性配合需求' },
+        { icon: 'globe', title: '出口经验', description: '长期供应东南亚、中东、南美等市场' },
+        { icon: 'chat', title: '沟通效率', description: '业务团队具备英语能力，24 小时内回复询价' },
+        { icon: 'package', title: '小量试单', description: '新客户友善，支持小批量试单验证质量' }
       ]
     },
     inquiryFlow: {
@@ -149,12 +150,12 @@ export const homeContent: Record<Locale, {
     whyChooseUs: {
       title: 'The reason global buyers choose Xie Huang is not because we are the cheapest.',
       items: [
-        { icon: '🏭', title: 'Made in Taiwan', description: 'Own factory production, direct quality control, no middlemen.' },
-        { icon: '📋', title: 'Transparent Specs', description: 'Complete technical specifications and material reports for every product.' },
-        { icon: '🔧', title: 'OEM Support', description: 'Accepting drawing samples and customized orders, flexible to your needs.' },
-        { icon: '🌍', title: 'Export Experience', description: 'Long-term supply to Southeast Asia, Middle East, South America, and more.' },
-        { icon: '💬', title: 'Communication', description: 'English-capable sales team, guaranteed inquiry response within 24 hours.' },
-        { icon: '📦', title: 'Trial Orders', description: 'Friendly to new customers, supporting small-batch trial orders to verify quality.' }
+        { icon: 'factory', title: 'Made in Taiwan', description: 'Own factory production, direct quality control, no middlemen.' },
+        { icon: 'clipboard', title: 'Transparent Specs', description: 'Complete technical specifications and material reports for every product.' },
+        { icon: 'wrench', title: 'OEM Support', description: 'Accepting drawing samples and customized orders, flexible to your needs.' },
+        { icon: 'globe', title: 'Export Experience', description: 'Long-term supply to Southeast Asia, Middle East, South America, and more.' },
+        { icon: 'chat', title: 'Communication', description: 'English-capable sales team, guaranteed inquiry response within 24 hours.' },
+        { icon: 'package', title: 'Trial Orders', description: 'Friendly to new customers, supporting small-batch trial orders to verify quality.' }
       ]
     },
     inquiryFlow: {

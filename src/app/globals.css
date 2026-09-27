@@ -1038,28 +1038,6 @@ textarea {
   font-weight: 500;
 }
 
-.hero__contact-quick {
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  margin-top: 1.5rem;
-  font-size: 0.95rem;
-  border-left: 3px solid #dc2626;
-  padding-left: 0.8rem;
-  color: #94a3b8;
-}
-
-.hero__contact-quick a {
-  color: #ef4444;
-  text-decoration: underline;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.hero__contact-quick a:hover {
-  color: #f87171;
-}
-
 /* =========================================================
    Full Bleed Quote Section
    ========================================================= */
@@ -1241,3 +1219,233 @@ textarea {
 
 
 
+
+/* =========================================================
+   手機版標頭：768px 以下收合為 ☰ 選單（D4）
+   ========================================================= */
+.header-actions,
+.menu-toggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .site-header {
+    margin: 0.5rem 0 1rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 16px;
+  }
+
+  .brand-copy p {
+    display: none;
+  }
+
+  .brand-copy .brand-name {
+    font-size: 1.15rem;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 12px;
+    background: rgba(30, 41, 59, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: #e2e8f0;
+    box-shadow: none;
+  }
+
+  .menu-toggle:hover {
+    background: rgba(51, 65, 85, 0.8);
+    transform: none;
+    box-shadow: none;
+  }
+
+  .site-header .nav {
+    display: none;
+  }
+
+  .site-header.is-menu-open .nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+  }
+
+  .site-header.is-menu-open .nav a {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    white-space: nowrap;
+  }
+
+  .nav-cart {
+    display: none !important;
+  }
+}
+
+/* 首頁 Hero 按鈕與聯絡資訊（D2）：主按鈕放大、次要按鈕改外框，聯絡資訊縮為按鈕下方一行 */
+.button-primary--hero {
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 0.9rem 1.6rem;
+}
+
+.button-outline {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 0.9rem 1.6rem;
+  border-radius: 10px;
+  border: 1px solid #475569;
+  color: #e2e8f0;
+  font-size: 1.05rem;
+  transition: all 0.3s ease;
+}
+
+.button-outline:hover {
+  border-color: #94a3b8;
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.hero__contact-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1.25rem;
+  margin: 1.5rem 0 0;
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+.hero__contact-line a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #cbd5e1;
+  text-decoration: underline;
+  text-decoration-color: rgba(203, 213, 225, 0.35);
+  text-underline-offset: 3px;
+}
+
+.hero__contact-line a:hover {
+  color: #f8fafc;
+  text-decoration-color: currentColor;
+}
+
+.hero__contact-line svg {
+  color: #fca5a5;
+  flex-shrink: 0;
+}
+
+/* 線條圖示（D9：取代 emoji） */
+.why-card__icon,
+.contact-icon-label,
+.cart-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.why-card__icon,
+.contact-icon-label,
+.footer-trust-badge__icon {
+  color: #fca5a5;
+}
+
+.cart-icon {
+  color: #e2e8f0;
+}
+
+/* 詢價清單：桌機維持表格（尺寸由原本的 inline style 移入），640px 以下改為直式卡片（D12） */
+.inquiry-cart-table .quantity-control {
+  height: 2.1rem;
+}
+
+.inquiry-cart-table .qty-btn {
+  width: 2rem;
+}
+
+.inquiry-cart-table .qty-input {
+  width: 3.2rem;
+}
+
+@media (max-width: 640px) {
+  .inquiry-cart-table,
+  .inquiry-cart-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .inquiry-cart-table thead {
+    display: none;
+  }
+
+  .inquiry-cart-table tr.cart-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'model remove'
+      'name name'
+      'qty qty';
+    gap: 0.35rem 0.75rem;
+    padding: 1rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  }
+
+  .inquiry-cart-table tr.cart-row td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .cart-row__model {
+    grid-area: model;
+    align-self: center;
+    font-size: 1.05rem;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+
+  .cart-row__name {
+    grid-area: name;
+    color: #cbd5e1;
+  }
+
+  .cart-row__qty {
+    grid-area: qty;
+    margin-top: 0.4rem;
+  }
+
+  .cart-row__remove {
+    grid-area: remove;
+  }
+
+  .inquiry-cart-table .quantity-control {
+    height: auto;
+  }
+
+  .inquiry-cart-table .qty-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+  }
+
+  .inquiry-cart-table .qty-input {
+    width: 5rem;
+  }
+
+  .inquiry-cart-table .remove-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

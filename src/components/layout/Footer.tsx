@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {type Locale} from '@/lib/catalog';
 import { localized } from '@/lib/localized-text';
+import { Icon } from '@/components/ui/Icon';
 
 const footerCopy: Record<Locale, {copyright: string; slogan: string; author: string}> = {
   'zh-TW': {
@@ -34,7 +35,7 @@ export function Footer({locale}: {locale: Locale}) {
           </p>
           <div className="footer-badge-list">
             <span className="footer-trust-badge">
-              🇹🇼 {localized(locale, { 'zh-TW': '台灣在地工廠製造', 'zh-CN': '台湾本地工厂制造', en: 'Made in Taiwan Quality' })}
+              <Icon name="shield-check" size={16} className="footer-trust-badge__icon" /> {localized(locale, { 'zh-TW': '台灣在地工廠製造', 'zh-CN': '台湾本地工厂制造', en: 'Made in Taiwan Quality' })}
             </span>
           </div>
         </div>
@@ -55,21 +56,21 @@ export function Footer({locale}: {locale: Locale}) {
           <h3 className="footer-col__title">{localized(locale, { 'zh-TW': '聯絡資訊', 'zh-CN': '联系信息', en: 'Contact Info' })}</h3>
           <ul className="footer-contact-list">
             <li>
-              <span className="contact-icon-label">📧</span> 
+              <span className="contact-icon-label"><Icon name="mail" size={18} /></span> 
               <a href="mailto:sales@xh-motorparts.com" className="contact-link">sales@xh-motorparts.com</a>
             </li>
             <li>
-              <span className="contact-icon-label">📱</span> 
+              <span className="contact-icon-label"><Icon name="chat" size={18} /></span> 
               <a href="https://wa.me/886930797299" target="_blank" rel="noopener noreferrer" className="contact-link">+886 930 797 299 (WhatsApp)</a>
             </li>
             <li>
-              <span className="contact-icon-label">📍</span> 
+              <span className="contact-icon-label"><Icon name="map-pin" size={18} /></span> 
               <span className="muted">
                 {localized(locale, { 'zh-TW': '台中市南屯區黎明路一段533-2號', 'zh-CN': '台中市南屯区黎明路一段533-2号', en: 'No. 533-2, Sec. 1, Liming Rd., Nantun Dist., Taichung City, Taiwan' })}
               </span>
             </li>
             <li>
-              <span className="contact-icon-label">🕒</span> 
+              <span className="contact-icon-label"><Icon name="clock" size={18} /></span> 
               <span className="muted">
                 {localized(locale, { 'zh-TW': '週一至週五 / 09:00 - 18:00', 'zh-CN': '周一至周五 / 09:00 - 18:00', en: 'Mon - Fri / 09:00 - 18:00' })}
               </span>

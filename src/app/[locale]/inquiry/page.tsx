@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { localized } from '@/lib/localized-text';
+import { Icon } from '@/components/ui/Icon';
 
 /**
  * B2B RFQ 詢價車詳情與客戶聯絡資料提交頁面
@@ -97,7 +98,7 @@ export default function InquiryCartPage() {
     return (
       <main className="container" style={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <article className="card" style={{ maxWidth: '500px', width: '100%', padding: '2.5rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', color: '#94a3b8', marginBottom: '1rem' }}>📋</div>
+          <div style={{ color: '#94a3b8', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}><Icon name="clipboard" size={48} /></div>
           <h1 style={{ fontSize: '1.5rem', marginTop: '0.83em', marginBottom: '0.8rem' }}>{t('cartEmpty')}</h1>
           <p className="muted" style={{ marginBottom: '2rem' }}>
             {localized(locale, { 'zh-TW': '送出詢價前，請先至產品目錄將感興趣的零件型號加入清單。', 'zh-CN': '提交询价前，请先至产品目录将感兴趣的零件型号加入清单。', en: 'Please add motorcycle parts to your inquiry list before submitting.' })}
@@ -142,15 +143,15 @@ export default function InquiryCartPage() {
                       : item.nameEn;
 
                   return (
-                    <tr key={item.id}>
-                      <td style={{ fontWeight: 'bold' }}>{item.modelNumber}</td>
-                      <td>{displayName || item.nameZhTw || item.nameEn}</td>
-                      <td>
-                        <div className="quantity-control" style={{ height: '2.1rem' }}>
+                    <tr key={item.id} className="cart-row">
+                      <td className="cart-row__model" style={{ fontWeight: 'bold' }}>{item.modelNumber}</td>
+                      <td className="cart-row__name">{displayName || item.nameZhTw || item.nameEn}</td>
+                      <td className="cart-row__qty">
+                        <div className="quantity-control">
                           <button
                             type="button"
                             className="qty-btn"
-                            style={{ width: '2rem' }}
+                            aria-label="-50"
                             onClick={() => handleQtyChange(item.id, item.quantity - 50)}
                           >
                             -
@@ -158,7 +159,6 @@ export default function InquiryCartPage() {
                           <input
                             type="number"
                             className="qty-input"
-                            style={{ width: '3.2rem' }}
                             value={item.quantity}
                             onChange={(e) => {
                               const v = parseInt(e.target.value, 10);
@@ -168,14 +168,14 @@ export default function InquiryCartPage() {
                           <button
                             type="button"
                             className="qty-btn"
-                            style={{ width: '2rem' }}
+                            aria-label="+50"
                             onClick={() => handleQtyChange(item.id, item.quantity + 50)}
                           >
                             +
                           </button>
                         </div>
                       </td>
-                      <td style={{ textAlign: 'center' }}>
+                      <td className="cart-row__remove" style={{ textAlign: 'center' }}>
                         <button
                           type="button"
                           className="remove-btn"
