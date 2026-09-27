@@ -13,6 +13,8 @@ interface AdminCategoryItem {
   descriptionZhCn: string;
   descriptionEn: string;
   sortOrder: number;
+  subCategoryCount: number;
+  productCount: number;
 }
 
 interface CategoryFormState {
@@ -71,6 +73,14 @@ export function AdminCategoryManager({ locale }: { locale: Locale }) {
 
   useEffect(() => {
     void loadCategories();
+    // 產品或子分類變動時更新筆數
+    const reload = () => void loadCategories();
+    window.addEventListener('products-updated', reload);
+    window.addEventListener('subcategories-updated', reload);
+    return () => {
+      window.removeEventListener('products-updated', reload);
+      window.removeEventListener('subcategories-updated', reload);
+    };
   }, [loadCategories]);
 
   async function submitCategory(event: React.FormEvent<HTMLFormElement>) {
@@ -128,8 +138,15 @@ export function AdminCategoryManager({ locale }: { locale: Locale }) {
     });
   }
 
-  async function deleteCategory(id: string) {
-    if (!window.confirm('確認刪除？這會將底下的子目錄與產品關聯一併移除！')) return;
+  // 刪除前依實際情況提示：有產品時不能刪除；子分類會一併刪除（A5）
+  async function deleteCategory(row: AdminCategoryItem) {
+    if (row.productCount > 0) {
+      setStatus('error', `「${row.nameZhTw}」底下還有 ${row.productCount} 個產品，請先把產品移到其他分類或刪除後再刪除分類。`);
+      return;
+    }
+    const subNote = row.subCategoryCount > 0 ? `底下的 ${row.subCategoryCount} 個子分類會一併刪除。` : '';
+    if (!window.confirm(`確定刪除大分類「${row.nameZhTw}」？${subNote}`)) return;
+    const id = row.id;
     setStatus('info', '刪除中...');
     try {
       const response = await fetch(`/api/admin/categories?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
@@ -210,11 +227,13 @@ export function AdminCategoryManager({ locale }: { locale: Locale }) {
             <th>Slug</th>
             <th>名稱 (繁中)</th>
             <th>排序</th>
+            <th>子分類</th>
+            <th>產品</th>
             <th>操作</th>
           </tr>
         </thead>
         <tbody>
-          {isLoading ? (<tr><td colSpan={5}>載入中...</td></tr>) : rows.length === 0 ? (<tr><td colSpan={5}>無大分類</td></tr>) : rows.map((r, index) => (
+          {isLoading ? (<tr><td colSpan={7}>載入中...</td></tr>) : rows.length === 0 ? (<tr><td colSpan={7}>無大分類</td></tr>) : rows.map((r, index) => (
             <tr
               key={r.id}
               style={{ borderBottom: '1px solid #1e293b' }}
@@ -283,9 +302,11 @@ export function AdminCategoryManager({ locale }: { locale: Locale }) {
               <td style={{ padding: '0.5rem 0' }}>{r.slug}</td>
               <td>{r.nameZhTw}</td>
               <td>{r.sortOrder}</td>
+              <td>{r.subCategoryCount}</td>
+              <td>{r.productCount}</td>
               <td>
                 <button type="button" onClick={() => startEdit(r)} style={{ marginRight: '0.5rem', padding: '0.3rem 0.6rem' }}>編輯</button>
-                <button type="button" onClick={() => void deleteCategory(r.id)} style={{ background: '#991b1b', padding: '0.3rem 0.6rem' }}>刪除</button>
+                <button type="button" onClick={() => void deleteCategory(r)} style={{ background: '#991b1b', padding: '0.3rem 0.6rem' }}>刪除</button>
               </td>
             </tr>
           ))}

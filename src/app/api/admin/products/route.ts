@@ -2,6 +2,7 @@ import {z} from 'zod';
 import {getSupabaseServerAuthClient, getSupabaseServiceRoleClient} from '@/lib/supabase/server';
 import {isAdminEmail} from '@/lib/admin-auth';
 import {revalidateCatalog} from '@/lib/revalidate';
+import {getProductImageUrls, removeUnreferencedImages} from '@/lib/product-image-cleanup';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
 
@@ -90,7 +91,7 @@ async function bindPrimaryImage(service: ServiceClient, productId: string, image
   try {
     const {data: existing, error: selectError} = await service
       .from('product_images')
-      .select('id')
+      .select('id, storage_path')
       .eq('product_id', productId)
       .order('sort_order', {ascending: true})
       .limit(1)
@@ -101,8 +102,14 @@ async function bindPrimaryImage(service: ServiceClient, productId: string, image
     }
 
     if (existing?.id) {
+      if (existing.storage_path === imageValue) return;
       const {error: updateError} = await service.from('product_images').update({storage_path: imageValue}).eq('id', existing.id);
-      if (updateError) console.error('bindPrimaryImage update error:', updateError.message);
+      if (updateError) {
+        console.error('bindPrimaryImage update error:', updateError.message);
+        return;
+      }
+      // 換圖後刪除沒有其他產品使用的舊圖檔（A5）
+      await removeUnreferencedImages(service, [existing.storage_path || '']);
       return;
     }
 
@@ -418,12 +425,15 @@ export async function DELETE(request: Request) {
     return Response.json({error: 'Missing product ID', requestId}, {status: 400});
   }
 
+  // 先記下圖片網址；刪除產品時資料庫會一併刪除圖片紀錄（on delete cascade），再清掉圖檔（A5）
+  const imageUrls = await getProductImageUrls(service, id);
   const {error} = await service.from('products').delete().eq('id', id);
 
   if (error) {
     logApiError(requestId, 'delete product failed', error.message);
     return Response.json({error: normalizeDatabaseError(error.message), requestId}, {status: 500});
   }
+  await removeUnreferencedImages(service, imageUrls);
 
   revalidateCatalog();
   return Response.json({ok: true, requestId});

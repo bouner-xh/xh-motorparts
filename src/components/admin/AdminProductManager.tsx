@@ -218,6 +218,7 @@ export function AdminProductManager({locale}: {locale: Locale}) {
       // 保留剛剛選的分類與子分類，方便連續新增同分類的產品（A3）
       setForm({...emptyFormState, category: form.category, subCategoryId: form.subCategoryId});
       await loadProducts();
+      window.dispatchEvent(new Event('products-updated'));
     } catch (error) {
       setStatus('error', error instanceof Error ? error.message : '儲存失敗');
     } finally {
@@ -266,6 +267,7 @@ export function AdminProductManager({locale}: {locale: Locale}) {
 
       setStatus('success', '產品已刪除');
       await loadProducts();
+      window.dispatchEvent(new Event('products-updated'));
     } catch (error) {
       setStatus('error', error instanceof Error ? error.message : '刪除失敗');
     }

@@ -46,7 +46,7 @@ const FOREIGN_KEYS = [
   { table: 'products', column: 'sub_category_id', ref: 'sub_categories', onDelete: 'restrict' },
   { table: 'product_images', column: 'product_id', ref: 'products', onDelete: 'cascade' }
 ];
-const UNIQUE = { categories: ['slug'], sub_categories: ['slug'] };
+const UNIQUE = { categories: ['slug'], sub_categories: ['slug'], products: ['model_number'] };
 
 // 解析 select：找出 alias:table!inner(cols) 形式的關聯欄位
 function parseEmbeds(select) {

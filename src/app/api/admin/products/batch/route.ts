@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin-auth';
 import { revalidateCatalog } from '@/lib/revalidate';
+import { getProductImageUrls, removeUnreferencedImages } from '@/lib/product-image-cleanup';
 
 const batchProductSchema = z.object({
   categorySlug: z.string().min(1),
@@ -189,7 +190,8 @@ export async function POST(request: Request) {
 
       // 4. 綁定圖片 (如果提供了 imagePath)
       if (item.imagePath) {
-        // 先嘗試刪除舊的 product_images 關聯 (避免重複)
+        // 先嘗試刪除舊的 product_images 關聯 (避免重複)，並記下舊圖稍後清除（A5）
+        const oldImageUrls = await getProductImageUrls(service, productId);
         await service.from('product_images').delete().eq('product_id', productId);
         // 新增新的關聯
         const { error: imgErr } = await service
@@ -203,6 +205,7 @@ export async function POST(request: Request) {
         if (imgErr) {
           console.error(`綁定圖片失敗 (Product ID: ${productId}): ${imgErr.message}`);
         }
+        await removeUnreferencedImages(service, oldImageUrls.filter((url) => url !== item.imagePath));
       }
 
       results.push({ modelNumber: item.modelNumber, success: true });

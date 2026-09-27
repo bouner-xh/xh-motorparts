@@ -26,6 +26,16 @@ async function getAuthenticatedUser() {
   return { ok: true, user } as const;
 }
 
+// 計算每個上層分類底下的資料筆數（A5：刪除前提示）
+async function countBy(service: NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>, table: string, column: string) {
+  const { data } = await service.from(table).select(column);
+  const counts = new Map<string, number>();
+  ((data as unknown as Record<string, string>[] | null) || []).forEach((row) => {
+    counts.set(row[column], (counts.get(row[column]) || 0) + 1);
+  });
+  return counts;
+}
+
 export async function GET() {
   const authResult = await getAuthenticatedUser();
   if (!authResult.ok) return Response.json({ error: authResult.error }, { status: authResult.error === 'Forbidden' ? 403 : 401 });
@@ -48,6 +58,11 @@ export async function GET() {
     sort_order: number | null;
   }
 
+  const [subCategoryCounts, productCounts] = await Promise.all([
+    countBy(service, 'sub_categories', 'category_id'),
+    countBy(service, 'products', 'category_id')
+  ]);
+
   const items = (data as CategoryQueryRow[] || []).map((item) => ({
     id: item.id,
     slug: item.slug,
@@ -57,7 +72,9 @@ export async function GET() {
     descriptionZhTw: item.description_i18n?.['zh-TW'] || '',
     descriptionZhCn: item.description_i18n?.['zh-CN'] || '',
     descriptionEn: item.description_i18n?.en || '',
-    sortOrder: item.sort_order ?? 0
+    sortOrder: item.sort_order ?? 0,
+    subCategoryCount: subCategoryCounts.get(item.id) || 0,
+    productCount: productCounts.get(item.id) || 0
   }));
 
   return Response.json({ items });
@@ -147,6 +164,15 @@ export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!id) return Response.json({ error: 'Missing ID' }, { status: 400 });
+
+  // 底下還有產品時不能刪除（資料庫設定為 restrict）；子分類會一併刪除（cascade）（A5）
+  const { data: products } = await service.from('products').select('id').eq('category_id', id);
+  if (products?.length) {
+    return Response.json(
+      { error: `這個大分類底下還有 ${products.length} 個產品，請先把產品移到其他分類或刪除後再試。` },
+      { status: 409 }
+    );
+  }
 
   const { error } = await service.from('categories').delete().eq('id', id);
   if (error) return Response.json({ error: error.message }, { status: 500 });
