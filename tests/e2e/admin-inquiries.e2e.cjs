@@ -1,7 +1,7 @@
 // E2E：後台詢價管理（A6 第一階段）
 // 狀態篩選與筆數、待處理數量、搜尋（含型號）、分頁、詳情視窗 Esc 關閉、更新後顯示最後更新時間
 // 使用模擬 Supabase（啟動方式同 admin-product-form.e2e.cjs）
-const { BASE_URL, withPage, assert, run } = require('./helpers.cjs');
+const { BASE_URL, withPage, assert, run, openAdminTab } = require('./helpers.cjs');
 const { PASSWORD, MOCK_URL } = require('./mock-supabase.cjs');
 
 const resetMock = () => fetch(`${MOCK_URL}/__mock/reset`, { method: 'POST' });
@@ -37,10 +37,11 @@ async function openInquiries(page) {
   await page.fill('input[name="email"]', 'admin@example.com');
   await page.fill('input[name="password"]', PASSWORD);
   await Promise.all([page.waitForURL(/\/admin\/dashboard/, { timeout: 60000 }), page.click('form button[type="submit"]')]);
-  await page.getByText(/共 \d+ 筆，第/).waitFor({ timeout: 30000 });
+  await openAdminTab(page, '詢價');
+  await page.locator('.admin-crm-panel').getByText(/共 \d+ 筆，第/).waitFor({ timeout: 30000 });
 }
 
-const rowCount = (page) => page.locator('tr', { has: page.getByRole('button', { name: '檢視' }) }).count();
+const rowCount = (page) => page.locator('.admin-crm-panel tr', { has: page.getByRole('button', { name: '檢視' }) }).count();
 
 run('狀態篩選、待處理數量、分頁', () =>
   withPage(async (page) => {
@@ -53,13 +54,13 @@ run('狀態篩選、待處理數量、分頁', () =>
       assert(await page.getByRole('tab', { name: `${label} ${n}` }).isVisible(), `「${label} ${n}」篩選按鈕`);
     }
     assert((await rowCount(page)) === 20, '第 1 頁 20 筆');
-    await page.getByText('共 25 筆，第 1 / 2 頁').waitFor();
+    await page.locator('.admin-crm-panel').getByText('共 25 筆，第 1 / 2 頁').waitFor();
     await page.locator('.admin-crm-panel').getByRole('button', { name: '下一頁' }).click();
-    await page.getByText('共 25 筆，第 2 / 2 頁').waitFor();
+    await page.locator('.admin-crm-panel').getByText('共 25 筆，第 2 / 2 頁').waitFor();
     assert((await rowCount(page)) === 5, '第 2 頁 5 筆');
 
     await page.getByRole('tab', { name: '報價中 6' }).click();
-    await page.getByText('共 6 筆，第 1 / 1 頁').waitFor();
+    await page.locator('.admin-crm-panel').getByText('共 6 筆，第 1 / 1 頁').waitFor();
     assert((await rowCount(page)) === 6, '篩選「報價中」後回到第 1 頁、6 筆');
 
     const justify = await page.locator('.admin-crm-panel > div').first().evaluate((el) => getComputedStyle(el).justifyContent);
@@ -75,11 +76,11 @@ run('搜尋公司、Email 與詢價型號', () =>
     const search = page.getByRole('searchbox', { name: '搜尋詢價單' });
 
     await search.fill('special-9');
-    await page.getByText('共 1 筆，第 1 / 1 頁').waitFor({ timeout: 10000 });
-    assert(await page.locator('tr', { hasText: 'Moto Italia' }).isVisible(), '以型號（不分大小寫）找到詢價單');
+    await page.locator('.admin-crm-panel').getByText('共 1 筆，第 1 / 1 頁').waitFor({ timeout: 10000 });
+    assert(await page.locator('.admin-crm-panel tr', { hasText: 'Moto Italia' }).isVisible(), '以型號（不分大小寫）找到詢價單');
 
     await search.fill('buyer03@');
-    await page.locator('tr', { hasText: '公司 03' }).waitFor({ timeout: 10000 });
+    await page.locator('.admin-crm-panel tr', { hasText: '公司 03' }).waitFor({ timeout: 10000 });
     assert((await rowCount(page)) === 1, '以 Email 找到詢價單（公司 03 在第 2 頁，搜尋後直接出現）');
 
     await search.fill('不存在的公司');
@@ -94,7 +95,7 @@ run('詳情視窗：Esc 關閉、更新狀態後筆數與最後更新時間同�
     await seed('inquiry_requests', sampleInquiries());
     await openInquiries(page);
 
-    const row = page.locator('tr', { hasText: '公司 12' });
+    const row = page.locator('.admin-crm-panel tr', { hasText: '公司 12' });
     await row.getByRole('button', { name: '檢視' }).click();
     const dialog = page.getByRole('dialog', { name: '詢價單詳情' });
     await dialog.waitFor();
@@ -114,7 +115,7 @@ run('詳情視窗：Esc 關閉、更新狀態後筆數與最後更新時間同�
     assert(saved.status === 'replied' && saved.reply_notes === '已寄報價單 Q-001', '狀態與備註已儲存');
     assert(saved.updated_at > '2026-09-02', '資料庫的最後更新時間已更新');
 
-    await page.locator('tr', { hasText: '公司 12' }).getByRole('button', { name: '檢視' }).click();
+    await page.locator('.admin-crm-panel tr', { hasText: '公司 12' }).getByRole('button', { name: '檢視' }).click();
     const meta = await dialog.getByText(/最後更新：/).innerText();
     const updatedPart = meta.split('最後更新：')[1] || '';
     assert(updatedPart && !updatedPart.includes('2026/09/01'), `詳情顯示新的最後更新時間（${meta}）`);

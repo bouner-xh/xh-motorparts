@@ -8,7 +8,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const JSZip = require('jszip');
-const { BASE_URL, withPage, assert, run } = require('./helpers.cjs');
+const { BASE_URL, withPage, assert, run, openAdminTab } = require('./helpers.cjs');
 const { PASSWORD, MOCK_URL } = require('./mock-supabase.cjs');
 const { buildXlsx } = require('./xlsx-fixture.cjs');
 
@@ -22,6 +22,7 @@ async function openImporter(page) {
   await page.fill('input[name="email"]', 'admin@example.com');
   await page.fill('input[name="password"]', PASSWORD);
   await Promise.all([page.waitForURL(/\/admin\/dashboard/, { timeout: 60000 }), page.click('form button[type="submit"]')]);
+  await openAdminTab(page, '批量匯入');
   const sheetInput = page.locator('input[type="file"][accept=".xlsx,.csv"]');
   await sheetInput.waitFor({ state: 'attached', timeout: 30000 });
   return sheetInput;

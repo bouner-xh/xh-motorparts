@@ -4,7 +4,7 @@
 // - 刪除產品、換圖後，沒有使用的圖檔會從 Storage 刪除
 // 使用模擬 Supabase（啟動方式同 admin-product-form.e2e.cjs）
 const fs = require('node:fs');
-const { BASE_URL, withPage, assert, run } = require('./helpers.cjs');
+const { BASE_URL, withPage, assert, run, openAdminTab } = require('./helpers.cjs');
 const { PASSWORD, MOCK_URL } = require('./mock-supabase.cjs');
 
 const resetMock = () => fetch(`${MOCK_URL}/__mock/reset`, { method: 'POST' });
@@ -21,7 +21,8 @@ async function login(page) {
   await page.fill('input[name="email"]', 'admin@example.com');
   await page.fill('input[name="password"]', PASSWORD);
   await Promise.all([page.waitForURL(/\/admin\/dashboard/, { timeout: 60000 }), page.click('form button[type="submit"]')]);
-  await page.locator('[data-testid="admin-product-form"]').waitFor({ timeout: 30000 });
+  await openAdminTab(page, '分類');
+  await page.getByRole('button', { name: '新增大分類' }).waitFor({ timeout: 30000 });
 }
 
 function recordDialogs(page, accept = true) {
@@ -124,6 +125,7 @@ run('換圖與刪除產品後，沒用到的圖檔從 Storage 刪除', () =>
     assert(!state.storage.some((p) => p.endsWith('first.jpg')), '換圖後舊圖已刪除');
     assert(state.storage.some((p) => p.endsWith('second.jpg')), '新圖保留');
 
+    await openAdminTab(page, '產品');
     await page.getByRole('button', { name: '重新載入列表' }).click();
     await page.locator('tr', { hasText: 'IMG-001' }).getByRole('button', { name: '刪除' }).click();
     await page.getByText('產品已刪除').waitFor({ timeout: 10000 });

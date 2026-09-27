@@ -154,6 +154,7 @@ export function AdminInquiryManager() {
         setNotice(`已更新 ${selectedInquiry.company_name || selectedInquiry.customer_name} 的詢價單`);
         // 狀態改變會影響篩選結果與各狀態筆數，重新載入
         await fetchInquiries();
+        window.dispatchEvent(new Event('inquiries-updated'));
       } else {
         setModalError(d.error || '儲存失敗');
       }
@@ -174,6 +175,7 @@ export function AdminInquiryManager() {
       if (res.ok) {
         setNotice('詢價紀錄已刪除');
         await fetchInquiries();
+        window.dispatchEvent(new Event('inquiries-updated'));
       } else {
         const d = await res.json().catch(() => ({}));
         setError(d.error || '刪除失敗');
@@ -197,7 +199,7 @@ export function AdminInquiryManager() {
   };
 
   return (
-    <div className="admin-crm-panel" style={{ marginTop: '2rem' }}>
+    <div className="admin-crm-panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <h3 style={{ margin: 0, fontSize: '1.25rem' }}>
           詢價管理中心 (CRM)

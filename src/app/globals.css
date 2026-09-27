@@ -1482,3 +1482,218 @@ textarea {
     min-height: 44px;
   }
 }
+
+/* =========================================================
+   後台分頁與總覽（A8）
+   ========================================================= */
+.admin-dashboard__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.admin-dashboard__header .page-title {
+  margin: 0;
+}
+
+.admin-dashboard__account {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.admin-dashboard__account form {
+  margin: 0;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.admin-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  box-shadow: none;
+  color: #94a3b8;
+  font-size: 1rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.admin-tab:hover {
+  color: #f8fafc;
+  background: none;
+}
+
+.admin-tab.is-active {
+  color: #f8fafc;
+  font-weight: 700;
+  border-bottom-color: #dc2626;
+}
+
+.admin-tab:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: -2px;
+}
+
+.admin-tab__badge {
+  background: #f59e0b;
+  color: #111827;
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.admin-tabpanel[hidden] {
+  display: none;
+}
+
+.admin-overview__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.admin-stat--alert {
+  border-color: rgba(245, 158, 11, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.25);
+}
+
+.admin-stat__label {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.admin-stat__value {
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.admin-stat--alert .admin-stat__value {
+  color: #f59e0b;
+}
+
+.admin-stat__sub {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.admin-stat__link {
+  margin-top: 0.6rem;
+  padding: 0;
+  min-height: 32px;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: #fca5a5;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.admin-stat__link:hover {
+  background: none;
+  text-decoration: underline;
+}
+
+.admin-overview__heading {
+  font-size: 1.1rem;
+  margin: 1.75rem 0 0.75rem;
+}
+
+.admin-overview__latest {
+  padding: 0.25rem 0.5rem;
+  overflow-x: auto;
+}
+
+.admin-overview__latest table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.admin-overview__latest th,
+.admin-overview__latest td {
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.admin-overview__latest th {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* 日期不換行，手機上保持一行 */
+.admin-overview__latest td:first-child {
+  white-space: nowrap;
+}
+
+.admin-overview__error {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  color: #fca5a5;
+}
+
+.admin-status {
+  display: inline-block;
+  white-space: nowrap;
+  padding: 0.1rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.admin-status--pending { color: #f59e0b; background: rgba(245, 158, 11, 0.15); }
+.admin-status--processing { color: #60a5fa; background: rgba(59, 130, 246, 0.15); }
+.admin-status--replied { color: #10b981; background: rgba(16, 185, 129, 0.15); }
+.admin-status--archived { color: #94a3b8; background: rgba(100, 116, 139, 0.15); }
+
+@media (max-width: 640px) {
+  .admin-overview__stats {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .admin-tab {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .admin-hide-mobile {
+    display: none;
+  }
+}

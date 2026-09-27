@@ -4,7 +4,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { BASE_URL, withPage, assert, run } = require('./helpers.cjs');
+const { BASE_URL, withPage, assert, run, openAdminTab } = require('./helpers.cjs');
 const { PASSWORD, MOCK_URL } = require('./mock-supabase.cjs');
 
 const resetMock = () => fetch(`${MOCK_URL}/__mock/reset`, { method: 'POST' });
@@ -37,6 +37,7 @@ async function openProducts(page) {
   await page.fill('input[name="email"]', 'admin@example.com');
   await page.fill('input[name="password"]', PASSWORD);
   await Promise.all([page.waitForURL(/\/admin\/dashboard/, { timeout: 60000 }), page.click('form button[type="submit"]')]);
+  await openAdminTab(page, '產品');
   await page.getByText(/共 \d+ 筆，第 1 \/ \d+ 頁/).last().waitFor({ timeout: 30000 });
 }
 

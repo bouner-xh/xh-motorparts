@@ -1,6 +1,6 @@
 // E2E：後台產品的大分類與子分類保持一致（A3）
 // 使用模擬 Supabase（啟動方式同 admin-product-form.e2e.cjs）
-const { BASE_URL, withPage, assert, run } = require('./helpers.cjs');
+const { BASE_URL, withPage, assert, run, openAdminTab } = require('./helpers.cjs');
 const { PASSWORD, MOCK_URL } = require('./mock-supabase.cjs');
 
 const resetMock = () => fetch(`${MOCK_URL}/__mock/reset`, { method: 'POST' });
@@ -14,6 +14,7 @@ async function openProductForm(page) {
   await page.fill('input[name="email"]', 'admin@example.com');
   await page.fill('input[name="password"]', PASSWORD);
   await Promise.all([page.waitForURL(/\/admin\/dashboard/, { timeout: 60000 }), page.click('form button[type="submit"]')]);
+  await openAdminTab(page, '產品');
   const form = page.locator('[data-testid="admin-product-form"]');
   await form.waitFor({ timeout: 30000 });
   await page.waitForFunction(() => document.querySelector('[data-testid="admin-product-form"] select').value !== '');

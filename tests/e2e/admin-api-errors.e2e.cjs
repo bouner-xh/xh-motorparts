@@ -1,7 +1,7 @@
 // E2E：後台 API 的輸入檢查與錯誤訊息（A9）
 // 錯誤以中文說明、不顯示資料庫原始訊息；ID 與長度檢查；不存在的分類不會被自動建立
 // 使用模擬 Supabase（啟動方式同 admin-product-form.e2e.cjs）
-const { BASE_URL, withPage, assert, run } = require('./helpers.cjs');
+const { BASE_URL, withPage, assert, run, openAdminTab } = require('./helpers.cjs');
 const { PASSWORD, MOCK_URL } = require('./mock-supabase.cjs');
 
 const resetMock = () => fetch(`${MOCK_URL}/__mock/reset`, { method: 'POST' });
@@ -14,6 +14,7 @@ async function login(page) {
   await page.fill('input[name="email"]', 'admin@example.com');
   await page.fill('input[name="password"]', PASSWORD);
   await Promise.all([page.waitForURL(/\/admin\/dashboard/, { timeout: 60000 }), page.click('form button[type="submit"]')]);
+  await openAdminTab(page, '產品');
   await page.locator('[data-testid="admin-product-form"]').waitFor({ timeout: 30000 });
 }
 
@@ -30,6 +31,7 @@ run('大分類代號重複：畫面顯示中文說明，不顯示資料庫原始
   withPage(async (page) => {
     await resetMock();
     await login(page);
+    await openAdminTab(page, '分類');
     const form = page.locator('form.admin-form', { hasText: '描述 (zh-TW)' });
     await form.getByLabel('Slug (網址代號)').fill('cylinder');
     await form.getByLabel('名稱 (zh-TW)').fill('重複');
