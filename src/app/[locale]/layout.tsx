@@ -12,6 +12,7 @@ import { getBaseUrl } from '@/lib/site';
 import { CartProvider } from '@/context/CartContext';
 import { CartIndicator } from '@/components/layout/CartIndicator';
 import { LanguageLinks } from '@/components/layout/LanguageLinks';
+import { SiteHeader } from '@/components/layout/SiteHeader';
 import { localized } from '@/lib/localized-text';
 
 const companyByLocale: Record<Locale, string> = {
@@ -67,26 +68,30 @@ export default async function LocaleLayout({
       <CartProvider>
         <AnalyticsScripts />
         <div className="container page-shell">
-          <header className="site-header">
-            <div className="brand-row">
+          <SiteHeader
+            brand={
               <div className="brand-copy">
                 <div className="brand-name">{companyByLocale[localeValue]}</div>
                 <p>
                   {localized(localeValue, { 'zh-TW': '摩托車零件產品目錄與商務詢價平台', 'zh-CN': '摩托车零件产品目录与商务询价平台', en: 'Motorcycle parts catalog and B2B inquiry platform' })}
                 </p>
               </div>
-            </div>
-            <nav className="nav" style={{ alignItems: 'center' }}>
-              <Link href={`/${localeValue}`}>{t('home')}</Link>
-              <Link href={`/${localeValue}/products`}>{t('products')}</Link>
-              <Link href={`/${localeValue}/about`}>{t('about')}</Link>
-              <Link href={`/${localeValue}/contact`}>{t('contact')}</Link>
-              <LanguageLinks />
-              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-                <CartIndicator locale={localeValue} />
-              </div>
-            </nav>
-          </header>
+            }
+            links={
+              <>
+                <Link href={`/${localeValue}`}>{t('home')}</Link>
+                <Link href={`/${localeValue}/products`}>{t('products')}</Link>
+                <Link href={`/${localeValue}/about`}>{t('about')}</Link>
+                <Link href={`/${localeValue}/contact`}>{t('contact')}</Link>
+                <LanguageLinks />
+              </>
+            }
+            cart={<CartIndicator locale={localeValue} />}
+            menuLabel={{
+              open: localized(localeValue, { 'zh-TW': '開啟選單', 'zh-CN': '打开菜单', en: 'Open menu' }),
+              close: localized(localeValue, { 'zh-TW': '關閉選單', 'zh-CN': '关闭菜单', en: 'Close menu' }),
+            }}
+          />
           {children}
           <Footer locale={localeValue} />
           <CookieBanner />
