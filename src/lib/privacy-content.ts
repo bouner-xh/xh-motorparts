@@ -135,7 +135,7 @@ export const privacyContent: Record<Locale, PrivacyContent> = {
         content: '若您對於本隱私政策、Cookie 設定或個人資料處理有任何疑問、申訴或建議，歡迎透過以下窗口與我們對接：',
         bullets: [
           '公司名稱：協皇企業有限公司',
-          '電子郵件：bounerchang@gmail.com',
+          '電子郵件：sales@xh-motorparts.com',
           '服務時間：週一至週五 09:00 - 18:00 (GMT+8)'
         ]
       },
@@ -250,7 +250,7 @@ export const privacyContent: Record<Locale, PrivacyContent> = {
         content: '若您对于本隐私政策、Cookie 设置或个人数据处理有任何疑问、申诉或建议，欢迎通过以下窗口与我们对接：',
         bullets: [
           '公司名称：协皇企业有限公司',
-          '电子邮件：bounerchang@gmail.com',
+          '电子邮件：sales@xh-motorparts.com',
           '服务时间：周一至周五 09:00 - 18:00 (GMT+8)'
         ]
       },
@@ -365,7 +365,7 @@ export const privacyContent: Record<Locale, PrivacyContent> = {
         content: 'If you have any questions, feedback, or requests regarding this Privacy Policy, please contact our data team:',
         bullets: [
           'Company Name: Xie Huang Enterprise Co., Ltd.',
-          'Email: bounerchang@gmail.com',
+          'Email: sales@xh-motorparts.com',
           'Business Hours: Monday to Friday 09:00 - 18:00 (GMT+8)'
         ]
       },

@@ -28,8 +28,9 @@
 | D1 產品卡片直接加入詢價、D13 產品預設圖、D5 Hero 手機內距、D6 語系切換停留同頁、D7 三語文案、D8 小字對比、D10 H1、D11 主按鈕結構 | #4 |
 | 密碼更換、關閉公開註冊、git 歷史改寫、Vercel 管理員名單、Cloudflare Email Routing | 設定變更（見 CHANGELOG） |
 | C2 `sales@xh-motorparts.com` 可收信（2026-09-27 老闆以外部信箱實測，轉寄到負責人信箱） | 設定變更 |
+| S9 對外聯絡信箱改為 `sales@xh-motorparts.com` | #8 |
 
-測試：`bash tests/run-all.sh`（單元 16 項、E2E 30 項，8 種環境情境）全部通過。
+測試：`bash tests/run-all.sh`（單元 16 項、E2E 31 項，8 種環境情境）全部通過。
 
 **2026-09-26 正式網站唯讀檢查**（`production-check` 等 7 支測試）：S0、S3、S7、D1、D5、D6、D7、D8、D10、D11、D13 在正式網站皆確認正常。
 C4 canonical 仍為不帶 www 的網址，確認是 Vercel 的 `NEXT_PUBLIC_BASE_URL` 仍為舊值（見待處理 #1）。
@@ -45,7 +46,6 @@ C4 canonical 仍為不帶 www 的網址，確認是 Vercel 的 `NEXT_PUBLIC_BASE
 | 編號 | 項目 | 建議 |
 |---|---|---|
 | S6 補充 | 頁尾加「Cookie 設定」連結，可撤回同意（GDPR） | 放在頁尾「隱私政策」旁 |
-| S9 | 首頁與頁尾的個人 Gmail 改為 `sales@xh-motorparts.com` | `sales@` 已確認可收信，可以進行；需確認是否同時改寄件／通知信箱 |
 | S10 | CSP 改用 nonce | 建議暫緩（會讓全站改為即時產生頁面） |
 | C3 | Cloudflare 代理改為 DNS only | 需先提供 Cloudflare Security／Rules 截圖確認沒有自訂規則 |
 | C5 | 忘記密碼功能 | 建議暫緩（目前只有兩位管理員） |

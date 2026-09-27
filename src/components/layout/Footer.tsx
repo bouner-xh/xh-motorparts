@@ -56,7 +56,7 @@ export function Footer({locale}: {locale: Locale}) {
           <ul className="footer-contact-list">
             <li>
               <span className="contact-icon-label">📧</span> 
-              <a href="mailto:bounerchang@gmail.com" className="contact-link">bounerchang@gmail.com</a>
+              <a href="mailto:sales@xh-motorparts.com" className="contact-link">sales@xh-motorparts.com</a>
             </li>
             <li>
               <span className="contact-icon-label">📱</span> 

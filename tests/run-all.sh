@@ -65,7 +65,7 @@ node --experimental-strip-types --test 'tests/security/*.test.mts' 2>&1 | grep -
 [ "${PIPESTATUS[0]}" -eq 0 ] || FAIL=1
 
 echo "== 2. 開發模式（無資料庫）"
-start_server npx next dev -p $PORT && e2e inquiry-flow admin-login admin-upload site-smoke canonical-url home-hero-responsive no-nested-interactive text-contrast
+start_server npx next dev -p $PORT && e2e inquiry-flow admin-login admin-upload site-smoke canonical-url home-hero-responsive no-nested-interactive text-contrast contact-email
 stop_server
 
 echo "== 3. 開發模式 + 模擬 Supabase（管理員名單：admin@example.com）"
