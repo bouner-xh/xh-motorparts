@@ -2,16 +2,18 @@ import { z } from 'zod';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin-auth';
 import { revalidateCatalog } from '@/lib/revalidate';
+import { dbErrorResponse, invalidInputResponse, isUuid, INVALID_ID_MESSAGE } from '@/lib/admin-api-errors';
 
+// 欄位長度上限（A9）
 const categoryPayloadSchema = z.object({
-  id: z.string().optional(),
-  slug: z.string().min(1),
-  nameZhTw: z.string().min(1),
-  nameZhCn: z.string().min(1),
-  nameEn: z.string().min(1),
-  descriptionZhTw: z.string().optional().default(''),
-  descriptionZhCn: z.string().optional().default(''),
-  descriptionEn: z.string().optional().default(''),
+  id: z.string().uuid().optional(),
+  slug: z.string().trim().min(1).max(64),
+  nameZhTw: z.string().trim().min(1).max(200),
+  nameZhCn: z.string().trim().min(1).max(200),
+  nameEn: z.string().trim().min(1).max(200),
+  descriptionZhTw: z.string().max(2000).optional().default(''),
+  descriptionZhCn: z.string().max(2000).optional().default(''),
+  descriptionEn: z.string().max(2000).optional().default(''),
   sortOrder: z.number().int().default(0),
 });
 
@@ -48,7 +50,7 @@ export async function GET() {
     .select('id, slug, name_i18n, description_i18n, sort_order')
     .order('sort_order', { ascending: true });
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return dbErrorResponse('categories GET', error);
 
   interface CategoryQueryRow {
     id: string;
@@ -88,7 +90,7 @@ export async function POST(request: Request) {
   if (!service) return Response.json({ error: 'Missing service role' }, { status: 500 });
 
   const parsed = categoryPayloadSchema.safeParse(await request.json());
-  if (!parsed.success) return Response.json({ error: 'Invalid payload' }, { status: 400 });
+  if (!parsed.success) return invalidInputResponse();
   const payload = parsed.data;
 
   const { data: inserted, error } = await service
@@ -102,7 +104,7 @@ export async function POST(request: Request) {
     .select('id')
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return dbErrorResponse('categories POST', error);
   revalidateCatalog();
   return Response.json({ ok: true, id: inserted.id });
 }
@@ -118,25 +120,25 @@ export async function PUT(request: Request) {
 
   if (Array.isArray(body)) {
     const sortItemsSchema = z.array(z.object({
-      id: z.string(),
+      id: z.string().uuid(),
       sortOrder: z.number().int()
-    }));
+    })).max(500);
     const parsed = sortItemsSchema.safeParse(body);
-    if (!parsed.success) return Response.json({ error: 'Invalid sort payload' }, { status: 400 });
+    if (!parsed.success) return invalidInputResponse();
 
     const updates = parsed.data.map(item =>
       service.from('categories').update({ sort_order: item.sortOrder }).eq('id', item.id)
     );
     const results = await Promise.all(updates);
     const firstError = results.find(r => r.error);
-    if (firstError) return Response.json({ error: firstError.error?.message || 'Update failed' }, { status: 500 });
+    if (firstError) return dbErrorResponse('categories sort', firstError.error);
 
     revalidateCatalog();
     return Response.json({ ok: true });
   }
 
   const parsed = categoryPayloadSchema.safeParse(body);
-  if (!parsed.success || !parsed.data.id) return Response.json({ error: 'Invalid payload' }, { status: 400 });
+  if (!parsed.success || !parsed.data.id) return invalidInputResponse();
   const payload = parsed.data;
 
   const { error } = await service
@@ -149,7 +151,7 @@ export async function PUT(request: Request) {
     })
     .eq('id', payload.id);
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return dbErrorResponse('categories PUT', error);
   revalidateCatalog();
   return Response.json({ ok: true });
 }
@@ -163,7 +165,7 @@ export async function DELETE(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
-  if (!id) return Response.json({ error: 'Missing ID' }, { status: 400 });
+  if (!isUuid(id)) return invalidInputResponse(INVALID_ID_MESSAGE);
 
   // 底下還有產品時不能刪除（資料庫設定為 restrict）；子分類會一併刪除（cascade）（A5）
   const { data: products } = await service.from('products').select('id').eq('category_id', id);
@@ -175,7 +177,7 @@ export async function DELETE(request: Request) {
   }
 
   const { error } = await service.from('categories').delete().eq('id', id);
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return dbErrorResponse('categories DELETE', error);
 
   revalidateCatalog();
   return Response.json({ ok: true });

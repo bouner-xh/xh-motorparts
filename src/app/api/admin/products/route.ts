@@ -3,6 +3,7 @@ import {getSupabaseServerAuthClient, getSupabaseServiceRoleClient} from '@/lib/s
 import {isAdminEmail} from '@/lib/admin-auth';
 import {revalidateCatalog} from '@/lib/revalidate';
 import {getProductImageUrls, removeUnreferencedImages} from '@/lib/product-image-cleanup';
+import {describeDbError, INVALID_ID_MESSAGE, INVALID_INPUT_MESSAGE, isUuid} from '@/lib/admin-api-errors';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
 
@@ -28,18 +29,19 @@ interface ProductImageRow {
   storage_path: string | null;
 }
 
+// 欄位長度上限（A9）
 const productPayloadSchema = z.object({
-  id: z.string().optional(),
-  category: z.string().min(1),
-  modelNumber: z.string().min(1),
-  nameZhTw: z.string().min(1),
-  nameZhCn: z.string().min(1),
-  nameEn: z.string().min(1),
-  specifications: z.array(z.string()).default([]),
+  id: z.string().uuid().optional(),
+  category: z.string().trim().min(1).max(64),
+  modelNumber: z.string().trim().min(1).max(100),
+  nameZhTw: z.string().trim().min(1).max(200),
+  nameZhCn: z.string().trim().min(1).max(200),
+  nameEn: z.string().trim().min(1).max(200),
+  specifications: z.array(z.string().max(200)).max(50).default([]),
   stockQuantity: z.number().int().nonnegative().default(0),
   isActive: z.boolean().default(true),
   subCategoryId: z.string().uuid(),
-  imagePath: z.string().optional().default('')
+  imagePath: z.string().max(1000).optional().default('')
 });
 
 function toAdminProductItem(item: ProductRow) {
@@ -167,62 +169,17 @@ function logApiError(requestId: string, stage: string, detail: unknown) {
   console.error(`[admin-products][${requestId}] ${stage}`, detail);
 }
 
-function normalizeDatabaseError(message?: string) {
-  const value = (message || '').trim();
-  if (!value) {
-    return 'Database operation failed';
-  }
-
-  if (value.includes('permission denied')) {
-    return '資料庫權限不足：請確認 SUPABASE_SERVICE_ROLE_KEY 使用 service role key，並在 Supabase SQL Editor 補齊資料表/策略初始化。';
-  }
-
-  if (value.includes('Invalid API key')) {
-    return 'Supabase API key 無效：請重新貼上正確的 SUPABASE_SERVICE_ROLE_KEY。';
-  }
-
-  return value;
+// 資料庫錯誤：詳細內容記錄在伺服器 log，回應中文說明（A9）
+function dbError(requestId: string, stage: string, error: {code?: string; message?: string} | null | undefined) {
+  logApiError(requestId, stage, `${error?.code || ''} ${error?.message || ''}`);
+  const {message, status} = describeDbError(error);
+  return Response.json({error: message, requestId}, {status});
 }
 
-interface EnsureCategoryResult {
-  id: string | null;
-  error: string;
-}
-
-async function ensureCategoryId(service: ServiceClient, slug: string) {
-  const {data: existed, error: queryError} = await service
-    .from('categories')
-    .select('id')
-    .eq('slug', slug)
-    .maybeSingle();
-
-  if (!queryError && existed?.id) {
-    return {id: existed.id, error: ''} satisfies EnsureCategoryResult;
-  }
-
-  if (queryError && !/0 rows|Results contain 0 rows/.test(queryError.message || '')) {
-    return {id: null, error: `Category query failed: ${queryError.message}`} satisfies EnsureCategoryResult;
-  }
-
-  const {data: inserted, error: insertError} = await service
-    .from('categories')
-    .insert({
-      slug,
-      name_i18n: {},
-      description_i18n: {},
-      sort_order: 999
-    })
-    .select('id')
-    .single();
-
-  if (insertError || !inserted?.id) {
-    return {
-      id: null,
-      error: `Category create failed: ${insertError?.message || 'unknown error'}`
-    } satisfies EnsureCategoryResult;
-  }
-
-  return {id: inserted.id, error: ''} satisfies EnsureCategoryResult;
+// 依代號找大分類；找不到時不再自動建立沒有名稱的分類（A9）
+async function findCategoryId(service: ServiceClient, slug: string) {
+  const {data} = await service.from('categories').select('id').eq('slug', slug).maybeSingle();
+  return (data?.id as string | undefined) || null;
 }
 
 // 子分類必須屬於所選的大分類，否則前台會把產品放到錯誤的位置（A3）
@@ -248,10 +205,7 @@ export async function GET() {
     .select('id,model_number,name_i18n,specifications,stock_quantity,is_active,category:categories!inner(slug),sub_category_id')
     .order('model_number', {ascending: true});
 
-  if (error) {
-    logApiError(requestId, 'query products failed', error.message);
-    return Response.json({error: normalizeDatabaseError(error.message), requestId}, {status: 500});
-  }
+  if (error) return dbError(requestId, 'query products failed', error);
 
   const productRows = (data as ProductRow[] | null) || [];
   const imageMap = await buildImageMap(
@@ -286,29 +240,24 @@ export async function POST(request: Request) {
 
   if (!parsed.success) {
     logApiError(requestId, 'payload validation failed', parsed.error.flatten());
-    return Response.json({error: 'Invalid product payload', requestId}, {status: 400});
+    return Response.json({error: INVALID_INPUT_MESSAGE, requestId}, {status: 400});
   }
 
   const payload = parsed.data;
 
-  const categoryResult = await ensureCategoryId(service, payload.category);
-
-  if (!categoryResult.id) {
-    logApiError(requestId, 'category prepare failed', categoryResult.error || 'unknown');
-    return Response.json(
-      {error: normalizeDatabaseError(categoryResult.error || 'Category prepare failed'), requestId},
-      {status: 400}
-    );
+  const categoryId = await findCategoryId(service, payload.category);
+  if (!categoryId) {
+    return Response.json({error: '找不到這個大分類，請重新整理頁面後再選一次', requestId}, {status: 400});
   }
 
-  if (!(await checkSubCategoryInCategory(service, payload.subCategoryId, categoryResult.id))) {
+  if (!(await checkSubCategoryInCategory(service, payload.subCategoryId, categoryId))) {
     return Response.json({error: '子分類不屬於所選的大分類，請重新選擇子分類', requestId}, {status: 400});
   }
 
   const {data: inserted, error} = await service
     .from('products')
     .insert({
-      category_id: categoryResult.id,
+      category_id: categoryId,
       model_number: payload.modelNumber,
       name_i18n: {
         'zh-TW': payload.nameZhTw,
@@ -323,13 +272,7 @@ export async function POST(request: Request) {
     .select('id')
     .single();
 
-  if (error || !inserted?.id) {
-    logApiError(requestId, 'insert product failed', error?.message || 'unknown');
-    return Response.json(
-      {error: normalizeDatabaseError(error?.message || 'Create product failed'), requestId},
-      {status: 500}
-    );
-  }
+  if (error || !inserted?.id) return dbError(requestId, 'insert product failed', error);
 
   await bindPrimaryImage(service, inserted.id, payload.imagePath);
 
@@ -354,34 +297,29 @@ export async function PUT(request: Request) {
 
   if (!parsed.success || !parsed.data.id) {
     logApiError(requestId, 'payload validation failed', parsed.success ? 'missing id' : parsed.error.flatten());
-    return Response.json({error: 'Invalid product payload', requestId}, {status: 400});
+    return Response.json({error: INVALID_INPUT_MESSAGE, requestId}, {status: 400});
   }
 
   const payload = parsed.data;
   const productId = payload.id;
 
   if (!productId) {
-    return Response.json({error: 'Missing product ID', requestId}, {status: 400});
+    return Response.json({error: INVALID_ID_MESSAGE, requestId}, {status: 400});
   }
 
-  const categoryResult = await ensureCategoryId(service, payload.category);
-
-  if (!categoryResult.id) {
-    logApiError(requestId, 'category prepare failed', categoryResult.error || 'unknown');
-    return Response.json(
-      {error: normalizeDatabaseError(categoryResult.error || 'Category prepare failed'), requestId},
-      {status: 400}
-    );
+  const categoryId = await findCategoryId(service, payload.category);
+  if (!categoryId) {
+    return Response.json({error: '找不到這個大分類，請重新整理頁面後再選一次', requestId}, {status: 400});
   }
 
-  if (!(await checkSubCategoryInCategory(service, payload.subCategoryId, categoryResult.id))) {
+  if (!(await checkSubCategoryInCategory(service, payload.subCategoryId, categoryId))) {
     return Response.json({error: '子分類不屬於所選的大分類，請重新選擇子分類', requestId}, {status: 400});
   }
 
   const {error} = await service
     .from('products')
     .update({
-      category_id: categoryResult.id,
+      category_id: categoryId,
       model_number: payload.modelNumber,
       name_i18n: {
         'zh-TW': payload.nameZhTw,
@@ -395,10 +333,7 @@ export async function PUT(request: Request) {
     })
     .eq('id', productId);
 
-  if (error) {
-    logApiError(requestId, 'update product failed', error.message);
-    return Response.json({error: normalizeDatabaseError(error.message), requestId}, {status: 500});
-  }
+  if (error) return dbError(requestId, 'update product failed', error);
 
   await bindPrimaryImage(service, productId, payload.imagePath);
 
@@ -421,18 +356,15 @@ export async function DELETE(request: Request) {
   const {searchParams} = new URL(request.url);
   const id = searchParams.get('id');
 
-  if (!id) {
-    return Response.json({error: 'Missing product ID', requestId}, {status: 400});
+  if (!isUuid(id)) {
+    return Response.json({error: INVALID_ID_MESSAGE, requestId}, {status: 400});
   }
 
   // 先記下圖片網址；刪除產品時資料庫會一併刪除圖片紀錄（on delete cascade），再清掉圖檔（A5）
   const imageUrls = await getProductImageUrls(service, id);
   const {error} = await service.from('products').delete().eq('id', id);
 
-  if (error) {
-    logApiError(requestId, 'delete product failed', error.message);
-    return Response.json({error: normalizeDatabaseError(error.message), requestId}, {status: 500});
-  }
+  if (error) return dbError(requestId, 'delete product failed', error);
   await removeUnreferencedImages(service, imageUrls);
 
   revalidateCatalog();

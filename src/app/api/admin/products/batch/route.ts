@@ -3,19 +3,28 @@ import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib
 import { isAdminEmail } from '@/lib/admin-auth';
 import { revalidateCatalog } from '@/lib/revalidate';
 import { getProductImageUrls, removeUnreferencedImages } from '@/lib/product-image-cleanup';
+import { describeDbError, INVALID_INPUT_MESSAGE, type DbErrorLike } from '@/lib/admin-api-errors';
 
+// 每列的錯誤訊息：原始資料庫錯誤記在伺服器 log，畫面顯示中文說明（A9）
+function rowDbError(stage: string, modelNumber: string, error: DbErrorLike | null | undefined) {
+  console.error(`[admin-batch] ${stage} ${modelNumber}`, error?.code || '', error?.message || '');
+  return new Error(`${stage}：${describeDbError(error).message}`);
+}
+
+// 欄位長度上限（A9）
+const i18nSchema = z.record(z.string().max(20), z.string().max(200)).default({});
 const batchProductSchema = z.object({
-  categorySlug: z.string().min(1),
-  categoryNameI18n: z.record(z.string(), z.string()).default({}),
-  subCategorySlug: z.string().min(1),
-  subCategoryNameI18n: z.record(z.string(), z.string()).default({}),
-  modelNumber: z.string().min(1),
-  nameI18n: z.record(z.string(), z.string()).default({}),
+  categorySlug: z.string().trim().min(1).max(64),
+  categoryNameI18n: i18nSchema,
+  subCategorySlug: z.string().trim().min(1).max(64),
+  subCategoryNameI18n: i18nSchema,
+  modelNumber: z.string().trim().min(1).max(100),
+  nameI18n: i18nSchema,
   // 沒填（null／未提供）時：新產品用預設值，既有產品保留原本內容（A4）
-  specifications: z.array(z.string()).nullish(),
+  specifications: z.array(z.string().max(200)).max(50).nullish(),
   stockQuantity: z.number().int().nonnegative().nullish(),
   isActive: z.boolean().default(true),
-  imagePath: z.string().optional().default('')
+  imagePath: z.string().max(1000).optional().default('')
 });
 
 // 每次最多 100 筆；前端每 50 筆送一次（src/lib/product-import.ts 的 IMPORT_CHUNK_SIZE），避免超過伺服器執行時間
@@ -43,7 +52,8 @@ export async function POST(request: Request) {
 
   const parsed = batchImportPayloadSchema.safeParse(await request.json());
   if (!parsed.success) {
-    return Response.json({ error: 'Invalid payload schema', details: parsed.error.flatten() }, { status: 400 });
+    console.error('[admin-batch] payload validation failed', JSON.stringify(parsed.error.flatten()));
+    return Response.json({ error: `${INVALID_INPUT_MESSAGE}（每次最多 100 筆）` }, { status: 400 });
   }
 
   const { products } = parsed.data;
@@ -88,7 +98,7 @@ export async function POST(request: Request) {
             .single();
 
           if (catErr || !catNew?.id) {
-            throw new Error(`建立大分類失敗: ${catErr?.message || '未知錯誤'}`);
+            throw rowDbError('建立大分類失敗', item.modelNumber, catErr);
           }
           categoryId = catNew.id;
         }
@@ -128,7 +138,7 @@ export async function POST(request: Request) {
             .single();
 
           if (subErr || !subNew?.id) {
-            throw new Error(`建立子分類失敗: ${subErr?.message || '未知錯誤'}`);
+            throw rowDbError('建立子分類失敗', item.modelNumber, subErr);
           }
           subCategoryId = subNew.id;
         }
@@ -161,7 +171,7 @@ export async function POST(request: Request) {
           .eq('id', productId);
 
         if (updateErr) {
-          throw new Error(`更新產品失敗: ${updateErr.message}`);
+          throw rowDbError('更新產品失敗', item.modelNumber, updateErr);
         }
       } else {
         // 新增
@@ -183,7 +193,7 @@ export async function POST(request: Request) {
           .single();
 
         if (createErr || !prodNew?.id) {
-          throw new Error(`建立產品失敗: ${createErr?.message || '未知錯誤'}`);
+          throw rowDbError('建立產品失敗', item.modelNumber, createErr);
         }
         productId = prodNew.id;
       }

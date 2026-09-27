@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin-auth';
+import { dbErrorResponse, invalidInputResponse, isUuid, INVALID_ID_MESSAGE } from '@/lib/admin-api-errors';
 
 const STATUSES = ['pending', 'processing', 'replied', 'archived'] as const;
 type InquiryStatus = (typeof STATUSES)[number];
@@ -60,7 +61,7 @@ export async function GET(request: Request) {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return dbErrorResponse('inquiries GET', error);
 
   const rows = (data as InquiryRow[] | null) || [];
   const counts: Record<'all' | InquiryStatus, number> = { all: rows.length, pending: 0, processing: 0, replied: 0, archived: 0 };
@@ -88,7 +89,7 @@ export async function PUT(request: Request) {
     const parsed = updateInquirySchema.safeParse(body);
 
     if (!parsed.success) {
-      return Response.json({ error: 'Invalid payload' }, { status: 400 });
+      return invalidInputResponse();
     }
 
     // 回傳更新後的資料（含資料庫自動更新的 updated_at）
@@ -102,11 +103,11 @@ export async function PUT(request: Request) {
       .select('*')
       .single();
 
-    if (error) return Response.json({ error: error.message }, { status: 500 });
+    if (error) return dbErrorResponse('inquiries PUT', error);
 
     return Response.json({ ok: true, item: data });
   } catch {
-    return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return invalidInputResponse();
   }
 }
 
@@ -119,14 +120,14 @@ export async function DELETE(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
-  if (!id || !z.string().uuid().safeParse(id).success) return Response.json({ error: 'Missing ID' }, { status: 400 });
+  if (!isUuid(id)) return invalidInputResponse(INVALID_ID_MESSAGE);
 
   const { error } = await service
     .from('inquiry_requests')
     .delete()
     .eq('id', id);
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return dbErrorResponse('inquiries DELETE', error);
 
   return Response.json({ ok: true });
 }
