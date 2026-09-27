@@ -38,19 +38,20 @@ export default async function LocaleHome({
           <h1 className="hero__title" style={{ whiteSpace: 'pre-line', marginTop: '1.5rem' }}>{content.hero.title}</h1>
           <p className="muted hero__description" style={{ marginTop: '1rem' }}>{content.hero.subtitle}</p>
           
-          <div className="hero__contact-quick">
-            <span>📧 Email: <a href="mailto:sales@xh-motorparts.com">sales@xh-motorparts.com</a></span>
-            <span>📱 WhatsApp: <a href="https://wa.me/886930797299" target="_blank" rel="noopener noreferrer">+886 930 797 299</a></span>
-          </div>
-
           <div className="hero__actions" style={{ marginTop: '2rem' }}>
-            <Link className="button-primary" href={`/${localeValue}/products`}>
+            <Link className="button-primary button-primary--hero" href={`/${localeValue}/products`}>
               {content.hero.primaryCta}
             </Link>
-            <Link className="button-secondary" href={`/${localeValue}/about`}>
+            <Link className="button-outline" href={`/${localeValue}/about`}>
               {content.hero.secondaryCta}
             </Link>
           </div>
+
+          <p className="hero__contact-line">
+            <span>{localized(localeValue, { 'zh-TW': '或直接聯絡業務', 'zh-CN': '或直接联系业务', en: 'Or contact our sales team' })}</span>
+            <a href="mailto:sales@xh-motorparts.com"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>sales@xh-motorparts.com</a>
+            <a href="https://wa.me/886930797299" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 0 1-13.4 7.9L3 21l1.1-4.6A9 9 0 1 1 21 12Z"/></svg>WhatsApp +886 930 797 299</a>
+          </p>
         </div>
       </section>
 

@@ -1038,28 +1038,6 @@ textarea {
   font-weight: 500;
 }
 
-.hero__contact-quick {
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  margin-top: 1.5rem;
-  font-size: 0.95rem;
-  border-left: 3px solid #dc2626;
-  padding-left: 0.8rem;
-  color: #94a3b8;
-}
-
-.hero__contact-quick a {
-  color: #ef4444;
-  text-decoration: underline;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.hero__contact-quick a:hover {
-  color: #f87171;
-}
-
 /* =========================================================
    Full Bleed Quote Section
    ========================================================= */
@@ -1314,4 +1292,57 @@ textarea {
   .nav-cart {
     display: none !important;
   }
+}
+
+/* 首頁 Hero 按鈕與聯絡資訊（D2）：主按鈕放大、次要按鈕改外框，聯絡資訊縮為按鈕下方一行 */
+.button-primary--hero {
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 0.9rem 1.6rem;
+}
+
+.button-outline {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 0.9rem 1.6rem;
+  border-radius: 10px;
+  border: 1px solid #475569;
+  color: #e2e8f0;
+  font-size: 1.05rem;
+  transition: all 0.3s ease;
+}
+
+.button-outline:hover {
+  border-color: #94a3b8;
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.hero__contact-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1.25rem;
+  margin: 1.5rem 0 0;
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+.hero__contact-line a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #cbd5e1;
+  text-decoration: underline;
+  text-decoration-color: rgba(203, 213, 225, 0.35);
+  text-underline-offset: 3px;
+}
+
+.hero__contact-line a:hover {
+  color: #f8fafc;
+  text-decoration-color: currentColor;
+}
+
+.hero__contact-line svg {
+  color: #fca5a5;
+  flex-shrink: 0;
 }
