@@ -26,7 +26,7 @@
 
 ## 2026-09-27（第十批）：後台分頁與總覽
 
-PR：（合併後補上）
+PR：[#15](https://github.com/bouner-xh/xh-motorparts/pull/15)
 
 | 編號 | 修改 | 主要檔案 | Commit | 驗證 |
 |---|---|---|---|---|
