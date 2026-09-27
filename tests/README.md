@@ -77,6 +77,10 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `admin-product-form.e2e.cjs` | 產品表單不預填測試資料、預設不上架、沒有偵錯工具；手動新增可儲存（A2） | 模擬 Supabase |
 | `admin-product-category.e2e.cjs` | 連續新增保留分類、切換大分類清空子分類、API 拒絕分類不符（A3） | 模擬 Supabase |
 | `admin-product-import.e2e.cjs` | Excel＋ZIP 匯入、保留翻譯、FALSE 不上架、錯誤列表、120 筆分 3 批、範例檔（A1、A4） | 模擬 Supabase |
+| `admin-delete.e2e.cjs` | 有產品的分類不能刪除並說明原因、刪除大分類提示子分類、換圖與刪除產品後清除圖檔（A5） | 模擬 Supabase |
+| `admin-inquiries.e2e.cjs` | 詢價狀態篩選與筆數、搜尋（含型號）、分頁、Esc 關閉、最後更新時間（A6） | 模擬 Supabase |
+| `admin-product-list.e2e.cjs` | 產品搜尋篩選分頁縮圖、正在編輯與取消、複製、未存檔圖片清除（A7） | 模擬 Supabase |
+| `admin-api-errors.e2e.cjs` | 錯誤訊息為中文說明、長度與 ID 檢查、不自動建立分類（A9） | 模擬 Supabase |
 
 ### 模擬 Supabase
 
@@ -84,3 +88,8 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 讓後台權限與產品列表可以在沒有真實 Supabase 的環境下測試。範例資料：1 個分類（cylinder）、1 個子分類（std）、2 個產品。啟動：`node tests/e2e/mock-supabase.cjs`（port 54321）。
 
 可用 `E2E_BASE_URL` 指定其他網址，例如 Vercel Preview。
+
+### 模擬 Supabase（`tests/e2e/mock-supabase.cjs`）
+
+可讀寫的模擬資料庫與 Storage，後台測試都用它。外鍵與唯一值規則對照 `doc/SUPABASE_INIT_SQL.md`。
+測試輔助端點：`POST /__mock/reset`（重設為範例資料）、`GET /__mock/state`（查看資料與已上傳檔案）、`POST /__mock/seed`（加入資料）。

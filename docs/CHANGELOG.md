@@ -24,6 +24,23 @@
 
 ---
 
+## 2026-09-27（第八批）：後台分類刪除、詢價管理、產品列表與 API 錯誤處理
+
+PR：（合併後補上）
+
+| 編號 | 修改 | 主要檔案 | Commit | 驗證 |
+|---|---|---|---|---|
+| A5 | 分類列表顯示子分類數與產品數；有產品時不能刪除並說明原因（API 回 409）；刪除大分類提示子分類會一併刪除；刪除產品、換圖、匯入覆蓋圖片後清除沒人用的圖檔 | `AdminCategoryManager.tsx`、`AdminSubCategoryManager.tsx`、`api/admin/categories`、`api/admin/sub-categories`、`src/lib/product-image-cleanup.ts`（新）、`src/lib/storage-path.ts`（新） | `ac8f6d8` | `admin-delete.e2e.cjs`、`tests/admin/storage-path.test.mts` |
+| A6 第一階段 | 詢價依狀態篩選（含筆數）、「N 筆待處理」、搜尋（公司／聯絡人／Email／國家／電話／型號）、每頁 20 筆、建立與最後更新時間、Esc 關閉、錯誤不取代整個面板、修正排版 | `AdminInquiryManager.tsx`、`api/admin/inquiries/route.ts` | `81d2fac` | `admin-inquiries.e2e.cjs` |
+| A7 | 產品列表搜尋、分類與上架篩選、分頁、縮圖、子分類；編輯時捲到表單並顯示「正在編輯」與取消；「複製」產品；未存檔的上傳圖片自動刪除 | `AdminProductManager.tsx`、`api/admin/upload-image`（新增 DELETE）、`src/lib/product-image-url.ts`（新） | `528d38b` | `admin-product-list.e2e.cjs` |
+| A9 | 後台 API 錯誤改為中文說明（原始訊息只記在伺服器 log）、ID 格式與欄位長度檢查、產品 API 不再自動建立沒有名稱的分類 | `src/lib/admin-api-errors.ts`（新）、`src/app/api/admin/**` | `01918dc` | `admin-api-errors.e2e.cjs`、`tests/admin/admin-api-errors.test.mts` |
+
+**之後修改時要注意**
+- 後台 API 回傳錯誤請用 `src/lib/admin-api-errors.ts` 的 `dbErrorResponse`／`invalidInputResponse`，不要直接回傳 `error.message`。
+- 會刪除或更換產品圖片的地方，請在資料庫更新後呼叫 `removeUnreferencedImages`，避免圖檔累積。
+- 後台元件之間用瀏覽器事件同步：`products-updated`、`categories-updated`、`subcategories-updated`。
+- A6 第二階段（匯出 CSV、客戶列表、後台直接寄回覆信）尚未進行，需另外討論；「修改人」紀錄需要新增資料表欄位，也需確認。
+
 ## 2026-09-27（第七批）：後台產品管理與批量匯入
 
 PR：[#11](https://github.com/bouner-xh/xh-motorparts/pull/11)
