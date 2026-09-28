@@ -1,33 +1,16 @@
 import { z } from 'zod';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin-auth';
+import { filterInquiries, INQUIRY_STATUSES, normalizeKeyword, parseStatus, type InquiryRow, type InquiryStatus } from '@/lib/inquiry-export';
 import { dbErrorResponse, invalidInputResponse, isUuid, INVALID_ID_MESSAGE } from '@/lib/admin-api-errors';
 
-const STATUSES = ['pending', 'processing', 'replied', 'archived'] as const;
-type InquiryStatus = (typeof STATUSES)[number];
 const PAGE_SIZE = 20;
 
 const updateInquirySchema = z.object({
   id: z.string().uuid(),
-  status: z.enum(STATUSES),
+  status: z.enum(INQUIRY_STATUSES),
   replyNotes: z.string().max(5000).default('')
 });
-
-interface InquiryRow {
-  status: InquiryStatus;
-  customer_name?: string | null;
-  customer_email?: string | null;
-  company_name?: string | null;
-  country?: string | null;
-  phone?: string | null;
-  items?: {modelNumber?: string}[] | null;
-}
-
-// 搜尋：公司、聯絡人、Email、國家、電話、詢價的型號（不分大小寫）
-function matchesKeyword(row: InquiryRow, keyword: string) {
-  const fields = [row.customer_name, row.customer_email, row.company_name, row.country, row.phone, ...(row.items || []).map((i) => i.modelNumber)];
-  return fields.some((value) => (value || '').toLowerCase().includes(keyword));
-}
 
 async function getAuthenticatedUser() {
   const supabase = await getSupabaseServerAuthClient();
@@ -51,9 +34,8 @@ export async function GET(request: Request) {
   if (!service) return Response.json({ error: 'Missing service role' }, { status: 500 });
 
   const { searchParams } = new URL(request.url);
-  const statusParam = searchParams.get('status');
-  const status = STATUSES.includes(statusParam as InquiryStatus) ? (statusParam as InquiryStatus) : null;
-  const keyword = (searchParams.get('q') || '').trim().toLowerCase().slice(0, 100);
+  const status = parseStatus(searchParams.get('status'));
+  const keyword = normalizeKeyword(searchParams.get('q'));
   const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1', 10) || 1);
 
   const { data, error } = await service
@@ -69,7 +51,7 @@ export async function GET(request: Request) {
     if (row.status in counts) counts[row.status]++;
   });
 
-  const filtered = rows.filter((row) => (!status || row.status === status) && (!keyword || matchesKeyword(row, keyword)));
+  const filtered = filterInquiries(rows, status, keyword);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const items = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);

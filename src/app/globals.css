@@ -1699,3 +1699,25 @@ textarea {
     display: none;
   }
 }
+
+/* 後台匯出按鈕（A6） */
+.admin-export-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(30, 41, 59, 0.6);
+  color: #f8fafc;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.admin-export-link:hover {
+  border-color: #dc2626;
+}
+
+.admin-export-link[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

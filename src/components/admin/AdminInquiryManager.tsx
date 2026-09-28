@@ -68,6 +68,10 @@ export function AdminInquiryManager() {
   const [total, setTotal] = useState(0);
   const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const exportParams = new URLSearchParams({
+    ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+    ...(keyword ? { q: keyword } : {}),
+  }).toString();
   const openerRef = useRef<HTMLElement | null>(null);
 
   const fetchInquiries = useCallback(async () => {
@@ -209,20 +213,35 @@ export function AdminInquiryManager() {
             </span>
           ) : null}
         </h3>
-        <button
-          type="button"
-          onClick={() => void fetchInquiries()}
-          style={{
-            padding: '0.4rem 0.8rem',
-            background: 'rgba(30, 41, 59, 0.6)',
-            border: '1px solid rgba(148, 163, 184, 0.15)',
-            fontSize: '0.85rem',
-            borderRadius: '6px',
-            boxShadow: 'none',
-          }}
-        >
-          重新整理
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* 匯出目前篩選的結果（A6 ①）；檔案含客戶個資 */}
+          <a
+            href={`/api/admin/inquiries/export?${exportParams}`}
+            download
+            className="admin-export-link"
+            title="匯出的檔案含客戶個資，請妥善保管，不要轉寄給外部人員"
+            aria-disabled={total === 0}
+            onClick={(e) => {
+              if (total === 0) e.preventDefault();
+            }}
+          >
+            匯出 CSV（{total} 筆）
+          </a>
+          <button
+            type="button"
+            onClick={() => void fetchInquiries()}
+            style={{
+              padding: '0.4rem 0.8rem',
+              background: 'rgba(30, 41, 59, 0.6)',
+              border: '1px solid rgba(148, 163, 184, 0.15)',
+              fontSize: '0.85rem',
+              borderRadius: '6px',
+              boxShadow: 'none',
+            }}
+          >
+            重新整理
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
