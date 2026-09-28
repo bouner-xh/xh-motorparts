@@ -147,3 +147,35 @@ export function buildCustomerMailHtml(data: InquiryEmailData) {
         </p>
       `;
 }
+
+// 公司對外信箱（Cloudflare Email Routing 轉寄到負責人信箱）
+export const SALES_EMAIL = 'sales@xh-motorparts.com';
+
+export type EmailEnvelope = {
+  to: string;
+  subject: string;
+  html: string;
+  replyTo: string;
+};
+
+// 給管理員的新詢價通知：回覆地址設為客戶，在信箱直接按「回覆」就是回給客戶
+export function buildAdminEnvelope(data: InquiryEmailData, adminEmail: string, saveFailed = false): EmailEnvelope {
+  return {
+    to: adminEmail,
+    subject: sanitizeSubject(
+      `${saveFailed ? '[NOT SAVED TO CRM] ' : ''}[New RFQ Inquiry] From ${data.country} - ${data.companyName} - ${data.name}`
+    ),
+    html: buildAdminMailHtml(data),
+    replyTo: data.email
+  };
+}
+
+// 給客戶的確認信：回覆地址設為公司信箱，客戶直接回覆也會寄到 sales@
+export function buildCustomerEnvelope(data: InquiryEmailData): EmailEnvelope {
+  return {
+    to: data.email,
+    subject: 'Inquiry Received: Xie Huang Enterprise Co., Ltd. (Taiwan)',
+    html: buildCustomerMailHtml(data),
+    replyTo: SALES_EMAIL
+  };
+}

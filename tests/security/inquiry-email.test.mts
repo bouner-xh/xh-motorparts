@@ -59,3 +59,17 @@ test('正常內容照常顯示', () => {
 test('信件標題移除換行字元', () => {
   assert.equal(sanitizeSubject('A\r\nBcc: x@y.com\nB'), 'A Bcc: x@y.com B');
 });
+
+// 回覆地址：管理員按回覆 → 客戶；客戶按回覆 → 公司信箱
+test('通知信的回覆地址是客戶，確認信的回覆地址是 sales@', async () => {
+  const { buildAdminEnvelope, buildCustomerEnvelope, SALES_EMAIL } = await import('../../src/lib/inquiry-email.ts');
+  const data = { ...malicious, email: 'buyer@moto.example' };
+  const admin = buildAdminEnvelope(data, SALES_EMAIL);
+  assert.equal(admin.to, 'sales@xh-motorparts.com');
+  assert.equal(admin.replyTo, 'buyer@moto.example');
+  assert.doesNotMatch(admin.subject, /[\r\n]/);
+  assert.match(buildAdminEnvelope(data, SALES_EMAIL, true).subject, /^\[NOT SAVED TO CRM\]/);
+  const customer = buildCustomerEnvelope(data);
+  assert.equal(customer.to, 'buyer@moto.example');
+  assert.equal(customer.replyTo, 'sales@xh-motorparts.com');
+});
