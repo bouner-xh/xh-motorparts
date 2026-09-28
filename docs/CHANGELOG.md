@@ -24,6 +24,19 @@
 
 ---
 
+## 2026-09-28（第十二批）：詢價信件回覆地址、產品頁按鈕位置
+
+PR：（合併後補上）
+
+| 編號 | 修改 | 主要檔案 | Commit | 驗證 |
+|---|---|---|---|---|
+| 信件 B | 新詢價通知信的回覆地址設為客戶（在信箱按回覆就是回給客戶）；客戶確認信的回覆地址設為 `sales@`；未設定 `RESEND_ADMIN_EMAIL` 時改寄 `sales@`，程式與舊文件不再有個人信箱 | `src/lib/inquiry-email.ts`、`src/app/api/inquiry/route.ts`、`doc/IMPLEMENTATION_STATUS.md` | `daaf66d` | `tests/security/inquiry-email.test.mts` |
+| D15 | 數量與「加入詢價清單」移到規格、庫存下方；修正產品照片 1:1 比例沒有生效；桌機按鈕 1,122px → 677px（第一個畫面內），手機 1,617px → 985px | 產品頁 `page.tsx`、`InquiryForm.tsx`、`globals.css` | `9ea2b61` | `product-detail-cta.e2e.cjs` |
+
+**之後修改時要注意**
+- 網站寄出的信件請用 `inquiry-email.ts` 的 envelope 函式，並設定 `replyTo`，避免客戶回信寄到沒人收的地址。
+- Gmail 以 `sales@` 名義寄信的設定步驟：`docs/gmail-send-as-sales.md`。
+
 ## 2026-09-27（第十一批）：匯入工具圖示、功能介紹
 
 PR：[#16](https://github.com/bouner-xh/xh-motorparts/pull/16)
