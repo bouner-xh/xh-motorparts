@@ -85,6 +85,8 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `product-detail-cta.e2e.cjs` | 產品頁不用捲動就看得到「加入詢價清單」、照片 1:1（D15） | 模擬 Supabase |
 | `admin-inquiry-export.e2e.cjs` | 詢價匯出 CSV：篩選結果、每個品項一列、BOM、防公式注入、未登入 401（A6 ①） | 模擬 Supabase |
 | `admin-customers.e2e.cjs` | 客戶列表：次數、排序、國家、型號搜尋、詳情、與詢價分頁互相跳轉、匯出（A6 ②） | 模擬 Supabase |
+| `admin-inquiry-events.e2e.cjs` | 詢價處理紀錄：操作人與前後值、沒有改變不記錄、刪除後保留、資料表不存在時照常運作（A6 ③） | 模擬 Supabase |
+| `admin-inquiry-reply.e2e.cjs` | 後台回覆客戶：範本、未填提示不能寄、PDF 附件、狀態與紀錄、寄信失敗（A6 ④） | 模擬 Supabase＋模擬 Resend（`RESEND_API_URL`，見檔案開頭） |
 
 ### 模擬 Supabase
 

@@ -1928,3 +1928,123 @@ textarea {
 .admin-inquiry-customer .admin-stat__link {
   margin-top: 0;
 }
+
+/* 詢價處理紀錄（A6 ③） */
+.admin-events {
+  margin-bottom: 1.25rem;
+}
+
+.admin-events__empty {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.admin-events__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 0.9rem;
+  border-left: 2px solid rgba(148, 163, 184, 0.25);
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.admin-events__list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.6rem;
+}
+
+.admin-events__time {
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-events__actor {
+  color: #fca5a5;
+}
+
+/* 從後台回覆客戶（A6 ④） */
+.reply-composer {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.reply-composer h4 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.reply-composer label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.reply-composer textarea {
+  font-family: inherit;
+  line-height: 1.6;
+}
+
+.reply-composer__note {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.reply-composer__lang {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+
+.reply-composer__lang button {
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: none;
+}
+
+.reply-composer__lang button[aria-pressed='true'] {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.reply-composer__meta {
+  display: grid;
+  grid-template-columns: 7em 1fr;
+  gap: 0.3rem 0.75rem;
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.reply-composer__meta dt {
+  color: #94a3b8;
+}
+
+.reply-composer__meta dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+.reply-composer__preview {
+  background: #ffffff;
+  color: #1f2937;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.reply-composer__warn {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(127, 29, 29, 0.22);
+  color: #fca5a5;
+  font-size: 0.88rem;
+}
