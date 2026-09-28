@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { navigateAdmin } from '@/components/admin/AdminCustomerManager';
+import { InquiryReplyComposer } from '@/components/admin/InquiryReplyComposer';
 
 interface InquiryItem {
   productId: string;
@@ -91,6 +92,8 @@ export function AdminInquiryManager() {
   const [editNotes, setEditNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState('');
+  // 詳情視窗內的「回覆客戶」編輯畫面（A6 ④）
+  const [composing, setComposing] = useState(false);
   // 篩選、搜尋與分頁（A6）
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [keywordInput, setKeywordInput] = useState('');
@@ -166,6 +169,7 @@ export function AdminInquiryManager() {
     setEditStatus(inq.status);
     setEditNotes(inq.reply_notes || '');
     setModalError('');
+    setComposing(false);
   };
 
   const handleCloseDetail = useCallback(() => {
@@ -506,6 +510,22 @@ export function AdminInquiryManager() {
               建立：{formatDateTime(selectedInquiry.created_at)}　最後更新：{formatDateTime(selectedInquiry.updated_at)}
             </p>
 
+            {composing ? (
+              <InquiryReplyComposer
+                inquiry={selectedInquiry}
+                customerEmail={selectedInquiry.customer_email}
+                onCancel={() => setComposing(false)}
+                onSent={(status) => {
+                  const who = selectedInquiry.company_name || selectedInquiry.customer_name;
+                  setComposing(false);
+                  handleCloseDetail();
+                  setNotice(`已寄出回覆給 ${who}${status === 'replied' ? '，狀態已改為「已回覆」' : ''}`);
+                  void fetchInquiries();
+                  window.dispatchEvent(new Event('inquiries-updated'));
+                }}
+              />
+            ) : (
+              <>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
               <div>
                 <p className="muted" style={{ margin: '0 0 0.25rem', fontSize: '0.8rem' }}>買家姓名</p>
@@ -661,7 +681,10 @@ export function AdminInquiryManager() {
               </p>
             ) : null}
 
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'end' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'end', flexWrap: 'wrap' }}>
+              <button type="button" className="button-secondary" style={{ marginRight: 'auto' }} onClick={() => setComposing(true)}>
+                回覆客戶
+              </button>
               <button
                 type="button"
                 onClick={handleCloseDetail}
@@ -690,6 +713,8 @@ export function AdminInquiryManager() {
                 {saving ? '儲存中...' : '儲存變更'}
               </button>
             </div>
+              </>
+            )}
           </div>
         </div>
       )}

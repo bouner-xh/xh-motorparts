@@ -3,6 +3,7 @@ import { Redis } from '@upstash/redis';
 import { z } from 'zod';
 import { getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { buildAdminEnvelope, buildCustomerEnvelope, SALES_EMAIL, type EmailEnvelope } from '@/lib/inquiry-email';
+import { sendResendEmail } from '@/lib/resend';
 import { getMissingProtectionConfig, isProductionDeployment } from '@/lib/inquiry-protection';
 
 // B2B RFQ 詢價車 Payload 驗證 Schema
@@ -58,45 +59,9 @@ async function verifyTurnstile(token: string) {
   return { ok: Boolean(data.success), reason: data.success ? 'verified' : 'verification-failed' };
 }
 
-/**
- * 透過 Resend REST API 發送 HTML 郵件
- */
+// 透過 Resend 寄信（共用 src/lib/resend.ts）
 async function sendEmail({ to, subject, html, replyTo }: EmailEnvelope) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-
-  if (!apiKey) {
-    console.warn('Resend API key is missing. Skipping email send.');
-    return false;
-  }
-
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to,
-        subject,
-        html,
-        reply_to: replyTo
-      })
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error(`Resend API returned error: ${errText}`);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Failed to send email via Resend:', error);
-    return false;
-  }
+  return (await sendResendEmail({ to, subject, html, replyTo })).ok;
 }
 
 export async function POST(request: Request) {

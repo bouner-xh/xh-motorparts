@@ -57,6 +57,8 @@ e2e() {
 trap 'stop_server; stop_mock' EXIT
 
 MOCK_ENV=(NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=anon SUPABASE_SERVICE_ROLE_KEY=service)
+# 後台寄信（A6 ④）改寄到模擬伺服器，不會真的寄出
+MAIL_ENV=(RESEND_API_KEY=test-key RESEND_API_URL=http://127.0.0.1:54321 RESEND_FROM_EMAIL=noreply@xh-motorparts.com)
 ANALYTICS_ENV=(NEXT_PUBLIC_GA4_MEASUREMENT_ID=G-TEST123 NEXT_PUBLIC_CLARITY_PROJECT_ID=testclarity)
 PROTECTION_ENV=(NEXT_PUBLIC_TURNSTILE_SITE_KEY=dummy TURNSTILE_SECRET_KEY=dummy UPSTASH_REDIS_REST_URL=https://dummy.upstash.io UPSTASH_REDIS_REST_TOKEN=dummy)
 
@@ -70,7 +72,7 @@ stop_server
 
 echo "== 3. 開發模式 + 模擬 Supabase（管理員名單：admin@example.com）"
 start_mock
-start_server env "${MOCK_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next dev -p $PORT && e2e admin-access product-card-inquiry language-switch locale-text page-h1 hreflang admin-product-form admin-product-category admin-product-import admin-delete admin-inquiries admin-product-list admin-api-errors admin-dashboard-tabs product-detail-cta admin-inquiry-export admin-customers admin-inquiry-events
+start_server env "${MOCK_ENV[@]}" "${MAIL_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next dev -p $PORT && e2e admin-access product-card-inquiry language-switch locale-text page-h1 hreflang admin-product-form admin-product-category admin-product-import admin-delete admin-inquiries admin-product-list admin-api-errors admin-dashboard-tabs product-detail-cta admin-inquiry-export admin-customers admin-inquiry-events admin-inquiry-reply
 stop_server
 
 echo "== 4. 開發模式 + 模擬 Supabase（未設定管理員名單）"

@@ -1,6 +1,7 @@
 // 測試用的模擬 Supabase 伺服器（登入、資料庫讀寫、Storage）
 // 用途：在沒有真實 Supabase 的環境下，測試「登入 → 後台權限 → 後台管理功能」的完整流程。
-// 測試輔助端點：POST /__mock/reset 重設資料、GET /__mock/state 查看資料、POST /__mock/seed 加入資料、POST /__mock/drop 模擬資料表不存在
+// 測試輔助端點：POST /__mock/reset 重設資料、GET /__mock/state 查看資料與寄出的信、POST /__mock/seed 加入資料、
+//   POST /__mock/drop 模擬資料表不存在、POST /__mock/email-fail 模擬寄信失敗；POST /emails 模擬 Resend
 // 啟動：node tests/e2e/mock-supabase.cjs（預設 port 54321）
 //
 // 可登入帳號（密碼皆為 test-password）：
@@ -49,6 +50,9 @@ const FOREIGN_KEYS = [
 ];
 // 模擬「資料表尚未建立」（POST /__mock/drop），測試功能在資料表不存在時的行為
 let MISSING = new Set();
+// 模擬 Resend 寄信（測試時設定 RESEND_API_URL=http://127.0.0.1:54321）：記錄寄出的信，可模擬寄信失敗
+let EMAILS = [];
+let EMAIL_FAIL = false;
 const UNIQUE = { categories: ['slug'], sub_categories: ['slug'], products: ['model_number'] };
 
 // 解析 select：找出 alias:table!inner(cols) 形式的關聯欄位
@@ -298,10 +302,22 @@ const server = http.createServer((req, res) => {
       TABLES = seedTables();
       STORAGE = new Set();
       MISSING = new Set();
+      EMAILS = [];
+      EMAIL_FAIL = false;
       return send(res, 200, { ok: true });
     }
     if (url.pathname === '/__mock/state') {
-      return send(res, 200, { tables: TABLES, storage: [...STORAGE] });
+      return send(res, 200, { tables: TABLES, storage: [...STORAGE], emails: EMAILS });
+    }
+    if (url.pathname === '/__mock/email-fail' && req.method === 'POST') {
+      EMAIL_FAIL = Boolean(JSON.parse(raw || '{}').fail);
+      return send(res, 200, { ok: true });
+    }
+    if (url.pathname === '/emails' && req.method === 'POST') {
+      if (EMAIL_FAIL) return send(res, 422, { statusCode: 422, name: 'validation_error', message: 'mock: domain is not verified' });
+      const message = JSON.parse(raw || '{}');
+      EMAILS.push({ ...message, authorization: req.headers.authorization });
+      return send(res, 200, { id: `mock-email-${EMAILS.length}` });
     }
     if (url.pathname === '/__mock/drop' && req.method === 'POST') {
       const { table } = JSON.parse(raw || '{}');
