@@ -125,22 +125,20 @@ export default async function ProductDetailPage({
             {tProducts('stock')}：{product.stock}
           </p>
 
-          <div style={{ marginTop: 'auto' }}>
-            <p style={{ margin: 0 }}>
-              <Link className="text-link" href={`/${localeValue}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}`}>
-                ← {localized(localeValue, { 'zh-TW': '返回', 'zh-CN': '返回', en: 'Back to' })} {subCategoryData.name}
-              </Link>
-            </p>
-            <div style={{ marginTop: '-0.4rem' }}>
-              <InquiryForm
-                productId={product.id}
-                productModel={product.model}
-                productName={product.name}
-                categorySlug={categoryData.slug}
-                subCategorySlug={subCategoryData.slug}
-              />
-            </div>
-          </div>
+          {/* D15：數量與「加入詢價清單」放在規格、庫存下方，不用捲動就看得到 */}
+          <InquiryForm
+            productId={product.id}
+            productModel={product.model}
+            productName={product.name}
+            categorySlug={categoryData.slug}
+            subCategorySlug={subCategoryData.slug}
+          />
+
+          <p style={{ margin: 'auto 0 0' }}>
+            <Link className="text-link" href={`/${localeValue}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}`}>
+              ← {localized(localeValue, { 'zh-TW': '返回', 'zh-CN': '返回', en: 'Back to' })} {subCategoryData.name}
+            </Link>
+          </p>
         </div>
       </section>
     </main>

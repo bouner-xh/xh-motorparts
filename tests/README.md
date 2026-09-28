@@ -82,6 +82,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `admin-product-list.e2e.cjs` | 產品搜尋篩選分頁縮圖、正在編輯與取消、複製、未存檔圖片清除（A7） | 模擬 Supabase |
 | `admin-api-errors.e2e.cjs` | 錯誤訊息為中文說明、長度與 ID 檢查、不自動建立分類（A9） | 模擬 Supabase |
 | `admin-dashboard-tabs.e2e.cjs` | 後台分頁與總覽、網址記住分頁、鍵盤操作、切換不遺失表單、待處理數量同步、手機版、登出（A8） | 模擬 Supabase |
+| `product-detail-cta.e2e.cjs` | 產品頁不用捲動就看得到「加入詢價清單」、照片 1:1（D15） | 模擬 Supabase |
 
 ### 模擬 Supabase
 

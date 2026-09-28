@@ -18,7 +18,7 @@
 - **2026-06-09 大升級**：
   1. **後台拖曳排序功能**：已完成大分類與子目錄管理之拖曳排序（HTML5 drag and drop API），調整順序後一鍵儲存回 Supabase 資料庫，前台產品選單與分類列表皆會根據新排序即時呈現。
   2. **B2B RFQ 詢價購物車**：新增前端 `CartContext` 與 Header `CartIndicator`，買家可在產品內頁調整需求數量並加入清單，並於 `/[locale]/inquiry` 提供編輯清單與填寫 company/國家等 B2B 表單。
-  3. **CRM 詢價管理與郵件通知**：客戶提交詢價後自動寫入 Supabase CRM，並透過 Resend API 雙向寄發無表情符號的專業商務確認信（寄給客戶與管理員 `bounerchang@gmail.com`）。管理後台新增 CRM 調度面板，可查看明細、更改狀態（Pending / Processing / Replied / Archived）與填寫跟進註記。
+  3. **CRM 詢價管理與郵件通知**：客戶提交詢價後自動寫入 Supabase CRM，並透過 Resend API 雙向寄發無表情符號的專業商務確認信（寄給客戶與管理員 `負責人信箱`）。管理後台新增 CRM 調度面板，可查看明細、更改狀態（Pending / Processing / Replied / Archived）與填寫跟進註記。
 
 ## 功能追蹤（對齊 v1.6）
 

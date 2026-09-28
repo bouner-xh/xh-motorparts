@@ -2,7 +2,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { z } from 'zod';
 import { getSupabaseServiceRoleClient } from '@/lib/supabase/server';
-import { buildAdminMailHtml, buildCustomerMailHtml, sanitizeSubject } from '@/lib/inquiry-email';
+import { buildAdminEnvelope, buildCustomerEnvelope, SALES_EMAIL, type EmailEnvelope } from '@/lib/inquiry-email';
 import { getMissingProtectionConfig, isProductionDeployment } from '@/lib/inquiry-protection';
 
 // B2B RFQ 詢價車 Payload 驗證 Schema
@@ -61,15 +61,7 @@ async function verifyTurnstile(token: string) {
 /**
  * 透過 Resend REST API 發送 HTML 郵件
  */
-async function sendEmail({
-  to,
-  subject,
-  html
-}: {
-  to: string;
-  subject: string;
-  html: string;
-}) {
+async function sendEmail({ to, subject, html, replyTo }: EmailEnvelope) {
   const apiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
@@ -89,7 +81,8 @@ async function sendEmail({
         from: fromEmail,
         to,
         subject,
-        html
+        html,
+        reply_to: replyTo
       })
     });
 
@@ -214,23 +207,12 @@ export async function POST(request: Request) {
     }
 
     // 4) 寄送電子郵件 (Resend)
-    const adminEmail = process.env.RESEND_ADMIN_EMAIL || 'bounerchang@gmail.com';
+    // 未設定時寄到公司信箱（不再寫死個人信箱）
+    const adminEmail = process.env.RESEND_ADMIN_EMAIL || SALES_EMAIL;
     const hasResend = Boolean(process.env.RESEND_API_KEY);
 
-    const sendAdminEmail = () =>
-      sendEmail({
-        to: adminEmail,
-        subject: sanitizeSubject(
-          `${saveFailed ? '[NOT SAVED TO CRM] ' : ''}[New RFQ Inquiry] From ${data.country} - ${data.companyName} - ${data.name}`
-        ),
-        html: buildAdminMailHtml(data)
-      });
-    const sendCustomerEmail = () =>
-      sendEmail({
-        to: data.email,
-        subject: 'Inquiry Received: Xie Huang Enterprise Co., Ltd. (Taiwan)',
-        html: buildCustomerMailHtml(data)
-      });
+    const sendAdminEmail = () => sendEmail(buildAdminEnvelope(data, adminEmail, saveFailed));
+    const sendCustomerEmail = () => sendEmail(buildCustomerEnvelope(data));
 
     if (saveFailed) {
       // 資料庫寫入失敗：管理員通知信是唯一的紀錄，寄送成功才能告訴客戶已收到

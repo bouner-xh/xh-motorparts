@@ -97,12 +97,12 @@ export function InquiryForm({
   }, [quantity, added]);
 
   return (
-    <div className="card inquiry-form" style={{ marginTop: '1.5rem', border: '1px solid rgba(148, 163, 184, 0.25)', padding: '1.25rem' }}>
-      <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem' }}>
+    <div className="card inquiry-form" style={{ marginTop: '0.5rem', border: '1px solid rgba(148, 163, 184, 0.25)', padding: '1rem 1.25rem' }}>
+      <h3 style={{ margin: '0 0 0.75rem', fontSize: '1.05rem' }}>
         {added ? t('alreadyInCart') : t('title')}
       </h3>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '0.75rem 1rem' }}>
         <div>
           <label style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '0.4rem' }}>
             {t('quantity')}
@@ -124,7 +124,7 @@ export function InquiryForm({
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flex: '1 1 220px' }}>
           <button
             type="button"
             onClick={handleAction}
