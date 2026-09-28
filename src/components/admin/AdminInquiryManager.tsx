@@ -30,6 +30,36 @@ interface Inquiry {
 }
 
 type StatusFilter = 'all' | Inquiry['status'];
+
+interface InquiryEvent {
+  id: string;
+  actor_email: string;
+  action: 'status' | 'notes' | 'reply' | 'delete';
+  from_value: string | null;
+  to_value: string | null;
+  detail?: { subject?: string; attachment?: string };
+  created_at: string;
+}
+
+const STATUS_TEXT: Record<string, string> = { pending: '新詢價', processing: '報價中', replied: '已回覆', archived: '已封存' };
+
+function truncate(text: string, max = 60) {
+  return text.length > max ? `${text.slice(0, max)}…` : text;
+}
+
+// 處理紀錄的文字說明（A6 ③）
+function describeEvent(e: InquiryEvent) {
+  switch (e.action) {
+    case 'status':
+      return `狀態：${STATUS_TEXT[e.from_value || ''] || e.from_value} → ${STATUS_TEXT[e.to_value || ''] || e.to_value}`;
+    case 'notes':
+      return e.to_value ? `更新內部備忘：「${truncate(e.to_value)}」` : '清除內部備忘';
+    case 'reply':
+      return `寄出回覆：「${truncate(e.detail?.subject || '')}」${e.detail?.attachment ? `（附件 ${e.detail.attachment}）` : ''}`;
+    default:
+      return '刪除詢價單';
+  }
+}
 type Counts = Record<StatusFilter, number>;
 
 const FILTERS: { key: StatusFilter; label: string }[] = [
@@ -70,6 +100,8 @@ export function AdminInquiryManager() {
   const [total, setTotal] = useState(0);
   const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [events, setEvents] = useState<InquiryEvent[]>([]);
+  const [eventsState, setEventsState] = useState<'loading' | 'ready' | 'unavailable' | 'error'>('loading');
   const exportParams = new URLSearchParams({
     ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
     ...(keyword ? { q: keyword } : {}),
@@ -141,6 +173,24 @@ export function AdminInquiryManager() {
     // 關閉後把焦點還給原本的「檢視」按鈕，鍵盤操作不會跳回頁首
     openerRef.current?.focus();
   }, []);
+
+  // 開啟詳情時載入處理紀錄（A6 ③）
+  const loadEvents = useCallback(async (inquiryId: string) => {
+    setEventsState('loading');
+    try {
+      const res = await fetch(`/api/admin/inquiries/events?id=${encodeURIComponent(inquiryId)}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setEvents(data.events || []);
+      setEventsState(data.available ? 'ready' : 'unavailable');
+    } catch {
+      setEventsState('error');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedInquiry) void loadEvents(selectedInquiry.id);
+  }, [selectedInquiry, loadEvents]);
 
   // 詳情視窗：開啟時移入焦點，按 Esc 關閉（A6）
   useEffect(() => {
@@ -580,6 +630,29 @@ export function AdminInquiryManager() {
                   }}
                 />
               </label>
+            </div>
+
+            <div className="admin-events" data-testid="inquiry-events">
+              <p className="muted" style={{ margin: '0 0 0.5rem', fontSize: '0.8rem' }}>處理紀錄</p>
+              {eventsState === 'loading' ? (
+                <p className="muted admin-events__empty">載入中...</p>
+              ) : eventsState === 'unavailable' ? (
+                <p className="muted admin-events__empty">處理紀錄尚未啟用：需要先在 Supabase 建立資料表（步驟見 docs/inquiry-events-setup.md）。</p>
+              ) : eventsState === 'error' ? (
+                <p className="muted admin-events__empty">處理紀錄暫時無法載入。</p>
+              ) : events.length === 0 ? (
+                <p className="muted admin-events__empty">還沒有處理紀錄。更新狀態、備忘或寄出回覆後會記錄在這裡。</p>
+              ) : (
+                <ol className="admin-events__list">
+                  {events.map((e) => (
+                    <li key={e.id}>
+                      <span className="admin-events__time">{formatDateTime(e.created_at)}</span>
+                      <span className="admin-events__actor">{e.actor_email}</span>
+                      <span>{describeEvent(e)}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
             </div>
 
             {modalError ? (

@@ -1,6 +1,6 @@
 // 測試用的模擬 Supabase 伺服器（登入、資料庫讀寫、Storage）
 // 用途：在沒有真實 Supabase 的環境下，測試「登入 → 後台權限 → 後台管理功能」的完整流程。
-// 測試輔助端點：POST /__mock/reset 重設資料、GET /__mock/state 查看資料、POST /__mock/seed 加入資料
+// 測試輔助端點：POST /__mock/reset 重設資料、GET /__mock/state 查看資料、POST /__mock/seed 加入資料、POST /__mock/drop 模擬資料表不存在
 // 啟動：node tests/e2e/mock-supabase.cjs（預設 port 54321）
 //
 // 可登入帳號（密碼皆為 test-password）：
@@ -44,8 +44,11 @@ const FOREIGN_KEYS = [
   { table: 'sub_categories', column: 'category_id', ref: 'categories', onDelete: 'cascade' },
   { table: 'products', column: 'category_id', ref: 'categories', onDelete: 'restrict' },
   { table: 'products', column: 'sub_category_id', ref: 'sub_categories', onDelete: 'restrict' },
-  { table: 'product_images', column: 'product_id', ref: 'products', onDelete: 'cascade' }
+  { table: 'product_images', column: 'product_id', ref: 'products', onDelete: 'cascade' },
+  { table: 'inquiry_events', column: 'inquiry_id', ref: 'inquiry_requests', onDelete: 'set null' }
 ];
+// 模擬「資料表尚未建立」（POST /__mock/drop），測試功能在資料表不存在時的行為
+let MISSING = new Set();
 const UNIQUE = { categories: ['slug'], sub_categories: ['slug'], products: ['model_number'] };
 
 // 解析 select：找出 alias:table!inner(cols) 形式的關聯欄位
@@ -127,10 +130,14 @@ function checkUnique(table, row, ignoreId) {
 // 刪除一筆資料並依外鍵設定連帶處理（cascade 連帶刪除、restrict 擋下）
 function deleteRows(table, ids) {
   for (const fk of FOREIGN_KEYS.filter((f) => f.ref === table)) {
-    const children = TABLES[fk.table].filter((r) => ids.includes(r[fk.column]));
+    const children = (TABLES[fk.table] || []).filter((r) => ids.includes(r[fk.column]));
     if (!children.length) continue;
     if (fk.onDelete === 'restrict') {
       return dbError(409, '23503', `update or delete on table "${table}" violates foreign key constraint on table "${fk.table}"`);
+    }
+    if (fk.onDelete === 'set null') {
+      children.forEach((r) => (r[fk.column] = null));
+      continue;
     }
     const error = deleteRows(fk.table, children.map((r) => r.id));
     if (error) return error;
@@ -142,6 +149,7 @@ function deleteRows(table, ids) {
 // 模擬資料庫的讀寫（PostgREST）
 function handleRest(req, url, raw) {
   const table = url.pathname.slice('/rest/v1/'.length);
+  if (MISSING.has(table)) return dbError(404, 'PGRST205', `Could not find the table 'public.${table}' in the schema cache`);
   if (!TABLES[table]) TABLES[table] = [];
   const select = url.searchParams.get('select') || '*';
   const now = new Date().toISOString();
@@ -289,10 +297,17 @@ const server = http.createServer((req, res) => {
     if (url.pathname === '/__mock/reset') {
       TABLES = seedTables();
       STORAGE = new Set();
+      MISSING = new Set();
       return send(res, 200, { ok: true });
     }
     if (url.pathname === '/__mock/state') {
       return send(res, 200, { tables: TABLES, storage: [...STORAGE] });
+    }
+    if (url.pathname === '/__mock/drop' && req.method === 'POST') {
+      const { table } = JSON.parse(raw || '{}');
+      MISSING.add(table);
+      delete TABLES[table];
+      return send(res, 200, { ok: true });
     }
     if (url.pathname === '/__mock/seed' && req.method === 'POST') {
       const { table, rows } = JSON.parse(raw || '{}');

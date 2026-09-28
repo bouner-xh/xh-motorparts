@@ -1928,3 +1928,38 @@ textarea {
 .admin-inquiry-customer .admin-stat__link {
   margin-top: 0;
 }
+
+/* 詢價處理紀錄（A6 ③） */
+.admin-events {
+  margin-bottom: 1.25rem;
+}
+
+.admin-events__empty {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.admin-events__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 0.9rem;
+  border-left: 2px solid rgba(148, 163, 184, 0.25);
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.admin-events__list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.6rem;
+}
+
+.admin-events__time {
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-events__actor {
+  color: #fca5a5;
+}

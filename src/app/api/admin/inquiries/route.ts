@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin-auth';
+import { recordInquiryEvents } from '@/lib/inquiry-events';
+import { buildDeleteEvent, buildInquiryChangeEvents } from '@/lib/inquiry-event-diff';
 import { filterInquiries, INQUIRY_STATUSES, normalizeKeyword, parseStatus, type InquiryRow, type InquiryStatus } from '@/lib/inquiry-export';
 import { dbErrorResponse, invalidInputResponse, isUuid, INVALID_ID_MESSAGE } from '@/lib/admin-api-errors';
 
@@ -82,6 +84,13 @@ export async function PUT(request: Request) {
       return invalidInputResponse();
     }
 
+    // 先讀取修改前的內容，存檔後寫入處理紀錄（A6 ③）
+    const { data: before } = await service
+      .from('inquiry_requests')
+      .select('id, status, reply_notes, company_name, customer_name, customer_email')
+      .eq('id', parsed.data.id)
+      .maybeSingle();
+
     // 回傳更新後的資料（含資料庫自動更新的 updated_at）
     const { data, error } = await service
       .from('inquiry_requests')
@@ -94,6 +103,13 @@ export async function PUT(request: Request) {
       .single();
 
     if (error) return dbErrorResponse('inquiries PUT', error);
+
+    if (before) {
+      await recordInquiryEvents(
+        service,
+        buildInquiryChangeEvents(before, { status: parsed.data.status, reply_notes: parsed.data.replyNotes }, authResult.user.email || '')
+      );
+    }
 
     return Response.json({ ok: true, item: data });
   } catch {
@@ -111,6 +127,14 @@ export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!isUuid(id)) return invalidInputResponse(INVALID_ID_MESSAGE);
+
+  // 刪除前先寫一筆紀錄（保留公司與 Email 快照），事後查得到是誰刪的（A6 ③）
+  const { data: before } = await service
+    .from('inquiry_requests')
+    .select('id, status, reply_notes, company_name, customer_name, customer_email')
+    .eq('id', id)
+    .maybeSingle();
+  if (before) await recordInquiryEvents(service, [buildDeleteEvent(before, authResult.user.email || '')]);
 
   const { error } = await service
     .from('inquiry_requests')
