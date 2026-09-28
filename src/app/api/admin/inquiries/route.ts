@@ -54,7 +54,15 @@ export async function GET(request: Request) {
   const filtered = filterInquiries(rows, status, keyword);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const items = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  // 每張詢價附上「這位客戶共詢價幾次」（以 Email 計算，不分大小寫），詳情視窗顯示並可連到客戶列表（A6 ②）
+  const countByEmail = new Map<string, number>();
+  rows.forEach((row) => {
+    const key = (row.customer_email || '').toLowerCase();
+    if (key) countByEmail.set(key, (countByEmail.get(key) || 0) + 1);
+  });
+  const items = filtered
+    .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+    .map((row) => ({ ...row, customer_inquiry_count: countByEmail.get((row.customer_email || '').toLowerCase()) || 1 }));
 
   return Response.json({ items, total: filtered.length, page: currentPage, pageSize: PAGE_SIZE, totalPages, counts });
 }

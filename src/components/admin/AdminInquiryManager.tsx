@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
+import { navigateAdmin } from '@/components/admin/AdminCustomerManager';
 
 interface InquiryItem {
   productId: string;
@@ -25,6 +26,7 @@ interface Inquiry {
   reply_notes?: string;
   created_at: string;
   updated_at?: string;
+  customer_inquiry_count?: number;
 }
 
 type StatusFilter = 'all' | Inquiry['status'];
@@ -102,6 +104,20 @@ export function AdminInquiryManager() {
   useEffect(() => {
     void fetchInquiries();
   }, [fetchInquiries]);
+
+  // 從客戶詳情點「在詢價分頁查看」：以客戶 Email 搜尋、顯示全部狀態（A6 ②）
+  useEffect(() => {
+    const onNavigate = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { tab?: string; q?: string };
+      if (detail?.tab !== 'inquiries' || !detail.q) return;
+      setStatusFilter('all');
+      setKeywordInput(detail.q);
+      setKeyword(detail.q);
+      setPage(1);
+    };
+    window.addEventListener('admin-navigate', onNavigate);
+    return () => window.removeEventListener('admin-navigate', onNavigate);
+  }, []);
 
   // 輸入關鍵字 0.3 秒後才搜尋，避免每打一個字就查詢一次
   useEffect(() => {
@@ -463,6 +479,25 @@ export function AdminInquiryManager() {
                   {selectedInquiry.country} {selectedInquiry.phone ? `(${selectedInquiry.phone})` : ''}
                 </p>
               </div>
+            </div>
+
+            {/* 這位客戶的詢價次數與客戶資料連結（A6 ②） */}
+            <div className="admin-inquiry-customer">
+              <span>
+                這位客戶共詢價 <strong>{selectedInquiry.customer_inquiry_count ?? 1}</strong> 次
+                {(selectedInquiry.customer_inquiry_count ?? 1) > 1 ? '（回頭客）' : '（第一次詢價）'}
+              </span>
+              <button
+                type="button"
+                className="admin-stat__link"
+                onClick={() => {
+                  const email = selectedInquiry.customer_email;
+                  handleCloseDetail();
+                  navigateAdmin({ tab: 'customers', email });
+                }}
+              >
+                查看客戶 →
+              </button>
             </div>
 
             <div style={{ marginBottom: '1.25rem' }}>

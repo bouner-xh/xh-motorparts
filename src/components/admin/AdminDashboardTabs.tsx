@@ -11,12 +11,14 @@ import {AdminSubCategoryManager} from '@/components/admin/AdminSubCategoryManage
 import {AdminProductImporter} from '@/components/admin/AdminProductImporter';
 import {AdminProductManager} from '@/components/admin/AdminProductManager';
 import {AdminOverview, type OverviewData} from '@/components/admin/AdminOverview';
+import {AdminCustomerManager} from '@/components/admin/AdminCustomerManager';
 
-export type AdminTab = 'overview' | 'inquiries' | 'products' | 'categories' | 'import';
+export type AdminTab = 'overview' | 'inquiries' | 'customers' | 'products' | 'categories' | 'import';
 
 const TABS: {key: AdminTab; label: string}[] = [
   {key: 'overview', label: '總覽'},
   {key: 'inquiries', label: '詢價'},
+  {key: 'customers', label: '客戶'},
   {key: 'products', label: '產品'},
   {key: 'categories', label: '分類'},
   {key: 'import', label: '批量匯入'}
@@ -57,6 +59,7 @@ export function AdminDashboardTabs({locale}: {locale: Locale}) {
   const tabRefs = useRef<Record<AdminTab, HTMLButtonElement | null>>({
     overview: null,
     inquiries: null,
+    customers: null,
     products: null,
     categories: null,
     import: null
@@ -94,6 +97,16 @@ export function AdminDashboardTabs({locale}: {locale: Locale}) {
     if (focus) tabRefs.current[next]?.focus();
     window.scrollTo({top: 0});
   }, []);
+
+  // 其他元件要求切換分頁（例如客戶詳情 →「在詢價分頁查看」）
+  useEffect(() => {
+    const onNavigate = (event: Event) => {
+      const next = (event as CustomEvent).detail?.tab as AdminTab | undefined;
+      if (next && TABS.some((t) => t.key === next)) selectTab(next);
+    };
+    window.addEventListener('admin-navigate', onNavigate);
+    return () => window.removeEventListener('admin-navigate', onNavigate);
+  }, [selectTab]);
 
   // 鍵盤：左右鍵切換分頁（WAI-ARIA tabs 慣例）
   function onTabKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
@@ -147,6 +160,12 @@ export function AdminDashboardTabs({locale}: {locale: Locale}) {
         'inquiries',
         <section className="card">
           <AdminInquiryManager />
+        </section>
+      )}
+      {panel(
+        'customers',
+        <section className="card">
+          <AdminCustomerManager />
         </section>
       )}
       {panel(
