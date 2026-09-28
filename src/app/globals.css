@@ -484,6 +484,8 @@ textarea {
 
 .detail-media img {
   width: 100%;
+  /* D15：<Image> 帶有 height="900"，要設 auto 才會照 1:1 比例顯示，否則直式照片會被拉得很高 */
+  height: auto;
   aspect-ratio: 1 / 1;
   object-fit: cover;
   border-radius: 18px;
