@@ -24,9 +24,26 @@
 
 ---
 
-## 2026-09-28（第十二批）：詢價信件回覆地址、產品頁按鈕位置
+## 2026-09-28（第十三批）：詢價匯出、客戶列表（A6 第二階段 ①②）
 
 PR：（合併後補上）
+
+| 編號 | 修改 | 主要檔案 | Commit | 驗證 |
+|---|---|---|---|---|
+| A6 ① | 詢價分頁「匯出 CSV」：匯出目前篩選結果，每個品項一列、台灣時間、BOM；客戶輸入以 = + - @ 開頭的內容加單引號，防止 Excel 公式注入 | `src/lib/inquiry-export.ts`（新）、`api/admin/inquiries/export`（新）、`AdminInquiryManager.tsx` | `9319f7f` | `tests/admin/inquiry-export.test.mts`、`admin-inquiry-export.e2e.cjs` |
+| A6 ② | 新增「客戶」分頁：詢價次數、待處理、最近詢價、常詢價型號；搜尋、國家、排序、匯出；客戶詳情與詢價分頁互相跳轉；詢價詳情顯示回頭客 | `src/lib/customer-summary.ts`（新）、`src/lib/admin-customers.ts`（新）、`api/admin/customers`（新）、`AdminCustomerManager.tsx`（新） | `d4d6d78` | `tests/admin/customer-summary.test.mts`、`admin-customers.e2e.cjs` |
+
+**不需要改資料庫**：客戶資料沿用既有的 `customers` 表（每次詢價依 Email 自動建立或更新）。
+
+**設定變更**：`tsconfig.json` 開啟 `allowImportingTsExtensions`，讓 `src/lib` 的純函式可以用 `.ts` 路徑互相引用並直接做單元測試（專案原本就是 `noEmit`，不影響建置）。
+
+**之後修改時要注意**
+- 匯出功能會把客戶個資下載到電腦，伺服器紀錄會記下匯出人與筆數；匯出檔請勿轉寄給外部人員。
+- 新增後台 API 可以用 `src/lib/admin-session.ts` 的 `requireAdmin()` 做登入與權限檢查。
+
+## 2026-09-28（第十二批）：詢價信件回覆地址、產品頁按鈕位置
+
+PR：[#17](https://github.com/bouner-xh/xh-motorparts/pull/17)
 
 | 編號 | 修改 | 主要檔案 | Commit | 驗證 |
 |---|---|---|---|---|

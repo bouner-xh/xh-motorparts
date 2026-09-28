@@ -70,7 +70,7 @@ stop_server
 
 echo "== 3. 開發模式 + 模擬 Supabase（管理員名單：admin@example.com）"
 start_mock
-start_server env "${MOCK_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next dev -p $PORT && e2e admin-access product-card-inquiry language-switch locale-text page-h1 hreflang admin-product-form admin-product-category admin-product-import admin-delete admin-inquiries admin-product-list admin-api-errors admin-dashboard-tabs product-detail-cta
+start_server env "${MOCK_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next dev -p $PORT && e2e admin-access product-card-inquiry language-switch locale-text page-h1 hreflang admin-product-form admin-product-category admin-product-import admin-delete admin-inquiries admin-product-list admin-api-errors admin-dashboard-tabs product-detail-cta admin-inquiry-export admin-customers
 stop_server
 
 echo "== 4. 開發模式 + 模擬 Supabase（未設定管理員名單）"

@@ -1699,3 +1699,232 @@ textarea {
     display: none;
   }
 }
+
+/* 後台匯出按鈕（A6） */
+.admin-export-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(30, 41, 59, 0.6);
+  color: #f8fafc;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.admin-export-link:hover {
+  border-color: #dc2626;
+}
+
+.admin-export-link[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 後台客戶列表（A6 ②） */
+.admin-customers {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.admin-customers__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-customers__header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.admin-customers__hint {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.admin-customers__toolbar {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.admin-customers__toolbar input {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.admin-customers__toolbar select {
+  width: auto;
+}
+
+.admin-customers__error {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(127, 29, 29, 0.22);
+  color: #fca5a5;
+}
+
+.admin-customers__empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+}
+
+.admin-customers__table {
+  overflow-x: auto;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 12px;
+}
+
+.admin-customers__table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.admin-customers__table th,
+.admin-customers__table td {
+  text-align: left;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  vertical-align: top;
+}
+
+.admin-customers__table th {
+  color: #94a3b8;
+  font-weight: 500;
+  background: rgba(30, 41, 59, 0.4);
+  white-space: nowrap;
+}
+
+.admin-customers__table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.admin-customers .small {
+  font-size: 0.82rem;
+}
+
+.admin-customers__pending {
+  margin-left: 0.4rem;
+}
+
+.admin-customers__view {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.admin-customers__pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+
+.admin-customers__pager div {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-customers__info {
+  display: grid;
+  grid-template-columns: 5.5em 1fr;
+  gap: 0.35rem 0.75rem;
+  margin: 0 0 1rem;
+  font-size: 0.92rem;
+}
+
+.admin-customers__info dt {
+  color: #94a3b8;
+}
+
+.admin-customers__info dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+.admin-customers__history {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-customers__history li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 8px;
+}
+
+/* 後台共用對話框 */
+.admin-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(2, 6, 23, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.admin-modal__panel {
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  outline: none;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.admin-modal__panel h3 {
+  margin: 0 0 1rem;
+  font-size: 1.3rem;
+}
+
+.admin-modal__panel h4 {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+}
+
+.admin-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-inquiry-customer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.5);
+  font-size: 0.9rem;
+}
+
+.admin-inquiry-customer .admin-stat__link {
+  margin-top: 0;
+}

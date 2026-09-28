@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
+import { navigateAdmin } from '@/components/admin/AdminCustomerManager';
 
 interface InquiryItem {
   productId: string;
@@ -25,6 +26,7 @@ interface Inquiry {
   reply_notes?: string;
   created_at: string;
   updated_at?: string;
+  customer_inquiry_count?: number;
 }
 
 type StatusFilter = 'all' | Inquiry['status'];
@@ -68,6 +70,10 @@ export function AdminInquiryManager() {
   const [total, setTotal] = useState(0);
   const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const exportParams = new URLSearchParams({
+    ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+    ...(keyword ? { q: keyword } : {}),
+  }).toString();
   const openerRef = useRef<HTMLElement | null>(null);
 
   const fetchInquiries = useCallback(async () => {
@@ -98,6 +104,20 @@ export function AdminInquiryManager() {
   useEffect(() => {
     void fetchInquiries();
   }, [fetchInquiries]);
+
+  // 從客戶詳情點「在詢價分頁查看」：以客戶 Email 搜尋、顯示全部狀態（A6 ②）
+  useEffect(() => {
+    const onNavigate = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { tab?: string; q?: string };
+      if (detail?.tab !== 'inquiries' || !detail.q) return;
+      setStatusFilter('all');
+      setKeywordInput(detail.q);
+      setKeyword(detail.q);
+      setPage(1);
+    };
+    window.addEventListener('admin-navigate', onNavigate);
+    return () => window.removeEventListener('admin-navigate', onNavigate);
+  }, []);
 
   // 輸入關鍵字 0.3 秒後才搜尋，避免每打一個字就查詢一次
   useEffect(() => {
@@ -209,20 +229,35 @@ export function AdminInquiryManager() {
             </span>
           ) : null}
         </h3>
-        <button
-          type="button"
-          onClick={() => void fetchInquiries()}
-          style={{
-            padding: '0.4rem 0.8rem',
-            background: 'rgba(30, 41, 59, 0.6)',
-            border: '1px solid rgba(148, 163, 184, 0.15)',
-            fontSize: '0.85rem',
-            borderRadius: '6px',
-            boxShadow: 'none',
-          }}
-        >
-          重新整理
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* 匯出目前篩選的結果（A6 ①）；檔案含客戶個資 */}
+          <a
+            href={`/api/admin/inquiries/export?${exportParams}`}
+            download
+            className="admin-export-link"
+            title="匯出的檔案含客戶個資，請妥善保管，不要轉寄給外部人員"
+            aria-disabled={total === 0}
+            onClick={(e) => {
+              if (total === 0) e.preventDefault();
+            }}
+          >
+            匯出 CSV（{total} 筆）
+          </a>
+          <button
+            type="button"
+            onClick={() => void fetchInquiries()}
+            style={{
+              padding: '0.4rem 0.8rem',
+              background: 'rgba(30, 41, 59, 0.6)',
+              border: '1px solid rgba(148, 163, 184, 0.15)',
+              fontSize: '0.85rem',
+              borderRadius: '6px',
+              boxShadow: 'none',
+            }}
+          >
+            重新整理
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
@@ -444,6 +479,25 @@ export function AdminInquiryManager() {
                   {selectedInquiry.country} {selectedInquiry.phone ? `(${selectedInquiry.phone})` : ''}
                 </p>
               </div>
+            </div>
+
+            {/* 這位客戶的詢價次數與客戶資料連結（A6 ②） */}
+            <div className="admin-inquiry-customer">
+              <span>
+                這位客戶共詢價 <strong>{selectedInquiry.customer_inquiry_count ?? 1}</strong> 次
+                {(selectedInquiry.customer_inquiry_count ?? 1) > 1 ? '（回頭客）' : '（第一次詢價）'}
+              </span>
+              <button
+                type="button"
+                className="admin-stat__link"
+                onClick={() => {
+                  const email = selectedInquiry.customer_email;
+                  handleCloseDetail();
+                  navigateAdmin({ tab: 'customers', email });
+                }}
+              >
+                查看客戶 →
+              </button>
             </div>
 
             <div style={{ marginBottom: '1.25rem' }}>

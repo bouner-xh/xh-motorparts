@@ -44,7 +44,7 @@ run('登入後預設總覽：分頁、待處理數量、產品與分類筆數、
     await login(page);
 
     const tabs = await page.getByRole('tablist', { name: '後台功能' }).getByRole('tab').allInnerTexts();
-    assert(tabs.map((t) => t.replace(/\d+/g, '').trim()).join('/') === '總覽/詢價/產品/分類/批量匯入', `分頁順序（${tabs.join(' / ')}）`);
+    assert(tabs.map((t) => t.replace(/\d+/g, '').trim()).join('/') === '總覽/詢價/客戶/產品/分類/批量匯入', `分頁順序（${tabs.join(' / ')}）`);
     assert((await page.getByRole('tab', { name: /^總覽/ }).getAttribute('aria-selected')) === 'true', '預設為總覽');
     assert(/3/.test(await page.getByRole('tab', { name: /^詢價/ }).innerText()), '詢價分頁顯示 3 筆待處理');
     assert((await page.getByTestId('overview-pending').innerText()) === '3', '總覽待處理 3');
@@ -92,7 +92,7 @@ run('切換分頁：網址記住分頁、重新整理停留、鍵盤左右鍵、
     assert(await page.getByRole('tab', { name: /^分類/ }).evaluate((el) => el === document.activeElement), '焦點跟著移動');
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
-    assert((await page.getByRole('tab', { name: /^詢價/ }).getAttribute('aria-selected')) === 'true', '左鍵切到詢價');
+    assert((await page.getByRole('tab', { name: /^客戶/ }).getAttribute('aria-selected')) === 'true', '左鍵切到客戶');
   })
 );
 
