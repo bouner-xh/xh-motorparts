@@ -1,7 +1,7 @@
 // 測試用的模擬 Supabase 伺服器（登入、資料庫讀寫、Storage）
 // 用途：在沒有真實 Supabase 的環境下，測試「登入 → 後台權限 → 後台管理功能」的完整流程。
 // 測試輔助端點：POST /__mock/reset 重設資料、GET /__mock/state 查看資料與寄出的信、POST /__mock/seed 加入資料、
-//   POST /__mock/drop 模擬資料表不存在、POST /__mock/email-fail 模擬寄信失敗；POST /emails 模擬 Resend
+//   POST /__mock/drop 模擬資料表不存在、POST /__mock/email-fail 模擬寄信失敗；POST /emails 模擬 Resend、POST /upstash 模擬 Upstash Redis
 // 啟動：node tests/e2e/mock-supabase.cjs（預設 port 54321）
 //
 // 可登入帳號（密碼皆為 test-password）：
@@ -53,6 +53,10 @@ let MISSING = new Set();
 // 模擬 Resend 寄信（測試時設定 RESEND_API_URL=http://127.0.0.1:54321）：記錄寄出的信，可模擬寄信失敗
 let EMAILS = [];
 let EMAIL_FAIL = false;
+// 模擬 Upstash Redis REST（POST /upstash，body 為指令陣列）；token 須為 UPSTASH_TOKEN
+const UPSTASH_TOKEN = 'upstash-token';
+let REDIS = {};
+let REDIS_COMMANDS = [];
 const UNIQUE = { categories: ['slug'], sub_categories: ['slug'], products: ['model_number'] };
 
 // 解析 select：找出 alias:table!inner(cols) 形式的關聯欄位
@@ -304,10 +308,30 @@ const server = http.createServer((req, res) => {
       MISSING = new Set();
       EMAILS = [];
       EMAIL_FAIL = false;
+      REDIS = {};
+      REDIS_COMMANDS = [];
       return send(res, 200, { ok: true });
     }
     if (url.pathname === '/__mock/state') {
-      return send(res, 200, { tables: TABLES, storage: [...STORAGE], emails: EMAILS });
+      return send(res, 200, { tables: TABLES, storage: [...STORAGE], emails: EMAILS, redis: REDIS, redisCommands: REDIS_COMMANDS });
+    }
+    // 單一指令 POST /upstash；用戶端自動合併時改送 POST /upstash/pipeline（指令陣列的陣列）
+    if ((url.pathname === '/upstash' || url.pathname === '/upstash/pipeline') && req.method === 'POST') {
+      if (req.headers.authorization !== `Bearer ${UPSTASH_TOKEN}`) return send(res, 401, { error: 'Unauthorized' });
+      const runCommand = ([cmd, key, value]) => {
+        const name = String(cmd).toUpperCase();
+        REDIS_COMMANDS.push(name);
+        if (name === 'SET') {
+          REDIS[key] = value;
+          return { result: 'OK' };
+        }
+        if (name === 'GET') return { result: REDIS[key] ?? null };
+        return { error: `mock: unsupported command ${name}` };
+      };
+      const body = JSON.parse(raw || '[]');
+      if (url.pathname === '/upstash/pipeline') return send(res, 200, body.map(runCommand));
+      const result = runCommand(body);
+      return send(res, result.error ? 400 : 200, result);
     }
     if (url.pathname === '/__mock/email-fail' && req.method === 'POST') {
       EMAIL_FAIL = Boolean(JSON.parse(raw || '{}').fail);
@@ -350,4 +374,4 @@ if (require.main === module) {
 
 const MOCK_URL = `http://127.0.0.1:${PORT}`;
 
-module.exports = { PASSWORD, makeAccessToken, USERS, MOCK_URL };
+module.exports = { PASSWORD, makeAccessToken, USERS, MOCK_URL, UPSTASH_TOKEN };
