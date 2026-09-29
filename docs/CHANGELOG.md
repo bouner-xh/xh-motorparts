@@ -15,12 +15,33 @@
 |---|---|---|---|
 | `ADMIN_EMAILS` | 後台管理員名單（逗號分隔） | **所有人都無法進後台** | S2 |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`、`TURNSTILE_SECRET_KEY` | 詢價表單機器人驗證 | **正式環境停止收詢價單（503）** | S4 |
-| `UPSTASH_REDIS_REST_URL`、`UPSTASH_REDIS_REST_TOKEN` | 詢價表單流量限制 | **正式環境停止收詢價單（503）** | S4 |
+| `UPSTASH_REDIS_REST_URL`、`UPSTASH_REDIS_REST_TOKEN` | 詢價表單流量限制 | **未設定：正式環境停止收詢價單（503）**；已設定但連不上：略過流量限制照常收單並記錄錯誤（第十五批） | S4 |
 | `NEXT_PUBLIC_BASE_URL`（2026-09-27 已刪除，不需設定） | 正式網址（canonical、sitemap） | 使用程式預設值 `https://www.xh-motorparts.com`；若要設定，類型不可選 Secret | C4 |
 | `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY` | 資料庫與登入 | 產品改用內建資料、後台無法使用 | — |
 | `RESEND_API_KEY`、`RESEND_FROM_EMAIL`、`RESEND_ADMIN_EMAIL` | 詢價通知信 | 不寄信；資料庫也失敗時詢價回報失敗 | S1、S5 |
 
 修改環境變數後需要到 Vercel → Deployments → 最新部署 → **Redeploy** 才會生效。
+
+---
+
+## 2026-09-29（第十五批）：流量限制服務故障時照常收單（B）
+
+**事件：** 2026-09-29 正式站送出詢價一律顯示「伺服器處理詢價單時發生錯誤」。Vercel Logs：
+`getaddrinfo ENOTFOUND <舊資料庫>.upstash.io`。原因：Upstash 免費資料庫連續 14 天沒有使用，被自動刪除；
+流量限制連不上時程式直接拋錯，整個詢價表單停擺。
+
+**處理：**
+1. 設定變更：老闆在 Upstash 重建資料庫（東京 ap-northeast-1，Free），更新 Vercel 兩個 `UPSTASH_` 變數並 Redeploy；
+   第一次 Redeploy 未生效，確認 Production 的變數後再部署一次才恢復。老闆實際送單確認成功。
+2. 程式：`src/app/api/inquiry/route.ts`
+   - 流量限制呼叫 Upstash 失敗時略過並照常收單，Vercel 記錄 `[inquiry] rate-limit: Upstash unavailable`。機器人驗證（Turnstile）維持原本的嚴格檢查
+   - 未預期錯誤的紀錄加上失敗步驟：`Inquiry submission API error [stage: rate-limit|turnstile|database|email]`
+   - 「未設定」Upstash 變數時正式環境仍停止收單（S4 不變）
+
+**測試：** 新增 `tests/e2e/inquiry-ratelimit-down.e2e.cjs`（`run-all.sh` 情境 4b：Upstash 位址連不上，瀏覽器實際送單 → 顯示成功、寫入資料庫、寄出兩封信）。
+舊版執行同一測試得到 500（與正式站相同）。`inquiry-protection` 情境 B 另外確認 Upstash 連不上時回應 400（進入機器人驗證）而不是 500。
+
+**還原：** Revert 本批 PR。還原後 Upstash 一旦故障，詢價表單會再次全部失敗。
 
 ---
 

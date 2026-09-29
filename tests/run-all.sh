@@ -78,6 +78,10 @@ stop_server
 echo "== 4. 開發模式 + 模擬 Supabase（未設定管理員名單）"
 start_server env "${MOCK_ENV[@]}" npx next dev -p $PORT && e2e admin-access-no-list
 stop_server
+
+echo "== 4b. 開發模式 + 模擬 Supabase + 流量限制服務（Upstash）連不上"
+start_server env "${MOCK_ENV[@]}" "${MAIL_ENV[@]}" UPSTASH_REDIS_REST_URL=http://127.0.0.1:9 UPSTASH_REDIS_REST_TOKEN=dummy npx next dev -p $PORT && e2e inquiry-ratelimit-down
+stop_server
 stop_mock
 
 echo "== 5. 開發模式 + 資料庫故障"
