@@ -77,6 +77,8 @@ export async function POST(request: Request) {
     }
   }
 
+  // 出錯時記錄停在哪一步（流量限制／機器人驗證／資料庫／寄信），方便在 Vercel Logs 查修
+  let stage = 'parse';
   try {
     const body = await request.json();
     const parsed = inquirySchema.safeParse(body);
@@ -88,22 +90,32 @@ export async function POST(request: Request) {
     const data = parsed.data;
 
     // 1) Rate Limiting (防刷防爆保護)
+    // Upstash 連不上（例如免費資料庫閒置被刪除、環境變數設錯）時略過流量限制照常收單，
+    // 仍有 Turnstile 機器人驗證把關；錯誤寫進 Vercel 紀錄以便查修
+    stage = 'rate-limit';
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
     const rateLimiter = getRateLimiter();
     if (rateLimiter) {
-      const { success } = await rateLimiter.limit(ip);
-      if (!success) {
+      let limited = false;
+      try {
+        limited = !(await rateLimiter.limit(ip)).success;
+      } catch (error) {
+        console.error('[inquiry] rate-limit: Upstash unavailable, skipped rate limiting:', error);
+      }
+      if (limited) {
         return Response.json({ error: '請求過於頻繁，請稍後再試' }, { status: 429 });
       }
     }
 
     // 2) Cloudflare Turnstile 機器人驗證
+    stage = 'turnstile';
     const turnstile = await verifyTurnstile(data.turnstileToken);
     if (!turnstile.ok) {
       return Response.json({ error: '驗證失敗，請重新送出' }, { status: 400 });
     }
 
     // 3) 寫入 Supabase (CRM 客戶關係資料庫)
+    stage = 'database';
     const service = getSupabaseServiceRoleClient();
     let customerId: string | null = null;
     // 已設定資料庫但寫入失敗時為 true，需確保管理員至少收到通知信，否則回報失敗
@@ -172,6 +184,7 @@ export async function POST(request: Request) {
     }
 
     // 4) 寄送電子郵件 (Resend)
+    stage = 'email';
     // 未設定時寄到公司信箱（不再寫死個人信箱）
     const adminEmail = process.env.RESEND_ADMIN_EMAIL || SALES_EMAIL;
     const hasResend = Boolean(process.env.RESEND_API_KEY);
@@ -202,7 +215,7 @@ export async function POST(request: Request) {
       mode: hasResend ? 'ready-for-email' : 'scaffold-only'
     });
   } catch (error: unknown) {
-    console.error('Inquiry submission API error:', error);
+    console.error(`Inquiry submission API error [stage: ${stage}]:`, error);
     return Response.json({ error: '伺服器處理詢價單時發生錯誤' }, { status: 500 });
   }
 }

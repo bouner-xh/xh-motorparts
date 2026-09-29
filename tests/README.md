@@ -6,7 +6,7 @@
 bash tests/run-all.sh
 ```
 
-會依序在 8 種環境情境下啟動網站並執行全部單元測試與 E2E 測試（約 5～8 分鐘），
+會依序在 9 種環境情境下啟動網站並執行全部單元測試與 E2E 測試（約 5～8 分鐘），
 最後顯示「✅ 全部測試通過」或列出失敗的項目。每次修改後、合併進 master 前都應執行一次。
 
 ## 部署後檢查正式網站（唯讀）
@@ -54,6 +54,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `canonical-url.e2e.cjs` | 正式網址統一為 www（C4） | `npx next dev -p 3100` |
 | `site-smoke.e2e.cjs` | 主要頁面與本站資源皆能載入 | 開發或正式環境皆可 |
 | `inquiry-save-failure.e2e.cjs` | 資料庫故障時不可顯示成功（S5） | 需模擬資料庫故障，見檔案開頭說明 |
+| `inquiry-ratelimit-down.e2e.cjs` | 流量限制服務（Upstash）連不上時詢價照常送出 | 需模擬 Supabase 與無法連線的 Upstash 位址，見檔案開頭說明 |
 | `csp-analytics.e2e.cjs` | GA4 / Clarity 未被 CSP 擋下（S3） | 需正式環境建置，見檔案開頭說明 |
 | `cookie-consent.e2e.cjs` | Cookie 同意與 Clarity 載入、頁尾「Cookie 設定」撤回同意（S6） | 需設定測試用分析 ID，見檔案開頭說明 |
 | `admin-login.e2e.cjs` | 登入頁無後門、跳轉路徑驗證（S0 / S7） | `npx next dev -p 3100` |

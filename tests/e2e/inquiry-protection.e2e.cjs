@@ -36,6 +36,8 @@ if (expectBlocked) {
         }
       });
       assert(res.status() !== 503, `沒有被防護檢查擋下（實際 ${res.status()}，後續由 Turnstile / 限流處理）`);
+      // 測試用的 Upstash 位址連不上：應略過流量限制，由 Turnstile 擋下沒有驗證碼的請求（舊版會回 500）
+      assert(res.status() === 400, `Upstash 連不上時仍進入機器人驗證（實際 ${res.status()}）`);
     })
   );
 }

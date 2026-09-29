@@ -15,7 +15,7 @@
 |---|---|---|---|
 | `ADMIN_EMAILS` | 後台管理員名單（逗號分隔） | **所有人都無法進後台** | S2 |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`、`TURNSTILE_SECRET_KEY` | 詢價表單機器人驗證 | **正式環境停止收詢價單（503）** | S4 |
-| `UPSTASH_REDIS_REST_URL`、`UPSTASH_REDIS_REST_TOKEN` | 詢價表單流量限制 | **正式環境停止收詢價單（503）** | S4 |
+| `UPSTASH_REDIS_REST_URL`、`UPSTASH_REDIS_REST_TOKEN` | 詢價表單流量限制 | **未設定：正式環境停止收詢價單（503）**；已設定但連不上：略過流量限制照常收單並記錄錯誤（第十五批） | S4 |
 | `NEXT_PUBLIC_BASE_URL`（2026-09-27 已刪除，不需設定） | 正式網址（canonical、sitemap） | 使用程式預設值 `https://www.xh-motorparts.com`；若要設定，類型不可選 Secret | C4 |
 | `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY` | 資料庫與登入 | 產品改用內建資料、後台無法使用 | — |
 | `RESEND_API_KEY`、`RESEND_FROM_EMAIL`、`RESEND_ADMIN_EMAIL` | 詢價通知信 | 不寄信；資料庫也失敗時詢價回報失敗 | S1、S5 |
@@ -24,14 +24,35 @@
 
 ---
 
+## 2026-09-29（第十五批）：流量限制服務故障時照常收單（B）
+
+**事件：** 2026-09-29 正式站送出詢價一律顯示「伺服器處理詢價單時發生錯誤」。Vercel Logs：
+`getaddrinfo ENOTFOUND <舊資料庫>.upstash.io`。原因：Upstash 免費資料庫連續 14 天沒有使用，被自動刪除；
+流量限制連不上時程式直接拋錯，整個詢價表單停擺。
+
+**處理：**
+1. 設定變更：老闆在 Upstash 重建資料庫（東京 ap-northeast-1，Free），更新 Vercel 兩個 `UPSTASH_` 變數並 Redeploy；
+   第一次 Redeploy 未生效，確認 Production 的變數後再部署一次才恢復。老闆實際送單確認成功。
+2. 程式：`src/app/api/inquiry/route.ts`
+   - 流量限制呼叫 Upstash 失敗時略過並照常收單，Vercel 記錄 `[inquiry] rate-limit: Upstash unavailable`。機器人驗證（Turnstile）維持原本的嚴格檢查
+   - 未預期錯誤的紀錄加上失敗步驟：`Inquiry submission API error [stage: rate-limit|turnstile|database|email]`
+   - 「未設定」Upstash 變數時正式環境仍停止收單（S4 不變）
+
+**測試：** 新增 `tests/e2e/inquiry-ratelimit-down.e2e.cjs`（`run-all.sh` 情境 4b：Upstash 位址連不上，瀏覽器實際送單 → 顯示成功、寫入資料庫、寄出兩封信）。
+舊版執行同一測試得到 500（與正式站相同）。`inquiry-protection` 情境 B 另外確認 Upstash 連不上時回應 400（進入機器人驗證）而不是 500。
+
+**還原：** Revert 本批 PR。還原後 Upstash 一旦故障，詢價表單會再次全部失敗。
+
+---
+
 ## 2026-09-28（第十四批）：詢價處理紀錄、從後台回覆客戶（A6 第二階段 ③④）
 
-PR：（合併後補上）
+PR：[#19](https://github.com/bouner-xh/xh-motorparts/pull/19)
 
 | 編號 | 修改 | 主要檔案 | Commit | 驗證 |
 |---|---|---|---|---|
 | A6 ③ | 詢價處理紀錄：儲存時記錄操作人與狀態、備忘的前後值；刪除前先記錄；詳情顯示時間軸 | `supabase/migrations/20260928_inquiry_events.sql`（新）、`src/lib/inquiry-events.ts`、`inquiry-event-diff.ts`（新）、`api/admin/inquiries/events`（新） | `e3374cc` | `tests/admin/inquiry-event-diff.test.mts`、`admin-inquiry-events.e2e.cjs` |
-| A6 ④ | 從後台回覆客戶：中英文範本、預覽確認、未填提示不能寄、PDF 附件（4 MB）、回覆地址與副本 sales@、寄出後改為已回覆並記錄 | `src/lib/inquiry-reply.ts`（新）、`src/lib/resend.ts`（新）、`api/admin/inquiries/reply`（新）、`InquiryReplyComposer.tsx`（新） | 見 PR | `tests/admin/inquiry-reply.test.mts`、`admin-inquiry-reply.e2e.cjs` |
+| A6 ④ | 從後台回覆客戶：中英文範本、預覽確認、未填提示不能寄、PDF 附件（4 MB）、回覆地址與副本 sales@、寄出後改為已回覆並記錄 | `src/lib/inquiry-reply.ts`（新）、`src/lib/resend.ts`（新）、`api/admin/inquiries/reply`（新）、`InquiryReplyComposer.tsx`（新） | `fa92e3e` | `tests/admin/inquiry-reply.test.mts`、`admin-inquiry-reply.e2e.cjs` |
 
 **需要老闆做的事（資料庫）**：在 Supabase 執行 `supabase/migrations/20260928_inquiry_events.sql`，步驟見 `docs/inquiry-events-setup.md`。
 **沒執行之前**：後台其他功能與「回覆客戶」都照常運作（信會寄出、狀態會更新），只是不會留下處理紀錄，詳情會顯示「處理紀錄尚未啟用」。
