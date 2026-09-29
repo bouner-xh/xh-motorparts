@@ -75,12 +75,12 @@ start_mock
 start_server env "${MOCK_ENV[@]}" "${MAIL_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next dev -p $PORT && e2e admin-access product-card-inquiry language-switch locale-text page-h1 hreflang admin-product-form admin-product-category admin-product-import admin-delete admin-inquiries admin-product-list admin-api-errors admin-dashboard-tabs product-detail-cta admin-inquiry-export admin-customers admin-inquiry-events admin-inquiry-reply
 stop_server
 
-echo "== 4. 開發模式 + 模擬 Supabase（未設定管理員名單）"
-start_server env "${MOCK_ENV[@]}" npx next dev -p $PORT && e2e admin-access-no-list
+echo "== 4. 開發模式 + 模擬 Supabase（未設定管理員名單）+ 模擬 Upstash 與每日排程"
+start_server env "${MOCK_ENV[@]}" CRON_SECRET=e2e-cron-secret UPSTASH_REDIS_REST_URL=http://127.0.0.1:54321/upstash UPSTASH_REDIS_REST_TOKEN=upstash-token npx next dev -p $PORT && e2e admin-access-no-list cron-keepalive
 stop_server
 
 echo "== 4b. 開發模式 + 模擬 Supabase + 流量限制服務（Upstash）連不上"
-start_server env "${MOCK_ENV[@]}" "${MAIL_ENV[@]}" UPSTASH_REDIS_REST_URL=http://127.0.0.1:9 UPSTASH_REDIS_REST_TOKEN=dummy npx next dev -p $PORT && e2e inquiry-ratelimit-down
+start_server env "${MOCK_ENV[@]}" "${MAIL_ENV[@]}" CRON_SECRET=e2e-cron-secret UPSTASH_REDIS_REST_URL=http://127.0.0.1:9 UPSTASH_REDIS_REST_TOKEN=dummy npx next dev -p $PORT && { e2e inquiry-ratelimit-down; E2E_EXPECT=upstash-down e2e cron-keepalive; }
 stop_server
 stop_mock
 

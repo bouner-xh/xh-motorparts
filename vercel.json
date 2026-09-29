@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/upstash-keepalive",
+      "schedule": "17 19 * * *"
+    }
+  ]
+}

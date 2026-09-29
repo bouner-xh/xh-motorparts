@@ -19,12 +19,35 @@
 | `NEXT_PUBLIC_BASE_URL`（2026-09-27 已刪除，不需設定） | 正式網址（canonical、sitemap） | 使用程式預設值 `https://www.xh-motorparts.com`；若要設定，類型不可選 Secret | C4 |
 | `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY` | 資料庫與登入 | 產品改用內建資料、後台無法使用 | — |
 | `RESEND_API_KEY`、`RESEND_FROM_EMAIL`、`RESEND_ADMIN_EMAIL` | 詢價通知信 | 不寄信；資料庫也失敗時詢價回報失敗 | S1、S5 |
+| `CRON_SECRET` | 每日排程保持 Upstash 運作（Vercel 排程自動帶上） | 排程回報 503、Upstash 可能在 14 天沒有詢價後被刪除 | 第十六批 |
 
 修改環境變數後需要到 Vercel → Deployments → 最新部署 → **Redeploy** 才會生效。
 
 ---
 
+## 2026-09-29（第十六批）：每日排程保持 Upstash 運作（C）
+
+**原因：** Upstash 免費資料庫連續 14 天沒有使用會被自動刪除；網站詢價量低，只靠詢價觸發容易被判定閒置（第十五批事件）。
+
+**修改：**
+- `vercel.json`：新增 Vercel 排程，每天 UTC 19:17（台灣 03:17）呼叫 `/api/cron/upstash-keepalive`（免費方案每天一次，實際時間在該小時內）
+- `src/app/api/cron/upstash-keepalive/route.ts`：寫入並讀回 Upstash 一筆 `xh:keepalive`（30 天後自動過期）
+  - 只接受 `Authorization: Bearer <CRON_SECRET>`；未設定 `CRON_SECRET` 回 503，密碼錯誤回 401，Upstash 失敗回 502 並記錄 `[cron] upstash-keepalive`
+- `src/lib/cron-auth.ts`：密碼比對（固定時間比較）
+
+**需要的設定：** Vercel 環境變數 `CRON_SECRET`（Production），設定後 Redeploy。Vercel 排程會自動帶上這個密碼。
+**確認方式：** Vercel → 專案 → Settings → Cron Jobs 可看到排程並可手動 Run；Upstash 的 COMMANDS 每天會增加 2。
+
+**測試：** 單元 `tests/security/cron-auth.test.mts`；E2E `tests/e2e/cron-keepalive.e2e.cjs`（模擬 Upstash：沒密碼／錯密碼 401 且不碰 Upstash、正確密碼寫入並讀回；Upstash 連不上回 502）。舊版執行為 404。
+`mock-supabase.cjs` 新增模擬 Upstash（`POST /upstash`、`/upstash/pipeline`）。
+
+**還原：** Revert 本批 PR（或在 Vercel Cron Jobs 頁面停用排程）。
+
+---
+
 ## 2026-09-29（第十五批）：流量限制服務故障時照常收單（B）
+
+PR：[#20](https://github.com/bouner-xh/xh-motorparts/pull/20)
 
 **事件：** 2026-09-29 正式站送出詢價一律顯示「伺服器處理詢價單時發生錯誤」。Vercel Logs：
 `getaddrinfo ENOTFOUND <舊資料庫>.upstash.io`。原因：Upstash 免費資料庫連續 14 天沒有使用，被自動刪除；
