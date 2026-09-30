@@ -55,6 +55,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `site-smoke.e2e.cjs` | 主要頁面與本站資源皆能載入 | 開發或正式環境皆可 |
 | `inquiry-save-failure.e2e.cjs` | 資料庫故障時不可顯示成功（S5） | 需模擬資料庫故障，見檔案開頭說明 |
 | `inquiry-ratelimit-down.e2e.cjs` | 流量限制服務（Upstash）連不上時詢價照常送出 | 需模擬 Supabase 與無法連線的 Upstash 位址，見檔案開頭說明 |
+| `inquiry-limits.e2e.cjs` | 詢價欄位上限、品項名稱以資料庫為準（R3） | 需模擬 Supabase 與模擬 Resend，見檔案開頭說明 |
 | `cron-keepalive.e2e.cjs` | 每日排程保持 Upstash 運作：密碼檢查、寫入並讀回、Upstash 故障回報 | 需模擬 Supabase（內含模擬 Upstash）與 `CRON_SECRET`，見檔案開頭說明 |
 | `csp-analytics.e2e.cjs` | GA4 / Clarity 未被 CSP 擋下（S3） | 需正式環境建置，見檔案開頭說明 |
 | `cookie-consent.e2e.cjs` | Cookie 同意與 Clarity 載入、頁尾「Cookie 設定」撤回同意（S6） | 需設定測試用分析 ID，見檔案開頭說明 |

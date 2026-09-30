@@ -8,6 +8,7 @@ import { useCart } from '@/context/CartContext';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { localized } from '@/lib/localized-text';
 import { Icon } from '@/components/ui/Icon';
+import { INQUIRY_LIMITS } from '@/lib/inquiry-limits';
 
 /**
  * B2B RFQ 詢價車詳情與客戶聯絡資料提交頁面
@@ -200,33 +201,33 @@ export default function InquiryCartPage() {
               <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>
                 {t('name')} <span style={{ color: '#ef4444' }}>*</span>
               </span>
-              <input name="name" type="text" required placeholder="e.g. Mr. Chen" />
+              <input name="name" type="text" required maxLength={INQUIRY_LIMITS.name} placeholder="e.g. Mr. Chen" />
             </label>
 
             <label>
               <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>
                 {t('email')} <span style={{ color: '#ef4444' }}>*</span>
               </span>
-              <input name="email" type="email" required placeholder="e.g. buyer@company.com" />
+              <input name="email" type="email" required maxLength={INQUIRY_LIMITS.email} placeholder="e.g. buyer@company.com" />
             </label>
 
             <label>
               <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>
                 {t('companyName')} <span style={{ color: '#ef4444' }}>*</span>
               </span>
-              <input name="companyName" type="text" required placeholder="e.g. Motor Parts Trading Co." />
+              <input name="companyName" type="text" required maxLength={INQUIRY_LIMITS.companyName} placeholder="e.g. Motor Parts Trading Co." />
             </label>
 
             <label>
               <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>
                 {t('country')} <span style={{ color: '#ef4444' }}>*</span>
               </span>
-              <input name="country" type="text" required placeholder="e.g. Germany / Vietnam" />
+              <input name="country" type="text" required maxLength={INQUIRY_LIMITS.country} placeholder="e.g. Germany / Vietnam" />
             </label>
 
             <label>
               <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>{t('phone')}</span>
-              <input name="phone" type="text" placeholder="e.g. +886 4 12345678" />
+              <input name="phone" type="text" maxLength={INQUIRY_LIMITS.phone} placeholder="e.g. +886 4 12345678" />
             </label>
 
             <label>
@@ -234,6 +235,7 @@ export default function InquiryCartPage() {
               <textarea
                 name="message"
                 rows={4}
+                maxLength={INQUIRY_LIMITS.message}
                 placeholder={
                   localized(locale, { 'zh-TW': '請詳述您適用的摩托車車型、包裝需求或 OEM 特殊規格...', 'zh-CN': '请详述您适用的摩托车车型、包装需求或 OEM 特殊规格...', en: 'Please specify motorcycle models, OEM numbers, or packing requirements...' })
                 }

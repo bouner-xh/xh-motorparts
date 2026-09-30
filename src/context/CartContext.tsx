@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { INQUIRY_LIMITS } from '@/lib/inquiry-limits';
 
 /**
  * 詢價購物車項目介面
@@ -79,7 +80,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const updateQuantity = (id: string, quantity: number) => {
     setCart((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, quantity: Math.max(1, quantity) } : i))
+      prev.map((i) => (i.id === id ? { ...i, quantity: Math.min(INQUIRY_LIMITS.quantity, Math.max(1, quantity)) } : i))
     );
   };
 
