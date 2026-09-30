@@ -1,4 +1,4 @@
-// E2E：每日排程保持 Upstash 運作（避免免費資料庫 14 天沒有使用被刪除）
+// E2E：每日排程保持免費服務運作（Upstash 14 天沒有使用會被刪除、Supabase 7 天沒有活動會暫停）
 // 以 Vercel 排程的方式呼叫（Authorization: Bearer <CRON_SECRET>），需要模擬 Supabase 伺服器中的模擬 Upstash：
 //   node tests/e2e/mock-supabase.cjs &
 //   CRON_SECRET=e2e-cron-secret UPSTASH_REDIS_REST_URL=http://127.0.0.1:54321/upstash UPSTASH_REDIS_REST_TOKEN=upstash-token npx next dev -p 3100
@@ -16,6 +16,8 @@ if (upstashDown) {
     withPage(async (page) => {
       const res = await page.request.get(`${BASE_URL}${PATH}`, { headers: { Authorization: `Bearer ${SECRET}` } });
       assert(res.status() === 502, `回應 502（實際 ${res.status()}）`);
+      const body = await res.json();
+      assert(body.upstash === 'failed' && body.supabase === 'ok', `分別回報各服務狀態（upstash ${body.upstash}、supabase ${body.supabase}）`);
     })
   );
 } else {
@@ -38,9 +40,25 @@ if (upstashDown) {
       assert(res.status() === 200, `回應 200（實際 ${res.status()}）`);
       const body = await res.json();
       assert(body.ok === true, '讀回的值與寫入相同');
-      const { redis, redisCommands } = await mockState();
+      const { redis, redisCommands, restLog } = await mockState();
       assert(redis['xh:keepalive'] === body.at, 'Upstash 內有本次的時間紀錄');
       assert(redisCommands.join(',') === 'SET,GET', `寫入與讀取各一次（${redisCommands.join(',')}）`);
+      assert(body.supabase === 'ok' && restLog.includes('GET products'), '查詢了一次 Supabase 產品資料表');
+    })
+  );
+
+  run('Supabase 查詢失敗：排程回報失敗，Upstash 仍照常更新', () =>
+    withPage(async (page) => {
+      await fetch(`${MOCK_URL}/__mock/reset`, { method: 'POST' });
+      await fetch(`${MOCK_URL}/__mock/drop`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'products' }) });
+      try {
+        const res = await page.request.get(`${BASE_URL}${PATH}`, { headers: { Authorization: `Bearer ${SECRET}` } });
+        assert(res.status() === 502, `回應 502（實際 ${res.status()}）`);
+        const body = await res.json();
+        assert(body.supabase === 'failed' && body.upstash === 'ok', `supabase ${body.supabase}、upstash ${body.upstash}`);
+      } finally {
+        await fetch(`${MOCK_URL}/__mock/reset`, { method: 'POST' });
+      }
     })
   );
 }
