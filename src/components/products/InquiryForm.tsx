@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useParams } from 'next/navigation';
+import { INQUIRY_LIMITS } from '@/lib/inquiry-limits';
 
 interface InquiryFormProps {
   productId: string;
@@ -54,7 +55,7 @@ export function InquiryForm({
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10);
     if (!isNaN(val)) {
-      setQuantity(Math.max(1, val));
+      setQuantity(Math.min(INQUIRY_LIMITS.quantity, Math.max(1, val)));
     }
   };
 

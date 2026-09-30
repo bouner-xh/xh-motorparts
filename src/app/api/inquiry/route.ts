@@ -5,24 +5,26 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { buildAdminEnvelope, buildCustomerEnvelope, SALES_EMAIL, type EmailEnvelope } from '@/lib/inquiry-email';
 import { sendResendEmail } from '@/lib/resend';
 import { getMissingProtectionConfig, isProductionDeployment } from '@/lib/inquiry-protection';
+import { INQUIRY_LIMITS, productIdsToLookup, resolveInquiryItems, type CatalogProductRow } from '@/lib/inquiry-limits';
 
-// B2B RFQ 詢價車 Payload 驗證 Schema
+// B2B RFQ 詢價車 Payload 驗證 Schema（欄位上限見 src/lib/inquiry-limits.ts）
+const L = INQUIRY_LIMITS;
 const inquirySchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-  companyName: z.string().min(1),
-  country: z.string().min(1),
-  phone: z.string().optional().default(''),
-  message: z.string().optional().default(''),
+  name: z.string().min(1).max(L.name),
+  email: z.string().max(L.email).email(),
+  companyName: z.string().min(1).max(L.companyName),
+  country: z.string().min(1).max(L.country),
+  phone: z.string().max(L.phone).optional().default(''),
+  message: z.string().max(L.message).optional().default(''),
   items: z.array(z.object({
-    productId: z.string().min(1),
-    modelNumber: z.string().min(1),
-    nameZhTw: z.string().optional().default(''),
-    nameZhCn: z.string().optional().default(''),
-    nameEn: z.string().optional().default(''),
-    quantity: z.number().int().positive()
-  })).min(1),
-  turnstileToken: z.string().optional().default('')
+    productId: z.string().min(1).max(L.productId),
+    modelNumber: z.string().min(1).max(L.modelNumber),
+    nameZhTw: z.string().max(L.productName).optional().default(''),
+    nameZhCn: z.string().max(L.productName).optional().default(''),
+    nameEn: z.string().max(L.productName).optional().default(''),
+    quantity: z.number().int().positive().max(L.quantity)
+  })).min(1).max(L.items),
+  turnstileToken: z.string().max(L.turnstileToken).optional().default('')
 });
 
 function getRateLimiter() {
@@ -122,6 +124,19 @@ export async function POST(request: Request) {
     let saveFailed = false;
 
     if (service) {
+      // 品項名稱與型號以資料庫為準，不採用瀏覽器送來的文字（信件與詢價單都用這份）
+      const ids = productIdsToLookup(data.items);
+      let products: CatalogProductRow[] = [];
+      if (ids.length) {
+        const { data: rows, error: productError } = await service
+          .from('products')
+          .select('id, model_number, name_i18n')
+          .in('id', ids);
+        if (productError) console.error('[inquiry] product lookup failed:', productError.message);
+        products = (rows as CatalogProductRow[] | null) || [];
+      }
+      data.items = resolveInquiryItems(data.items, products);
+
       // a. 查詢或建立客戶 (以 Email 作為唯一鍵值)
       const { data: existingCustomer } = await service
         .from('customers')
