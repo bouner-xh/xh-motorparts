@@ -27,6 +27,8 @@
 
 ## 2026-09-30（第十八批）：每日排程同時保持 Supabase 運作（安全複查 R5）
 
+PR：[#23](https://github.com/bouner-xh/xh-motorparts/pull/23)
+
 **原因：** Supabase 免費專案 7 天沒有活動會被暫停；暫停後產品頁改用內建資料、詢價無法存檔、後台無法使用。
 
 **修改：** `src/app/api/cron/upstash-keepalive/route.ts`（沿用第十六批的排程與網址，不需要新設定）
