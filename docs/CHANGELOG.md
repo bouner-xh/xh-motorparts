@@ -25,7 +25,24 @@
 
 ---
 
+## 2026-09-30（第十八批）：每日排程同時保持 Supabase 運作（安全複查 R5）
+
+**原因：** Supabase 免費專案 7 天沒有活動會被暫停；暫停後產品頁改用內建資料、詢價無法存檔、後台無法使用。
+
+**修改：** `src/app/api/cron/upstash-keepalive/route.ts`（沿用第十六批的排程與網址，不需要新設定）
+- 除了讀寫 Upstash，另外查詢一次 Supabase `products`（只讀 1 筆 id）
+- 回應分別列出兩個服務的結果 `{ ok, upstash, supabase }`；任何一項失敗或未設定都回 502，Vercel Logs 會記錄 `[cron] keepalive`
+
+**測試：** `tests/e2e/cron-keepalive.e2e.cjs` 新增：確認有查詢產品資料表、Supabase 查詢失敗時回 502 且 Upstash 仍照常更新；Upstash 連不上時分別回報。
+`mock-supabase.cjs` 新增資料庫讀寫紀錄（`restLog`）。舊版執行新測試失敗（沒有查詢 Supabase、失敗時仍回 200）。
+
+**還原：** Revert 本批 PR（排程回到只處理 Upstash）。
+
+---
+
 ## 2026-09-30（第十七批）：詢價欄位上限、品項名稱以資料庫為準（安全複查 R3）
+
+PR：[#22](https://github.com/bouner-xh/xh-motorparts/pull/22)
 
 **原因：** 詢價確認信會寄到表單填的任何信箱；原本姓名、品項名稱沒有長度限制，而且品項名稱直接採用瀏覽器送來的文字，
 可被借用我們的網域寄出廣告內容、耗盡 Resend 每日 100 封額度（真正的詢價通知就寄不出去）。

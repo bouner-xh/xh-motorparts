@@ -57,6 +57,8 @@ let EMAIL_FAIL = false;
 const UPSTASH_TOKEN = 'upstash-token';
 let REDIS = {};
 let REDIS_COMMANDS = [];
+// 資料庫讀寫紀錄（例如 GET products），測試用來確認有沒有查詢資料庫
+let REST_LOG = [];
 const UNIQUE = { categories: ['slug'], sub_categories: ['slug'], products: ['model_number'] };
 
 // 解析 select：找出 alias:table!inner(cols) 形式的關聯欄位
@@ -157,6 +159,7 @@ function deleteRows(table, ids) {
 // 模擬資料庫的讀寫（PostgREST）
 function handleRest(req, url, raw) {
   const table = url.pathname.slice('/rest/v1/'.length);
+  REST_LOG.push(`${req.method} ${table}`);
   if (MISSING.has(table)) return dbError(404, 'PGRST205', `Could not find the table 'public.${table}' in the schema cache`);
   if (!TABLES[table]) TABLES[table] = [];
   const select = url.searchParams.get('select') || '*';
@@ -310,10 +313,11 @@ const server = http.createServer((req, res) => {
       EMAIL_FAIL = false;
       REDIS = {};
       REDIS_COMMANDS = [];
+      REST_LOG = [];
       return send(res, 200, { ok: true });
     }
     if (url.pathname === '/__mock/state') {
-      return send(res, 200, { tables: TABLES, storage: [...STORAGE], emails: EMAILS, redis: REDIS, redisCommands: REDIS_COMMANDS });
+      return send(res, 200, { tables: TABLES, storage: [...STORAGE], emails: EMAILS, redis: REDIS, redisCommands: REDIS_COMMANDS, restLog: REST_LOG });
     }
     // 單一指令 POST /upstash；用戶端自動合併時改送 POST /upstash/pipeline（指令陣列的陣列）
     if ((url.pathname === '/upstash' || url.pathname === '/upstash/pipeline') && req.method === 'POST') {
