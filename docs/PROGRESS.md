@@ -11,7 +11,6 @@
 
 | # | 事項 | 說明 |
 |---|---|---|
-| 0 | **Vercel 設定 `CRON_SECRET` 並 Redeploy** | 啟用每日排程（C），避免 Upstash 閒置 14 天被刪除、詢價表單停擺；確認方式見 CHANGELOG 第十六批 |
 | 0 | **Supabase 建立 `inquiry_events` 資料表** | 啟用詢價處理紀錄（A6 ③④），步驟見 `docs/inquiry-events-setup.md`，約 2 分鐘 |
 | 0 | Gmail 以 sales@ 寄信（做法 A） | 步驟見 `docs/gmail-send-as-sales.md`；先確認 Resend 網域為 Verified |
 | 1 | 刪除重複的 Vercel 專案（C1） | `xh-motorparts` 已中斷 Git 連結；觀察一週正常後可刪除 |
@@ -83,7 +82,7 @@
 | R6 | 中 | Vercel Hobby 方案條款限非商業使用 | 評估升級 Pro（每月 US$20） | 待老闆決定 |
 | R7 | 低 | Supabase 免費方案備份有限 | 定期用後台匯出 CSV，或升級時再處理 | 待老闆決定 |
 | R8 | 低 | npm audit：postcss（Next.js 內建，只處理本站 CSS）、eslint 相關套件（開發用） | 不影響正式站；Next.js 16 升級時一併處理 | 記錄 |
-| R9 | 低 | 正式站排程回應 503：尚未設定 `CRON_SECRET` | 老闆設定後觸發一次 | 待老闆處理 |
+| R9 | 低 | 正式站排程回應 503：尚未設定 `CRON_SECRET` | 老闆設定後觸發一次 | ✅ 2026-10-02 老闆設定並手動執行，回應 200（Upstash、Supabase 皆正常）；外部呼叫回 401 |
 
 ## 🛠️ 後台健檢（2026-09-27，老闆同意依序處理）
 
