@@ -49,7 +49,7 @@
 | Gmail 以 sales@ 回信（做法 A）：2026-10-03 老闆實測，回覆詢價通知信時寄件人為「協皇企業 Xie Huang Enterprise <sales@xh-motorparts.com>」 | 設定變更 |
 | C：每日排程讀寫 Upstash，避免免費資料庫閒置被刪除（需老闆設定 `CRON_SECRET`） | #21 |
 
-測試：`bash tests/run-all.sh`（單元 55 項、E2E 90 項結果，9 種環境情境）全部通過（2026-10-04）。
+測試：`bash tests/run-all.sh`（單元 59 項、E2E 93 項結果，9 種環境情境）全部通過（2026-10-04）。
 
 **2026-09-26 正式網站唯讀檢查**（`production-check` 等 7 支測試）：S0、S3、S7、D1、D5、D6、D7、D8、D10、D11、D13 在正式網站皆確認正常。
 2026-09-27 再次檢查：C4 canonical 已為 www，`canonical-url` 對正式網站通過。
