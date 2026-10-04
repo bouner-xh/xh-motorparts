@@ -41,7 +41,8 @@ const emptyFormState: SubCategoryFormState = {
   sortOrder: 0
 };
 
-export function AdminSubCategoryManager({ locale }: { locale: Locale }) {
+// locale 由後台頁面傳入，目前子分類表單固定顯示繁中
+export function AdminSubCategoryManager(_props: { locale: Locale }) {
   const [categories, setCategories] = useState<AdminCategoryItem[]>([]);
   const [rows, setRows] = useState<AdminSubCategoryItem[]>([]);
   const [form, setForm] = useState<SubCategoryFormState>(emptyFormState);
@@ -182,7 +183,7 @@ export function AdminSubCategoryManager({ locale }: { locale: Locale }) {
 
   return (
     <div>
-      <h3>子目錄 CRUD（{locale}）</h3>
+      <h3>子分類管理</h3>
       <p className="muted">管理大分類下的子分類標籤。</p>
 
       <form className="admin-form" onSubmit={submitSubCategory}>

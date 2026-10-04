@@ -3,6 +3,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {toProductImageUrl} from '@/lib/product-image-url';
 import {resizeProductImage} from '@/lib/image-resize';
+import {splitSpecifications, validateProductForm} from '@/lib/product-form';
 import type { Locale } from '@/lib/catalog';
 
 interface AdminCategoryItem {
@@ -68,7 +69,8 @@ const emptyFormState: ProductFormState = {
   imagePath: ''
 };
 
-export function AdminProductManager({locale}: {locale: Locale}) {
+// locale 由後台頁面傳入，目前產品表單固定顯示繁中
+export function AdminProductManager(_props: {locale: Locale}) {
   const [categories, setCategories] = useState<AdminCategoryItem[]>([]);
   const [rows, setRows] = useState<AdminProductItem[]>([]);
   const [subCategories, setSubCategories] = useState<AdminSubCategoryItem[]>([]);
@@ -180,10 +182,8 @@ export function AdminProductManager({locale}: {locale: Locale}) {
       nameZhTw: form.nameZhTw.trim(),
       nameZhCn: form.nameZhCn.trim(),
       nameEn: form.nameEn.trim(),
-      specifications: form.specifications
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean),
+      // 半形逗號、全形逗號、頓號都可以分隔（P4）
+      specifications: splitSpecifications(form.specifications),
       stockQuantity: Number(form.stockQuantity),
       isActive: form.isActive,
       subCategoryId: form.subCategoryId,
@@ -192,25 +192,10 @@ export function AdminProductManager({locale}: {locale: Locale}) {
 
     const method = form.id ? 'PUT' : 'POST';
 
-    const validationErrors: string[] = [];
-    if (!payload.modelNumber) {
-      validationErrors.push('型號不可為空');
-    }
-    if (!payload.subCategoryId) {
-      validationErrors.push('子分類不可為空（請先建立子分類）');
-    }
-    if (!payload.nameZhTw) {
-      validationErrors.push('名稱（zh-TW）不可為空');
-    }
-    if (!payload.nameZhCn) {
-      validationErrors.push('名稱（zh-CN）不可為空');
-    }
-    if (!payload.nameEn) {
-      validationErrors.push('名稱（en）不可為空');
-    }
+    const validationErrors = validateProductForm(payload);
 
     if (validationErrors.length) {
-      const message = `表單驗證失敗：${validationErrors.join(' / ')}`;
+      const message = `請修正：${validationErrors.join('、')}`;
       setStatus('error', message);
       setIsSubmitting(false);
       return;
@@ -387,8 +372,8 @@ export function AdminProductManager({locale}: {locale: Locale}) {
 
   return (
     <div>
-      <h3>產品 CRUD 與圖片管理（{locale}）</h3>
-      <p className="muted">可新增、編輯、刪除產品，並上傳產品主圖（會綁定為第一張圖片）。</p>
+      <h3>產品管理</h3>
+      <p className="muted">新增或編輯產品；確認內容無誤後勾選「上架」，前台才看得到。照片會自動縮小後再上傳。</p>
 
       <form ref={formRef} className="admin-form" data-testid="admin-product-form" onSubmit={handleSubmit} noValidate>
         {form.id ? (
@@ -476,7 +461,7 @@ export function AdminProductManager({locale}: {locale: Locale}) {
         </label>
 
         <label>
-          規格（逗號分隔）
+          規格（用逗號或頓號分隔）
           <input
             value={form.specifications}
             onChange={(event) => setForm((prev) => ({...prev, specifications: event.target.value}))}
@@ -488,6 +473,8 @@ export function AdminProductManager({locale}: {locale: Locale}) {
           庫存
           <input
             type="number"
+            min={0}
+            step={1}
             value={form.stockQuantity}
             onChange={(event) =>
               setForm((prev) => ({...prev, stockQuantity: Number(event.target.value || 0)}))
@@ -495,14 +482,6 @@ export function AdminProductManager({locale}: {locale: Locale}) {
           />
         </label>
 
-        <label>
-          圖片路徑 / URL
-          <input
-            value={form.imagePath}
-            onChange={(event) => setForm((prev) => ({...prev, imagePath: event.target.value}))}
-            placeholder="https://... 或 images/products/..."
-          />
-        </label>
 
         <label style={{flexDirection: 'row', alignItems: 'center', gap: '0.5rem'}}>
           <input
@@ -527,6 +506,20 @@ export function AdminProductManager({locale}: {locale: Locale}) {
               }
             }}          />
         </label>
+
+        {/* 一般用「上傳主圖」即可；手動網址只給特殊情況，收在進階裡避免誤填（P7） */}
+        <details className="admin-advanced">
+          <summary>進階：手動指定圖片網址</summary>
+          <label>
+            圖片網址
+            <input
+              value={form.imagePath}
+              onChange={(event) => setForm((prev) => ({...prev, imagePath: event.target.value}))}
+              placeholder="上傳主圖後會自動帶入"
+            />
+          </label>
+          <p className="muted">一般不需要填寫。只能使用本網站儲存空間的圖片；其他網站的圖片網址在前台會被安全設定擋住、無法顯示。</p>
+        </details>
 
         <div style={{display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center'}}>
           {form.imagePath ? (

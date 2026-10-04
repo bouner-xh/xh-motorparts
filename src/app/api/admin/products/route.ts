@@ -4,6 +4,7 @@ import {isAdminEmail} from '@/lib/admin-auth';
 import {revalidateCatalog} from '@/lib/revalidate';
 import {getProductImageUrls, removeUnreferencedImages} from '@/lib/product-image-cleanup';
 import {describeDbError, INVALID_ID_MESSAGE, INVALID_INPUT_MESSAGE, isUuid} from '@/lib/admin-api-errors';
+import {describeProductInputIssues, duplicateModelMessage} from '@/lib/product-form';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
 
@@ -176,6 +177,12 @@ function dbError(requestId: string, stage: string, error: {code?: string; messag
   return Response.json({error: message, requestId}, {status});
 }
 
+// 型號重複：直接指出是哪個型號（P6；資料庫對型號有唯一限制）
+function duplicateModelResponse(requestId: string, modelNumber: string, error: {code?: string; message?: string}) {
+  logApiError(requestId, 'duplicate model number', `${error.code || ''} ${error.message || ''}`);
+  return Response.json({error: duplicateModelMessage(modelNumber), requestId}, {status: 409});
+}
+
 // 依代號找大分類；找不到時不再自動建立沒有名稱的分類（A9）
 async function findCategoryId(service: ServiceClient, slug: string) {
   const {data} = await service.from('categories').select('id').eq('slug', slug).maybeSingle();
@@ -240,7 +247,8 @@ export async function POST(request: Request) {
 
   if (!parsed.success) {
     logApiError(requestId, 'payload validation failed', parsed.error.flatten());
-    return Response.json({error: INVALID_INPUT_MESSAGE, requestId}, {status: 400});
+    // 指出是哪個欄位有問題（P6）
+    return Response.json({error: describeProductInputIssues(parsed.error.issues), requestId}, {status: 400});
   }
 
   const payload = parsed.data;
@@ -272,6 +280,7 @@ export async function POST(request: Request) {
     .select('id')
     .single();
 
+  if (error?.code === '23505') return duplicateModelResponse(requestId, payload.modelNumber, error);
   if (error || !inserted?.id) return dbError(requestId, 'insert product failed', error);
 
   await bindPrimaryImage(service, inserted.id, payload.imagePath);
@@ -297,7 +306,8 @@ export async function PUT(request: Request) {
 
   if (!parsed.success || !parsed.data.id) {
     logApiError(requestId, 'payload validation failed', parsed.success ? 'missing id' : parsed.error.flatten());
-    return Response.json({error: INVALID_INPUT_MESSAGE, requestId}, {status: 400});
+    const message = parsed.success ? INVALID_INPUT_MESSAGE : describeProductInputIssues(parsed.error.issues);
+    return Response.json({error: message, requestId}, {status: 400});
   }
 
   const payload = parsed.data;
@@ -333,6 +343,7 @@ export async function PUT(request: Request) {
     })
     .eq('id', productId);
 
+  if (error?.code === '23505') return duplicateModelResponse(requestId, payload.modelNumber, error);
   if (error) return dbError(requestId, 'update product failed', error);
 
   await bindPrimaryImage(service, productId, payload.imagePath);
