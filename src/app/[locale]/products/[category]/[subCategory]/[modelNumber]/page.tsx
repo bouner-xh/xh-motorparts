@@ -86,7 +86,7 @@ export default async function ProductDetailPage({
 
   return (
     <main>
-      <ProductSchema product={product} category={categoryData.slug} locale={localeValue} />
+      <ProductSchema product={product} category={categoryData.slug} subCategory={subCategoryData.slug} locale={localeValue} />
       <Breadcrumb
         items={[
           { label: tNav('home'), href: `/${localeValue}` },

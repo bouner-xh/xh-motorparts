@@ -40,11 +40,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   );
 
-  // 4. 產品詳細頁路由
-  const products = await getCatalogProducts();
+  // 4. 產品詳細頁路由：實際網址為 /products/大分類/子分類/型號；沒有子分類的產品沒有產品頁，不列入（P10）
+  const products = (await getCatalogProducts()).filter((product) => product.subCategory);
   const productRoutes = locales.flatMap((locale) =>
     products.map((product) => ({
-      url: `${baseUrl}/${locale}/products/${product.category}/${encodeURIComponent(product.model)}`,
+      url: `${baseUrl}/${locale}/products/${product.category}/${encodeURIComponent(product.subCategory)}/${encodeURIComponent(product.model)}`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.6,
