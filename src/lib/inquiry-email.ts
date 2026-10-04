@@ -132,10 +132,12 @@ export function buildCustomerMailHtml(data: InquiryEmailData) {
           </tbody>
         </table>
 
-        <h3>Your Messages / Requirements</h3>
-        <blockquote style="border-left: 4px solid #cbd5e1; margin-left: 0; padding-left: 15px; color: #475569; font-style: italic;">
-          ${escapeHtml(data.message || 'No additional message.')}
-        </blockquote>
+        ${
+          // 確認信寄到表單填的任何信箱，不回顯客戶自由輸入的需求說明，避免被借用公司名義寄出任意文字；全文只在管理員通知信
+          data.message?.trim()
+            ? '<p>Your additional requirements have been received and will be reviewed by our sales team together with this inquiry.</p>'
+            : ''
+        }
 
         <p>If you have any technical drawings, OEM samples, or additional specifications to provide, please reply directly to this email or send them to sales@xh-motorparts.com.</p>
 

@@ -43,12 +43,13 @@
 | A6 第二階段 ③ 詢價處理紀錄、④ 從後台回覆客戶 | #19 |
 | 詢價表單故障排除：Upstash 免費資料庫閒置 14 天被刪除，重建並更新 Vercel 變數（2026-09-29 老闆實際送單確認恢復） | 設定變更 |
 | B：Upstash 連不上時略過流量限制照常收單；詢價錯誤紀錄標示失敗步驟 | #20 |
+| 客戶確認信不回顯需求說明（老闆 2026-10-04 決定） | 第十九批 |
 | C1 刪除重複的 Vercel 專案 `xh-motorparts`（2026-10-04 老闆確認未綁正式網域後刪除；正式站、轉址、每日排程唯讀檢查正常，舊 vercel.app 網址已 404） | 設定變更 |
 | 寄件人顯示名稱：Vercel `RESEND_FROM_EMAIL` 改為 `協皇企業 Xie Huang Enterprise <sales@xh-motorparts.com>`（2026-10-04 老闆設定，確認信與後台回覆皆顯示公司名稱） | 設定變更 |
 | Gmail 以 sales@ 回信（做法 A）：2026-10-03 老闆實測，回覆詢價通知信時寄件人為「協皇企業 Xie Huang Enterprise <sales@xh-motorparts.com>」 | 設定變更 |
 | C：每日排程讀寫 Upstash，避免免費資料庫閒置被刪除（需老闆設定 `CRON_SECRET`） | #21 |
 
-測試：`bash tests/run-all.sh`（單元 50 項、E2E 86 項結果，9 種環境情境）全部通過（2026-09-30）。
+測試：`bash tests/run-all.sh`（單元 52 項、E2E 88 項結果，9 種環境情境）全部通過（2026-10-04）。
 
 **2026-09-26 正式網站唯讀檢查**（`production-check` 等 7 支測試）：S0、S3、S7、D1、D5、D6、D7、D8、D10、D11、D13 在正式網站皆確認正常。
 2026-09-27 再次檢查：C4 canonical 已為 www，`canonical-url` 對正式網站通過。
