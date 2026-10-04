@@ -19,6 +19,13 @@
     "availability": "Availability",
     "inStock": "In stock",
     "madeToOrder": "Made to order",
+    "searchLabel": "Search products",
+    "searchPlaceholder": "Part number or name, e.g. 1HV-11311",
+    "searchButton": "Search",
+    "searchTitle": "Search results",
+    "searchFor": "{count} products for “{query}”",
+    "searchEmpty": "No products found for “{query}”. Try another keyword, or email the part number to sales@xh-motorparts.com and we will check it for you.",
+    "searchPrompt": "Enter a part number or product name",
     "category": "Category",
     "imagePath": "Image path",
     "backToCategory": "Back to category"

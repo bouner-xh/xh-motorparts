@@ -19,6 +19,13 @@
     "availability": "供貨狀態",
     "inStock": "現貨",
     "madeToOrder": "接單生產",
+    "searchLabel": "搜尋產品",
+    "searchPlaceholder": "輸入料號或品名，例如 1HV-11311",
+    "searchButton": "搜尋",
+    "searchTitle": "搜尋結果",
+    "searchFor": "「{query}」共 {count} 項產品",
+    "searchEmpty": "找不到「{query}」相關的產品。請換個關鍵字，或直接把料號寄到 sales@xh-motorparts.com 詢問，我們會協助確認。",
+    "searchPrompt": "請輸入料號或品名",
     "category": "分類",
     "imagePath": "圖片路徑",
     "backToCategory": "返回分類"

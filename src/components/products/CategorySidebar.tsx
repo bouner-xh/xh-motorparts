@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { CategoryKey, Locale } from '@/lib/catalog';
 import { getCategorySummaries, getSubCategories, type SubCategorySummary } from '@/lib/catalog-service';
+import { ProductSearchForm } from './ProductSearchForm';
 
 interface SubCategoryMap {
   [category: string]: SubCategorySummary[];
@@ -9,11 +10,13 @@ interface SubCategoryMap {
 export async function CategorySidebar({
   locale,
   activeCategory,
-  activeSubCategory
+  activeSubCategory,
+  searchValue = ''
 }: {
   locale: Locale;
   activeCategory?: CategoryKey;
   activeSubCategory?: string;
+  searchValue?: string;
 }) {
   const [categories, activeSubs] = await Promise.all([
     getCategorySummaries(locale),
@@ -27,6 +30,8 @@ export async function CategorySidebar({
 
   return (
     <aside className="category-sidebar card">
+      {/* 產品搜尋（P2）：所有產品列表頁的側欄最上方 */}
+      <ProductSearchForm locale={locale} defaultValue={searchValue} />
       <p className="category-sidebar__label">Catalog</p>
       <ul className="category-sidebar__list">
         {categories.map((c) => {

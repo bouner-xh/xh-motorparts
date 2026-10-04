@@ -350,6 +350,31 @@ textarea {
   height: fit-content;
 }
 
+/* 產品搜尋框（P2） */
+.product-search {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.product-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.product-search button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 1rem;
+}
+
+.search-empty {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
 .category-sidebar__label {
   margin: 0 0 0.8rem;
   font-size: 0.78rem;

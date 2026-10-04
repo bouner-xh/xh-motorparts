@@ -25,6 +25,22 @@
 
 ---
 
+## 2026-10-04（第二十三批）：前台產品搜尋（產品上架檢查 P2）
+
+**原因：** 買家多半拿料號來找產品，原本只能一層層點分類。
+
+**修改：**
+- `src/lib/product-search.ts`（新增）：比對與排序。料號忽略大小寫、空白、`- _ . /`；三種語言的名稱與規格也能搜；多個關鍵字都要符合；型號完全相同 > 開頭相同 > 包含 > 名稱 > 規格；最多 60 筆；關鍵字最長 100 字
+- `src/lib/catalog-service.ts`：`searchCatalogProducts` 只搜尋已上架產品，帶出子分類代號以連到正確的產品頁
+- 新頁面 `/[locale]/products/search?q=`：搜尋結果（不給搜尋引擎收錄）；查無結果時提示換關鍵字或寄料號到 sales@
+- `ProductSearchForm`：產品目錄、大分類、子分類頁的側欄最上方都有搜尋框（一般表單，不需要 JavaScript）；三語文字在 `messages/*.json`
+
+**測試：** 單元 `tests/admin/product-search.test.mts`；E2E `tests/e2e/product-search.e2e.cjs`（料號不分大小寫與連字號、點結果進入產品頁、名稱與規格搜尋、未上架搜不到、查無結果、英文頁、手機版沒有橫向捲動）。舊版執行失敗。
+
+**還原：** Revert 本批 PR。
+
+---
+
 ## 2026-10-04（第二十二批）：產品頁改顯示「現貨／接單生產」（產品上架檢查 P3）
 
 PR：[#27](https://github.com/bouner-xh/xh-motorparts/pull/27)
