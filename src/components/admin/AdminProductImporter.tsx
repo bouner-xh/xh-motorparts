@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Icon } from '@/components/ui/Icon';
+import { resizeProductImage } from '@/lib/image-resize';
 import {
   IMPORT_CHUNK_SIZE,
   buildTemplateCsv,
@@ -174,8 +175,10 @@ export function AdminProductImporter() {
         setCurrentProgress(`正在上傳產品 ${row.modelNumber} 的圖片 (${i + 1}/${updatedRows.length})...`);
 
         try {
+          // 上傳前先縮小照片（P1）
+          const prepared = matchedFile instanceof File ? await resizeProductImage(matchedFile) : matchedFile;
           const formData = new FormData();
-          formData.append('file', matchedFile);
+          formData.append('file', prepared);
 
           const uploadRes = await fetch('/api/admin/upload-image', {
             method: 'POST',
