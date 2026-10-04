@@ -27,6 +27,8 @@
 
 ## 2026-10-04（第二十一批）：產品表單好用度（產品上架檢查 P4、P6、P7）
 
+PR：[#26](https://github.com/bouner-xh/xh-motorparts/pull/26)
+
 **修改：**
 - P4 規格分隔：`src/lib/product-form.ts`（新增）`splitSpecifications`，產品表單的規格可用半形逗號、全形逗號「，」、頓號「、」、分號分隔（原本只認半形逗號，打「，」會變成一整個標籤）
 - P6 錯誤訊息：
