@@ -16,6 +16,9 @@
     "viewDetail": "View details",
     "specifications": "Specifications",
     "stock": "Stock",
+    "availability": "Availability",
+    "inStock": "In stock",
+    "madeToOrder": "Made to order",
     "category": "Category",
     "imagePath": "Image path",
     "backToCategory": "Back to category"

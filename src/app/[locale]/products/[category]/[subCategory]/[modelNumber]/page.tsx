@@ -122,7 +122,8 @@ export default async function ProductDetailPage({
             ))}
           </div>
           <p className="muted">
-            {tProducts('stock')}：{product.stock}
+            {/* 不公開精確庫存數字，只顯示供貨狀態（P3） */}
+            {tProducts('availability')}：{product.stock > 0 ? tProducts('inStock') : tProducts('madeToOrder')}
           </p>
 
           {/* D15：數量與「加入詢價清單」放在規格、庫存下方，不用捲動就看得到 */}
