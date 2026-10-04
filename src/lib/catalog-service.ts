@@ -2,6 +2,7 @@ import { cache } from 'react';
 import {getAllProducts, getProductsByCategory, findProduct} from '@/data/products';
 import {categoryDescriptions, categoryKeys, categoryNames, type CategoryKey, type Locale} from '@/lib/catalog';
 import {getSupabaseServerClient} from '@/lib/supabase/server';
+import {searchProducts} from '@/lib/product-search';
 
 const defaultImagePath = 'images/no-image.jpg';
 
@@ -207,6 +208,61 @@ export const getCatalogProducts = cache(async (locale: Locale = 'zh-TW') => {
     return getAllProducts();
   }
 });
+
+export interface ProductSearchResult {
+  id: string;
+  category: CategoryKey;
+  // 子分類代號；沒有子分類資料時為空字串（只能連到大分類頁）
+  subCategory: string;
+  model: string;
+  name: string;
+  image: string;
+  stock: number;
+  specifications: string[];
+}
+
+// 前台產品搜尋（P2）：只搜尋已上架產品；型號、三種語言名稱、規格都可以搜
+export async function searchCatalogProducts(query: string, locale: Locale = 'zh-TW'): Promise<ProductSearchResult[]> {
+  const supabase = getSupabaseServerClient();
+
+  if (!supabase) {
+    const fallback = getAllProducts().map((p) => ({...p, subCategory: '', names: [p.name]}));
+    return searchProducts(fallback, query).map(({names: _names, ...p}) => p);
+  }
+
+  const {data, error} = await supabase
+    .from('products')
+    .select('id,model_number,name_i18n,stock_quantity,specifications,category:categories!inner(slug),sub_category:sub_categories(slug)')
+    .eq('is_active', true);
+
+  if (error || !data) {
+    console.error('[catalog] product search failed:', error?.message);
+    return [];
+  }
+
+  const searchable = data.map((item) => {
+    const nameI18n = (item.name_i18n || {}) as Record<string, string>;
+    const subRef = item.sub_category as {slug?: string} | Array<{slug?: string}> | null;
+    return {
+      id: item.id as string,
+      category: (getPrimaryCategorySlug(item.category as {slug?: string} | null) || '') as CategoryKey,
+      subCategory: getPrimaryCategorySlug(subRef) || '',
+      model: item.model_number as string,
+      name: getLocalizedName(nameI18n, locale, item.model_number),
+      names: Object.values(nameI18n).filter(Boolean),
+      stock: (item.stock_quantity as number | null) ?? 0,
+      specifications: (item.specifications as string[] | null) ?? [],
+      image: defaultImagePath
+    };
+  });
+
+  const matched = searchProducts(searchable, query);
+  const imageMap = await getPrimaryImageMap(
+    supabase,
+    matched.map((item) => item.id)
+  );
+  return matched.map(({names: _names, ...item}) => ({...item, image: imageMap.get(item.id) || defaultImagePath}));
+}
 
 export interface SubCategorySummary {
   id: string;
