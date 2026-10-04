@@ -61,6 +61,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `admin-product-input.e2e.cjs` | 產品表單：規格全形逗號、錯誤訊息指出欄位、用語與進階圖片網址 | 需模擬 Supabase，見檔案開頭說明 |
 | `product-availability.e2e.cjs` | 產品頁顯示「現貨／接單生產」，不公開庫存數字 | 需模擬 Supabase，見檔案開頭說明 |
 | `product-search.e2e.cjs` | 前台產品搜尋：料號、名稱、規格，未上架搜不到，手機版 | 需模擬 Supabase，見檔案開頭說明 |
+| `product-urls.e2e.cjs` | sitemap 與結構化資料的產品網址含子分類、都能打開 | 需模擬 Supabase，見檔案開頭說明 |
 | `cron-keepalive.e2e.cjs` | 每日排程保持 Upstash 與 Supabase 運作：密碼檢查、各服務讀寫、故障回報 | 需模擬 Supabase（內含模擬 Upstash）與 `CRON_SECRET`，見檔案開頭說明 |
 | `csp-analytics.e2e.cjs` | GA4 / Clarity 未被 CSP 擋下（S3） | 需正式環境建置，見檔案開頭說明 |
 | `cookie-consent.e2e.cjs` | Cookie 同意與 Clarity 載入、頁尾「Cookie 設定」撤回同意（S6） | 需設定測試用分析 ID，見檔案開頭說明 |

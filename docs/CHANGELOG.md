@@ -25,6 +25,24 @@
 
 ---
 
+## 2026-10-04（第二十四批）：sitemap 與結構化資料的產品網址（產品上架檢查 P10）
+
+**原因：** 實際產品網址是 `/products/大分類/子分類/型號`，但 sitemap 與產品結構化資料（JSON-LD）用的是 `/products/大分類/型號`，少了子分類。
+正式站唯讀檢查確認 sitemap 列出的產品網址（例如 `/zh-TW/products/cylinder/TEST-337980`）都是 **404**，Google 收錄不到產品頁。
+
+**修改：**
+- `src/lib/catalog-service.ts`：`getCatalogProducts` 一併取出子分類代號（`subCategory`）
+- `src/app/sitemap.ts`：產品網址加上子分類；沒有子分類的產品沒有產品頁，不列入
+- `src/components/products/ProductSchema.tsx`：結構化資料的產品網址加上子分類，與頁面網址相同
+
+**測試：** E2E `tests/e2e/product-urls.e2e.cjs`（sitemap 的每個產品網址都能打開、網址含子分類、結構化資料網址與頁面相同）。舊版執行失敗。
+
+**上線後：** 可到 Google Search Console 重新提交 sitemap（`https://www.xh-motorparts.com/sitemap.xml`），加快重新收錄。
+
+**還原：** Revert 本批 PR。
+
+---
+
 ## 2026-10-04（第二十三批）：前台產品搜尋（產品上架檢查 P2）
 
 PR：[#28](https://github.com/bouner-xh/xh-motorparts/pull/28)

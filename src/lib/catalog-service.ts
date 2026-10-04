@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import {getAllProducts, getProductsByCategory, findProduct} from '@/data/products';
+import {getAllProducts, getProductsByCategory, findProduct, type Product} from '@/data/products';
 import {categoryDescriptions, categoryKeys, categoryNames, type CategoryKey, type Locale} from '@/lib/catalog';
 import {getSupabaseServerClient} from '@/lib/supabase/server';
 import {searchProducts} from '@/lib/product-search';
@@ -166,17 +166,18 @@ export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber
   }
 });
 
-export const getCatalogProducts = cache(async (locale: Locale = 'zh-TW') => {
+// 所有已上架產品（sitemap 使用）；subCategory 為子分類代號，用來組出實際的產品網址（P10）
+export const getCatalogProducts = cache(async (locale: Locale = 'zh-TW'): Promise<Array<Product & {subCategory: string}>> => {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
-    return getAllProducts();
+    return getAllProducts().map((p) => ({...p, subCategory: ''}));
   }
 
   try {
     const {data, error} = await supabase
       .from('products')
-      .select('id,model_number,name_i18n,stock_quantity,specifications,category:categories!inner(slug)')
+      .select('id,model_number,name_i18n,stock_quantity,specifications,category:categories!inner(slug),sub_category:sub_categories(slug)')
       .eq('is_active', true)
       .order('model_number', {ascending: true});
 
@@ -197,6 +198,7 @@ export const getCatalogProducts = cache(async (locale: Locale = 'zh-TW') => {
         return {
         id: item.id,
         category: (categorySlug || '') as CategoryKey,
+        subCategory: getPrimaryCategorySlug(item.sub_category as {slug?: string} | Array<{slug?: string}> | null) || '',
         model: item.model_number,
         name: getLocalizedName(item.name_i18n, locale, item.model_number),
         image: imageMap.get(item.id) || defaultImagePath,
@@ -205,7 +207,7 @@ export const getCatalogProducts = cache(async (locale: Locale = 'zh-TW') => {
       };
       });
   } catch {
-    return getAllProducts();
+    return getAllProducts().map((p) => ({...p, subCategory: ''}));
   }
 });
 

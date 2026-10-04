@@ -7,10 +7,13 @@ import { localized } from '@/lib/localized-text';
 export function ProductSchema({
   product,
   category,
+  subCategory,
   locale
 }: {
   product: Product;
   category: CategoryKey;
+  // 產品網址包含子分類：/products/大分類/子分類/型號（P10）
+  subCategory: string;
   locale: Locale;
 }) {
   const baseUrl = getBaseUrl();
@@ -31,7 +34,7 @@ export function ProductSchema({
       '@type': 'Offer',
       priceCurrency: 'TWD',
       availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/MadeToOrder',
-      url: `${baseUrl}/${locale}/products/${category}/${encodeURIComponent(product.model)}`
+      url: `${baseUrl}/${locale}/products/${category}/${encodeURIComponent(subCategory)}/${encodeURIComponent(product.model)}`
     }
   };
 
