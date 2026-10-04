@@ -18,7 +18,7 @@
 | `UPSTASH_REDIS_REST_URL`、`UPSTASH_REDIS_REST_TOKEN` | 詢價表單流量限制 | **未設定：正式環境停止收詢價單（503）**；已設定但連不上：略過流量限制照常收單並記錄錯誤（第十五批） | S4 |
 | `NEXT_PUBLIC_BASE_URL`（2026-09-27 已刪除，不需設定） | 正式網址（canonical、sitemap） | 使用程式預設值 `https://www.xh-motorparts.com`；若要設定，類型不可選 Secret | C4 |
 | `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY` | 資料庫與登入 | 產品改用內建資料、後台無法使用 | — |
-| `RESEND_API_KEY`、`RESEND_FROM_EMAIL`、`RESEND_ADMIN_EMAIL` | 詢價通知信 | 不寄信；資料庫也失敗時詢價回報失敗 | S1、S5 |
+| `RESEND_API_KEY`、`RESEND_FROM_EMAIL`（格式：`協皇企業 Xie Huang Enterprise <sales@xh-motorparts.com>`）、`RESEND_ADMIN_EMAIL` | 詢價通知信、確認信、後台回覆 | 不寄信；資料庫也失敗時詢價回報失敗 | S1、S5 |
 | `CRON_SECRET` | 每日排程保持 Upstash 運作（Vercel 排程自動帶上） | 排程回報 503、Upstash 可能在 14 天沒有詢價後被刪除 | 第十六批 |
 
 修改環境變數後需要到 Vercel → Deployments → 最新部署 → **Redeploy** 才會生效。
