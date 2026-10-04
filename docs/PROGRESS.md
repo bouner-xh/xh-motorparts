@@ -12,7 +12,6 @@
 | # | 事項 | 說明 |
 |---|---|---|
 | 0 | **Supabase 建立 `inquiry_events` 資料表** | 啟用詢價處理紀錄（A6 ③④），步驟見 `docs/inquiry-events-setup.md`，約 2 分鐘 |
-| 0 | Gmail 以 sales@ 寄信（做法 A） | 步驟見 `docs/gmail-send-as-sales.md`；先確認 Resend 網域為 Verified |
 | 1 | 刪除重複的 Vercel 專案（C1） | `xh-motorparts` 已中斷 Git 連結；觀察一週正常後可刪除 |
 | 2 | （選擇性）GitHub Support 清除舊 commit | 密碼已更換，風險已解除；要徹底清除需以 `bouner-xh` 帳號申請 |
 | 3 | 正式資料庫有測試產品 | `TEST-337980` 是之前的測試資料，老闆會在正式資料上架時一併調整分類（2026-09-27 確認）。成因見後台 A2 |
@@ -45,6 +44,7 @@
 | A6 第二階段 ③ 詢價處理紀錄、④ 從後台回覆客戶 | #19 |
 | 詢價表單故障排除：Upstash 免費資料庫閒置 14 天被刪除，重建並更新 Vercel 變數（2026-09-29 老闆實際送單確認恢復） | 設定變更 |
 | B：Upstash 連不上時略過流量限制照常收單；詢價錯誤紀錄標示失敗步驟 | #20 |
+| Gmail 以 sales@ 回信（做法 A）：2026-10-03 老闆實測，回覆詢價通知信時寄件人為「協皇企業 Xie Huang Enterprise <sales@xh-motorparts.com>」 | 設定變更 |
 | C：每日排程讀寫 Upstash，避免免費資料庫閒置被刪除（需老闆設定 `CRON_SECRET`） | #21 |
 
 測試：`bash tests/run-all.sh`（單元 50 項、E2E 86 項結果，9 種環境情境）全部通過（2026-09-30）。
@@ -56,7 +56,6 @@
 
 | 編號 | 項目 | 狀態 |
 |---|---|---|
-| — | Gmail 回覆詢價通知信時寄件人為個人信箱 | 待老闆確認 Gmail「以 sales@ 寄信」設定 |
 | C1 | Vercel 重複專案 | 已停止自動部署，觀察中（PR #3 之後只剩一個部署，確認生效） |
 
 ## ⏳ 待老闆決定
