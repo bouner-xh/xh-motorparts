@@ -2,6 +2,7 @@
 
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {toProductImageUrl} from '@/lib/product-image-url';
+import {resizeProductImage} from '@/lib/image-resize';
 import type { Locale } from '@/lib/catalog';
 
 interface AdminCategoryItem {
@@ -336,8 +337,10 @@ export function AdminProductManager({locale}: {locale: Locale}) {
     setIsUploading(true);
     setStatus('info', `圖片上傳中：${file.name}`);
 
+    // 上傳前先縮小照片，買家瀏覽時不用下載數 MB 的原檔（P1）
+    const prepared = await resizeProductImage(file);
     const body = new FormData();
-    body.append('file', file);
+    body.append('file', prepared);
 
     try {
       const response = await fetch('/api/admin/upload-image', {

@@ -39,6 +39,8 @@ function seedTables() {
 }
 let TABLES = seedTables();
 let STORAGE = new Set();
+// 上傳檔案的大小與類型（測試用來確認照片有被壓縮）
+let STORAGE_META = {};
 
 // 資料表之間的關聯：外鍵欄位 → 被參照的資料表，以及刪除時的行為（對應正式資料庫設定）
 const FOREIGN_KEYS = [
@@ -228,6 +230,7 @@ function handleStorage(req, url, raw) {
   const [, bucket, objectPath] = match;
   if ((req.method === 'POST' || req.method === 'PUT') && objectPath) {
     STORAGE.add(`${bucket}/${decodeURIComponent(objectPath)}`);
+    STORAGE_META[`${bucket}/${decodeURIComponent(objectPath)}`] = { bytes: req.bodyBytes, contentType: req.headers['content-type'] || '' };
     return { status: 200, body: { Key: `${bucket}/${objectPath}` } };
   }
   if (req.method === 'DELETE') {
@@ -273,8 +276,13 @@ function send(res, status, body, headers = {}) {
 
 const server = http.createServer((req, res) => {
   let raw = '';
-  req.on('data', (chunk) => (raw += chunk));
+  let bytes = 0;
+  req.on('data', (chunk) => {
+    raw += chunk;
+    bytes += chunk.length;
+  });
   req.on('end', () => {
+    req.bodyBytes = bytes;
     const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
     const bearer = (req.headers.authorization || '').replace(/^Bearer /, '');
 
@@ -308,6 +316,7 @@ const server = http.createServer((req, res) => {
     if (url.pathname === '/__mock/reset') {
       TABLES = seedTables();
       STORAGE = new Set();
+      STORAGE_META = {};
       MISSING = new Set();
       EMAILS = [];
       EMAIL_FAIL = false;
@@ -317,7 +326,7 @@ const server = http.createServer((req, res) => {
       return send(res, 200, { ok: true });
     }
     if (url.pathname === '/__mock/state') {
-      return send(res, 200, { tables: TABLES, storage: [...STORAGE], emails: EMAILS, redis: REDIS, redisCommands: REDIS_COMMANDS, restLog: REST_LOG });
+      return send(res, 200, { tables: TABLES, storage: [...STORAGE], storageMeta: STORAGE_META, emails: EMAILS, redis: REDIS, redisCommands: REDIS_COMMANDS, restLog: REST_LOG });
     }
     // 單一指令 POST /upstash；用戶端自動合併時改送 POST /upstash/pipeline（指令陣列的陣列）
     if ((url.pathname === '/upstash' || url.pathname === '/upstash/pipeline') && req.method === 'POST') {
