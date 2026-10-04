@@ -25,6 +25,20 @@
 
 ---
 
+## 2026-10-04（第十九批）：客戶確認信不回顯需求說明
+
+**原因：** 確認信寄到表單填的任何信箱。原本會附上客戶自由輸入的「需求說明」全文，有心人可以填陌生人的信箱與廣告文字，
+借公司名義（sales@）寄出，影響寄件網域信譽。老闆 2026-10-04 比較三種做法後決定：確認信不附需求說明。
+
+**修改：** `src/lib/inquiry-email.ts` 的確認信移除「Your Messages / Requirements」區塊；有填需求說明時改顯示固定文字
+「Your additional requirements have been received and will be reviewed by our sales team…」，沒填則不顯示。管理員通知信不變，仍有全文。
+
+**測試：** 單元 `tests/security/inquiry-email.test.mts`（確認信不含需求說明、通知信有全文）；E2E `tests/e2e/inquiry-confirmation-email.e2e.cjs`（瀏覽器送出含廣告文字的需求說明 → 確認信沒有、通知信有）。舊版執行失敗。
+
+**還原：** Revert 本批 PR。
+
+---
+
 ## 2026-09-30（第十八批）：每日排程同時保持 Supabase 運作（安全複查 R5）
 
 PR：[#23](https://github.com/bouner-xh/xh-motorparts/pull/23)

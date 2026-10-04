@@ -38,9 +38,19 @@ for (const [label, build] of [
     for (const raw of ['<a href="https://evil', '<script>', '<img src=x', '<b>TW</b>', '<i>123', '<u>1HV', '<form action']) {
       assert.ok(!html.includes(raw), `${label} 含有未跳脫內容：${raw}`);
     }
-    assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'), '訊息應以文字形式呈現');
   });
 }
+
+test('管理員通知信以文字形式呈現需求說明全文', () => {
+  assert.ok(buildAdminMailHtml(malicious).includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
+});
+
+test('客戶確認信不回顯需求說明，只說明已收到', () => {
+  const html = buildCustomerMailHtml({ ...malicious, message: 'FREE PRIZE visit spam.example now' });
+  assert.ok(!html.includes('spam.example') && !html.includes('FREE PRIZE'), '確認信不應包含客戶填寫的需求說明');
+  assert.ok(html.includes('Your additional requirements have been received'), '有填需求說明時提示已收到');
+  assert.ok(!buildCustomerMailHtml({ ...malicious, message: '' }).includes('additional requirements'), '沒填需求說明時不顯示提示');
+});
 
 test('正常內容照常顯示', () => {
   const html = buildAdminMailHtml({
