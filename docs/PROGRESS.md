@@ -76,7 +76,7 @@
 | R1 | 高 | GitHub repo 為**公開**：程式、文件、歷史中的個人信箱都可被任何人看到 | 改為 Private（免費，不影響 Vercel 部署） | 待老闆決定 |
 | R2 | 高 | 免費服務帳號（GitHub、Vercel、Supabase、Upstash、Resend、Cloudflare、Google）若被盜等同網站被接管 | 全部開啟兩步驟驗證 | 待老闆確認 |
 | R3 | 中 | 詢價確認信寄到表單填的任何信箱，姓名、品項名稱沒有長度限制，可被濫用發垃圾信、耗盡 Resend 每日 100 封 | 欄位長度與品項數上限；品項名稱改由資料庫帶入（API 變更） | ✅ 第十七批 #22 |
-| R4 | 中 | 正式資料庫（2026-10-04 老闆查詢）：7 張表 RLS 皆開啟；`customers`、`inquiry_requests` 有匿名 INSERT 規則（網站用 service role，不需要）；`categories`、`products`、`product_images` 各有一條重複的「Allow public read access」規則（條件皆為 true）；`products` 這條讓未上架產品也能被匿名讀取（網站程式本身有過濾，前台不受影響）；Storage 沒有匿名上傳／刪除規則 | 刪除兩條 INSERT 規則與三條重複的「Allow public read access」規則（前台查詢都有 `is_active = true`，已確認不受影響） | ✅ 2026-10-04 老闆執行刪除，public 只剩 4 條 SELECT 規則（products 限已上架）；正式站頁面唯讀檢查正常；待老闆實際送一筆詢價確認 |
+| R4 | 中 | 正式資料庫（2026-10-04 老闆查詢）：7 張表 RLS 皆開啟；`customers`、`inquiry_requests` 有匿名 INSERT 規則（網站用 service role，不需要）；`categories`、`products`、`product_images` 各有一條重複的「Allow public read access」規則（條件皆為 true）；`products` 這條讓未上架產品也能被匿名讀取（網站程式本身有過濾，前台不受影響）；Storage 沒有匿名上傳／刪除規則 | 刪除兩條 INSERT 規則與三條重複的「Allow public read access」規則（前台查詢都有 `is_active = true`，已確認不受影響） | ✅ 2026-10-04 老闆執行刪除，public 只剩 4 條 SELECT 規則（products 限已上架）；正式站頁面唯讀檢查正常；2026-10-04 老闆實際送詢價成功（確認信品項名稱取自資料庫）、後台回覆客戶寄出成功（寄件人、回覆地址、副本皆為 sales@） |
 | R5 | 中 | Supabase 免費專案 7 天沒有活動會暫停 | 每日排程順便查詢 Supabase 一次 | ✅ 第十八批 #23（需 `CRON_SECRET` 才會執行） |
 | R6 | 中 | Vercel Hobby 方案條款限非商業使用 | 評估升級 Pro（每月 US$20） | 老闆 2026-10-04 決定先不升級 |
 | R7 | 低 | Supabase 免費方案備份有限 | 定期用後台匯出 CSV，或升級時再處理 | 待老闆決定 |
