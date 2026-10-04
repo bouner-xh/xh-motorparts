@@ -27,6 +27,8 @@
 
 ## 2026-10-04（第二十四批）：sitemap 與結構化資料的產品網址（產品上架檢查 P10）
 
+PR：[#29](https://github.com/bouner-xh/xh-motorparts/pull/29)
+
 **原因：** 實際產品網址是 `/products/大分類/子分類/型號`，但 sitemap 與產品結構化資料（JSON-LD）用的是 `/products/大分類/型號`，少了子分類。
 正式站唯讀檢查確認 sitemap 列出的產品網址（例如 `/zh-TW/products/cylinder/TEST-337980`）都是 **404**，Google 收錄不到產品頁。
 
