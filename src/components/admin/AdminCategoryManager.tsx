@@ -42,7 +42,8 @@ const emptyFormState: CategoryFormState = {
   sortOrder: 0
 };
 
-export function AdminCategoryManager({ locale }: { locale: Locale }) {
+// locale 由後台頁面傳入，目前分類表單固定顯示繁中
+export function AdminCategoryManager(_props: { locale: Locale }) {
   const [rows, setRows] = useState<AdminCategoryItem[]>([]);
   const [form, setForm] = useState<CategoryFormState>(emptyFormState);
   const [statusMessage, setStatusMessage] = useState('');
@@ -164,7 +165,7 @@ export function AdminCategoryManager({ locale }: { locale: Locale }) {
 
   return (
     <div>
-      <h3>大分類 CRUD（{locale}）</h3>
+      <h3>大分類管理</h3>
       <p className="muted">管理網站頂層大分類，如汽缸系列、鏈條系列等。</p>
 
       <form className="admin-form" onSubmit={submitCategory}>

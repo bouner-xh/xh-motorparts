@@ -57,10 +57,10 @@ run('產品 API：不存在的分類不會被自動建立、長度與 ID 檢查'
     assert(!tables.categories.some((c) => c.slug === 'no-such-category'), '沒有自動建立空白分類');
 
     const tooLong = await api(page, 'POST', '/api/admin/products', { ...base, category: 'cylinder', nameZhTw: 'x'.repeat(201) });
-    assert(tooLong.status === 400 && tooLong.body.error.includes('格式不正確'), `名稱超過 200 字回應 400（${tooLong.status}）`);
+    assert(tooLong.status === 400 && tooLong.body.error.includes('名稱（zh-TW）太長（最多 200 字）'), `名稱超過 200 字回應 400，並指出欄位（${tooLong.body.error}）`);
 
     const dup = await api(page, 'POST', '/api/admin/products', { ...base, category: 'cylinder', modelNumber: '1HV-11311-00' });
-    assert(dup.status === 409 && dup.body.error.includes('資料重複') && !RAW_DB_TEXT.test(dup.body.error), `型號重複回應 409 中文說明（${dup.status}）`);
+    assert(dup.status === 409 && dup.body.error.includes('型號「1HV-11311-00」已經存在') && !RAW_DB_TEXT.test(dup.body.error), `型號重複回應 409，並指出型號（${dup.body.error}）`);
 
     for (const url of ['/api/admin/products?id=abc', '/api/admin/categories?id=abc', '/api/admin/sub-categories?id=abc']) {
       const res = await api(page, 'DELETE', url);

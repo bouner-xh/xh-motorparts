@@ -548,6 +548,25 @@ textarea {
   margin-top: 1rem;
 }
 
+/* 產品表單的進階設定（手動圖片網址，P7） */
+.admin-advanced {
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+}
+
+.admin-advanced summary {
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 0.92rem;
+}
+
+.admin-advanced[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
 @media (max-width: 960px) {
   .container {
     padding: 0.9rem;
