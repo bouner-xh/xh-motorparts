@@ -16,6 +16,9 @@
     "viewDetail": "查看详细",
     "specifications": "规格",
     "stock": "库存",
+    "availability": "供货状态",
+    "inStock": "现货",
+    "madeToOrder": "接单生产",
     "category": "分类",
     "imagePath": "图片路径",
     "backToCategory": "返回分类"

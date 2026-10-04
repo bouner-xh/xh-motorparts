@@ -30,7 +30,7 @@ export function ProductSchema({
     offers: {
       '@type': 'Offer',
       priceCurrency: 'TWD',
-      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/MadeToOrder',
       url: `${baseUrl}/${locale}/products/${category}/${encodeURIComponent(product.model)}`
     }
   };

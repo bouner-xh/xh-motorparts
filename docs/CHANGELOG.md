@@ -25,6 +25,21 @@
 
 ---
 
+## 2026-10-04（第二十二批）：產品頁改顯示「現貨／接單生產」（產品上架檢查 P3）
+
+**原因：** 產品頁公開顯示精確庫存數字（例如「庫存：20」），同業看得到；顯示 0 時買家可能以為不能下單。老闆 2026-10-04 決定改顯示供貨狀態。
+
+**修改：**
+- 產品頁 `.../[modelNumber]/page.tsx`：「庫存：數字」改為「供貨狀態：現貨」（庫存大於 0）或「供貨狀態：接單生產」（庫存為 0）；三語文字在 `messages/*.json`（`availability`、`inStock`、`madeToOrder`）
+- 結構化資料 `ProductSchema.tsx`：庫存為 0 時由 `OutOfStock`（缺貨）改為 `MadeToOrder`（接單生產），Google 不會把產品標成缺貨
+- 後台仍顯示精確庫存，方便內部管理
+
+**測試：** E2E `tests/e2e/product-availability.e2e.cjs`（繁中、簡中、英文頁的文字，頁面沒有「庫存」，結構化資料）。舊版執行失敗。
+
+**還原：** Revert 本批 PR。
+
+---
+
 ## 2026-10-04（第二十一批）：產品表單好用度（產品上架檢查 P4、P6、P7）
 
 PR：[#26](https://github.com/bouner-xh/xh-motorparts/pull/26)
