@@ -27,6 +27,8 @@
 
 ## 2026-10-06（第二十五批）：分類代號含空白時分類頁 404
 
+PR：[#30](https://github.com/bouner-xh/xh-motorparts/pull/30)
+
 **事件：** 老闆回報產品目錄點「離合器系列」「變速鼓撥叉」等分類出現 404。正式站唯讀檢查：分類代號含空白的 `CLUTCH HOUSING`、`DRUM FORK`、`SARTER MOTOR` 三個分類頁都是 404；`Transmission`、`sprocket` 正常。
 
 **原因：** 分類頁沒有把網址中的分類代號解碼（`CLUTCH%20HOUSING` 沒有還原成 `CLUTCH HOUSING`），用編碼過的字串去資料庫找分類，找不到就顯示 404。子分類、型號原本就有解碼，所以只有分類受影響；各處組網址時分類代號也沒有編碼。
