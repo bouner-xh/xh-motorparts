@@ -25,6 +25,22 @@
 
 ---
 
+## 2026-10-06（第二十六批）：產品頁標題與描述、robots.txt（SEO 調整）
+
+**原因：** 老闆希望在 Google 搜尋「DT125 counter shaft」找得到網站。檢查產品頁：標題為「型號 | 品名」，沒有分類與公司名；描述只有「型號 品名，規格」，英文頁出現中文逗號；robots.txt 封鎖 `/_next/`（網站的樣式與程式），Google 無法完整判斷網頁在手機上的呈現。
+
+**修改：**
+- `src/lib/product-seo.ts`（新增）：產品頁標題「品名 型號 | 分類 | 公司名」，例如 `DT125 COUNTER SHAFT 2A6-17421-00 | Transmission | Xie Huang Motorcycle Parts`；描述依語言寫成完整句子（品名、型號、分類、規格、台灣製造商、可線上詢價）；名稱與型號相同時只出現一次
+- 產品頁 metadata 與分享預覽（og:title、og:description）使用上面的標題與描述
+- `src/app/robots.ts`：不再封鎖 `/_next/`；後台與 API 仍封鎖
+- 新增 `docs/google-search-console.md`：Google Search Console 設定步驟（只需設定一次）
+
+**測試：** 單元 `tests/admin/product-seo.test.mts`；E2E `tests/e2e/product-seo.e2e.cjs`（英文、繁中標題與描述、og:title、robots.txt）。舊版執行失敗。
+
+**還原：** Revert 本批 PR。
+
+---
+
 ## 2026-10-06（第二十五批）：分類代號含空白時分類頁 404
 
 PR：[#30](https://github.com/bouner-xh/xh-motorparts/pull/30)
