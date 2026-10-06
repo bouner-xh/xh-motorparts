@@ -42,6 +42,15 @@ async function openInquiries(page) {
 }
 
 const rowCount = (page) => page.locator('.admin-crm-panel tr', { has: page.getByRole('button', { name: '檢視' }) }).count();
+// 頁碼文字會先更新、列表資料稍後才載入完成；等列表筆數變成預期值再檢查，避免讀到上一頁的資料
+async function waitRows(page, n) {
+  await page.waitForFunction(
+    (expected) => [...document.querySelectorAll('.admin-crm-panel tr')].filter((tr) => [...tr.querySelectorAll('button')].some((b) => b.textContent.trim() === '檢視')).length === expected,
+    n,
+    { timeout: 15000 }
+  ).catch(() => {});
+  return rowCount(page);
+}
 
 run('狀態篩選、待處理數量、分頁', () =>
   withPage(async (page) => {
@@ -57,11 +66,11 @@ run('狀態篩選、待處理數量、分頁', () =>
     await page.locator('.admin-crm-panel').getByText('共 25 筆，第 1 / 2 頁').waitFor();
     await page.locator('.admin-crm-panel').getByRole('button', { name: '下一頁' }).click();
     await page.locator('.admin-crm-panel').getByText('共 25 筆，第 2 / 2 頁').waitFor();
-    assert((await rowCount(page)) === 5, '第 2 頁 5 筆');
+    assert((await waitRows(page, 5)) === 5, '第 2 頁 5 筆');
 
     await page.getByRole('tab', { name: '報價中 6' }).click();
     await page.locator('.admin-crm-panel').getByText('共 6 筆，第 1 / 1 頁').waitFor();
-    assert((await rowCount(page)) === 6, '篩選「報價中」後回到第 1 頁、6 筆');
+    assert((await waitRows(page, 6)) === 6, '篩選「報價中」後回到第 1 頁、6 筆');
 
     const justify = await page.locator('.admin-crm-panel > div').first().evaluate((el) => getComputedStyle(el).justifyContent);
     assert(justify === 'space-between', `標題列排版正確（${justify}）`);
