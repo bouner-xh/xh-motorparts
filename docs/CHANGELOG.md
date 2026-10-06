@@ -27,6 +27,8 @@
 
 ## 2026-10-06（第二十六批）：產品頁標題與描述、robots.txt（SEO 調整）
 
+PR：[#31](https://github.com/bouner-xh/xh-motorparts/pull/31)（2026-10-06 正式站確認標題、描述與 robots.txt 已更新）
+
 **原因：** 老闆希望在 Google 搜尋「DT125 counter shaft」找得到網站。檢查產品頁：標題為「型號 | 品名」，沒有分類與公司名；描述只有「型號 品名，規格」，英文頁出現中文逗號；robots.txt 封鎖 `/_next/`（網站的樣式與程式），Google 無法完整判斷網頁在手機上的呈現。
 
 **修改：**
