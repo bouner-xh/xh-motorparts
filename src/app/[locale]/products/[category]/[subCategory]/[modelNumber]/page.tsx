@@ -12,6 +12,7 @@ import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
 import { getBaseUrl, localeAlternates } from '@/lib/site';
 import { localized } from '@/lib/localized-text';
 import { decodeSegment, encodeSegment } from '@/lib/url-segment';
+import { buildProductDescription, buildProductTitle } from '@/lib/product-seo';
 
 export async function generateMetadata({
   params,
@@ -42,13 +43,24 @@ export async function generateMetadata({
   const baseUrl = getBaseUrl();
   const encodedModel = encodeURIComponent(product.model);
 
+  // 搜尋引擎看到的標題與描述：品名在前、加上分類與公司名，描述依語言寫成完整句子（SEO 調整）
+  const seoInput = {
+    model: product.model,
+    name: product.name,
+    categoryName: categoryData.name,
+    subCategoryName: subCategoryData.name,
+    specifications: product.specifications
+  };
+  const title = buildProductTitle(seoInput, localeValue);
+  const description = buildProductDescription(seoInput, localeValue);
+
   return {
-    title: `${product.model} | ${product.name}`,
-    description: `${product.model} ${product.name}，${product.specifications.join(', ')}`,
+    title,
+    description,
     openGraph: {
       type: 'website',
-      title: `${product.model} | ${product.name}`,
-      description: `${product.model} ${product.name}，${product.specifications.join(', ')}`,
+      title,
+      description,
       url: `${baseUrl}/${locale}/products/${encodeSegment(categoryData.slug)}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`,
       images: [toProductImageUrl(product.image)],
       locale,
