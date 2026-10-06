@@ -8,13 +8,16 @@ import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import Link from 'next/link';
 import { localized } from '@/lib/localized-text';
+import { decodeSegment, encodeSegment } from '@/lib/url-segment';
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string; category: string }>;
 }): Promise<Metadata> {
-  const { locale, category } = await params;
+  const { locale, category: rawCategory } = await params;
+  // 分類代號可能含空白，網址參數需要解碼（例如 CLUTCH%20HOUSING）
+  const category = decodeSegment(rawCategory);
   if (!locales.includes(locale as Locale)) return {};
 
   const localeValue = locale as Locale;
@@ -32,11 +35,11 @@ export async function generateMetadata({
       type: 'website',
       title,
       description,
-      url: `${baseUrl}/${locale}/products/${category}`,
+      url: `${baseUrl}/${locale}/products/${encodeSegment(category)}`,
       locale,
       siteName: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' }),
     },
-    alternates: localeAlternates(locale, `/products/${category}`),
+    alternates: localeAlternates(locale, `/products/${encodeSegment(category)}`),
   };
 }
 
@@ -45,7 +48,9 @@ export default async function CategoryPage({
 }: {
   params: Promise<{ locale: string; category: string }>;
 }) {
-  const { locale, category } = await params;
+  const { locale, category: rawCategory } = await params;
+  // 分類代號可能含空白，網址參數需要解碼（例如 CLUTCH%20HOUSING）
+  const category = decodeSegment(rawCategory);
   if (!locales.includes(locale as Locale)) {
     notFound();
   }
@@ -85,7 +90,7 @@ export default async function CategoryPage({
 
         <section className="card-grid">
           {subCategories.length > 0 ? subCategories.map((sub) => (
-            <Link key={sub.id} className="card" href={`/${localeValue}/products/${categoryData.slug}/${sub.slug}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Link key={sub.id} className="card" href={`/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeSegment(sub.slug)}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ padding: '2rem' }}>
                 <h3 style={{ margin: '0 0 0.5rem 0', color: '#f8fafc', fontSize: '1.4rem' }}>{sub.name}</h3>
                 <p className="muted" style={{ margin: 0 }}>{localized(localeValue, { 'zh-TW': '查看相關產品', 'zh-CN': '查看相关产品', en: 'View products' })} ➔</p>

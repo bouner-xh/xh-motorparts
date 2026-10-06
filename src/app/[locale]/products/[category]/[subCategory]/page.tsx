@@ -8,13 +8,15 @@ import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { ProductCard } from '@/components/products/ProductCard';
 import { localized } from '@/lib/localized-text';
+import { decodeSegment, encodeSegment } from '@/lib/url-segment';
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string; category: string; subCategory: string }>;
 }): Promise<Metadata> {
-  const { locale, category, subCategory } = await params;
+  const { locale, category: rawCategory, subCategory } = await params;
+  const category = decodeSegment(rawCategory);
   if (!locales.includes(locale as Locale)) {
     return {};
   }
@@ -38,11 +40,11 @@ export async function generateMetadata({
       type: 'website',
       title,
       description,
-      url: `${baseUrl}/${locale}/products/${category}/${encodeURIComponent(subCategoryData.slug)}`,
+      url: `${baseUrl}/${locale}/products/${encodeSegment(category)}/${encodeURIComponent(subCategoryData.slug)}`,
       locale,
       siteName: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' }),
     },
-    alternates: localeAlternates(locale, `/products/${category}/${encodeURIComponent(subCategoryData.slug)}`),
+    alternates: localeAlternates(locale, `/products/${encodeSegment(category)}/${encodeURIComponent(subCategoryData.slug)}`),
   };
 }
 
@@ -51,7 +53,8 @@ export default async function SubCategoryPage({
 }: {
   params: Promise<{ locale: string; category: string; subCategory: string }>;
 }) {
-  const { locale, category, subCategory } = await params;
+  const { locale, category: rawCategory, subCategory } = await params;
+  const category = decodeSegment(rawCategory);
   if (!locales.includes(locale as Locale)) {
     notFound();
   }
@@ -84,7 +87,7 @@ export default async function SubCategoryPage({
         items={[
           { label: tNav('home'), href: `/${localeValue}` },
           { label: tNav('products'), href: `/${localeValue}/products` },
-          { label: categoryData.name, href: `/${localeValue}/products/${categoryData.slug}` },
+          { label: categoryData.name, href: `/${localeValue}/products/${encodeSegment(categoryData.slug)}` },
           { label: subCategoryData.name },
         ]}
       />
@@ -104,7 +107,7 @@ export default async function SubCategoryPage({
             <ProductCard
               key={product.id}
               product={product}
-              href={`/${localeValue}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}/${encodeURIComponent(product.model)}`}
+              href={`/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeURIComponent(subCategoryData.slug)}/${encodeURIComponent(product.model)}`}
               specLabel={tProducts('specifications')}
               detailLabel={tProducts('viewDetail')}
               locale={localeValue}

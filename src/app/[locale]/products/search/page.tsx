@@ -7,6 +7,7 @@ import {normalizeQuery} from '@/lib/product-search';
 import {CategorySidebar} from '@/components/products/CategorySidebar';
 import {ProductCard} from '@/components/products/ProductCard';
 import {ProductSearchForm} from '@/components/products/ProductSearchForm';
+import { encodeSegment } from '@/lib/url-segment';
 
 // 前台產品搜尋結果（P2）：每次依關鍵字查詢，不做靜態快取；搜尋結果頁不給搜尋引擎收錄
 export const dynamic = 'force-dynamic';
@@ -54,8 +55,8 @@ export default async function ProductSearchPage({
               product={product}
               href={
                 product.subCategory
-                  ? `/${localeValue}/products/${product.category}/${encodeURIComponent(product.subCategory)}/${encodeURIComponent(product.model)}`
-                  : `/${localeValue}/products/${product.category}`
+                  ? `/${localeValue}/products/${encodeSegment(product.category)}/${encodeURIComponent(product.subCategory)}/${encodeURIComponent(product.model)}`
+                  : `/${localeValue}/products/${encodeSegment(product.category)}`
               }
               specLabel={t('specifications')}
               detailLabel={t('viewDetail')}

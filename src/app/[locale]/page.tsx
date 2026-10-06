@@ -8,6 +8,7 @@ import { homeContent } from '@/lib/site-content';
 import { notFound } from 'next/navigation';
 import { localized } from '@/lib/localized-text';
 import { Icon } from '@/components/ui/Icon';
+import { encodeSegment } from '@/lib/url-segment';
 
 export default async function LocaleHome({
   params,
@@ -65,7 +66,7 @@ export default async function LocaleHome({
 
       <section className="card-grid">
         {categories.map((category) => (
-          <Link key={category.key} className="card category-card" href={`/${localeValue}/products/${category.key}`}>
+          <Link key={category.key} className="card category-card" href={`/${localeValue}/products/${encodeSegment(category.key)}`}>
             <div className="category-card__media">
               <Image src={getCategoryCoverUrl(category.key)} alt={category.name} fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized />
               <div className="category-card__overlay" />

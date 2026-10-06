@@ -25,6 +25,25 @@
 
 ---
 
+## 2026-10-06（第二十五批）：分類代號含空白時分類頁 404
+
+**事件：** 老闆回報產品目錄點「離合器系列」「變速鼓撥叉」等分類出現 404。正式站唯讀檢查：分類代號含空白的 `CLUTCH HOUSING`、`DRUM FORK`、`SARTER MOTOR` 三個分類頁都是 404；`Transmission`、`sprocket` 正常。
+
+**原因：** 分類頁沒有把網址中的分類代號解碼（`CLUTCH%20HOUSING` 沒有還原成 `CLUTCH HOUSING`），用編碼過的字串去資料庫找分類，找不到就顯示 404。子分類、型號原本就有解碼，所以只有分類受影響；各處組網址時分類代號也沒有編碼。
+
+**修改：**
+- `src/lib/url-segment.ts`（新增）：網址片段的編碼與解碼
+- 分類、子分類、產品三個頁面讀取分類代號時先解碼
+- 首頁、產品目錄、側欄、麵包屑、搜尋結果、sitemap、結構化資料組網址時，分類代號一律編碼
+
+**測試：** E2E `tests/e2e/category-slug-spaces.e2e.cjs`（代號 `CLUTCH HOUSING` 的分類 → 子分類 → 產品都能開啟、麵包屑連結、sitemap 中 9 個網址都能開啟）。舊版執行失敗（與正式站相同）。
+
+**建議：** 分類代號用英文小寫加連字號（例如 `clutch-housing`），網址比較乾淨；`SARTER MOTOR` 應為 `STARTER MOTOR`。修改代號會改變網址，舊連結會失效。
+
+**還原：** Revert 本批 PR。
+
+---
+
 ## 2026-10-04（第二十四批）：sitemap 與結構化資料的產品網址（產品上架檢查 P10）
 
 PR：[#29](https://github.com/bouner-xh/xh-motorparts/pull/29)
