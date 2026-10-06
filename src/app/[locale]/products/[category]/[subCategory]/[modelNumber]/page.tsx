@@ -11,13 +11,15 @@ import { getCatalogProduct, getCategoryBySlug, getSubCategoryBySlug } from '@/li
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
 import { getBaseUrl, localeAlternates } from '@/lib/site';
 import { localized } from '@/lib/localized-text';
+import { decodeSegment, encodeSegment } from '@/lib/url-segment';
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string; category: string; subCategory: string; modelNumber: string }>;
 }): Promise<Metadata> {
-  const { locale, category, subCategory, modelNumber } = await params;
+  const { locale, category: rawCategory, subCategory, modelNumber } = await params;
+  const category = decodeSegment(rawCategory);
 
   if (!locales.includes(locale as Locale)) {
     return {};
@@ -47,12 +49,12 @@ export async function generateMetadata({
       type: 'website',
       title: `${product.model} | ${product.name}`,
       description: `${product.model} ${product.name}，${product.specifications.join(', ')}`,
-      url: `${baseUrl}/${locale}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`,
+      url: `${baseUrl}/${locale}/products/${encodeSegment(categoryData.slug)}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`,
       images: [toProductImageUrl(product.image)],
       locale,
       siteName: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' })
     },
-    alternates: localeAlternates(locale, `/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`),
+    alternates: localeAlternates(locale, `/products/${encodeSegment(categoryData.slug)}/${encodeURIComponent(subCategoryData.slug)}/${encodedModel}`),
   };
 }
 
@@ -61,7 +63,8 @@ export default async function ProductDetailPage({
 }: {
   params: Promise<{ locale: string; category: string; subCategory: string; modelNumber: string }>;
 }) {
-  const { locale, category, subCategory, modelNumber } = await params;
+  const { locale, category: rawCategory, subCategory, modelNumber } = await params;
+  const category = decodeSegment(rawCategory);
   if (!locales.includes(locale as Locale)) {
     notFound();
   }
@@ -91,8 +94,8 @@ export default async function ProductDetailPage({
         items={[
           { label: tNav('home'), href: `/${localeValue}` },
           { label: tNav('products'), href: `/${localeValue}/products` },
-          { label: categoryData.name, href: `/${localeValue}/products/${categoryData.slug}` },
-          { label: subCategoryData.name, href: `/${localeValue}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}` },
+          { label: categoryData.name, href: `/${localeValue}/products/${encodeSegment(categoryData.slug)}` },
+          { label: subCategoryData.name, href: `/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeURIComponent(subCategoryData.slug)}` },
           { label: product.model },
         ]}
       />
@@ -136,7 +139,7 @@ export default async function ProductDetailPage({
           />
 
           <p style={{ margin: 'auto 0 0' }}>
-            <Link className="text-link" href={`/${localeValue}/products/${categoryData.slug}/${encodeURIComponent(subCategoryData.slug)}`}>
+            <Link className="text-link" href={`/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeURIComponent(subCategoryData.slug)}`}>
               ← {localized(localeValue, { 'zh-TW': '返回', 'zh-CN': '返回', en: 'Back to' })} {subCategoryData.name}
             </Link>
           </p>

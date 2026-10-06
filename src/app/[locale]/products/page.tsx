@@ -8,6 +8,7 @@ import { getCategoryCoverUrl } from '@/lib/assets';
 import { getCategorySummaries } from '@/lib/catalog-service';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { notFound } from 'next/navigation';
+import { encodeSegment } from '@/lib/url-segment';
 
 // canonical 與 hreflang 指向本頁（D14）；標題沿用 layout
 export async function generateMetadata({params}: {params: Promise<{locale: string}>}): Promise<Metadata> {
@@ -51,7 +52,7 @@ export default async function ProductsPage({
               </div>
               <div className="category-card__body">
                 <h3>
-                  <Link href={`/${localeValue}/products/${category.key}`}>{category.name}</Link>
+                  <Link href={`/${localeValue}/products/${encodeSegment(category.key)}`}>{category.name}</Link>
                 </h3>
                 <p className="muted">{category.description}</p>
               </div>

@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { locales } from '@/lib/catalog';
 import { getBaseUrl } from '@/lib/site';
 import { getCategorySummaries, getAllSubCategories, getCatalogProducts } from '@/lib/catalog-service';
+import { encodeSegment } from '@/lib/url-segment';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getBaseUrl();
@@ -22,7 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const categories = await getCategorySummaries('zh-TW');
   const categoryRoutes = locales.flatMap((locale) =>
     categories.map((c) => ({
-      url: `${baseUrl}/${locale}/products/${c.key}`,
+      url: `${baseUrl}/${locale}/products/${encodeSegment(c.key)}`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
@@ -33,7 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const subCategories = await getAllSubCategories();
   const subCategoryRoutes = locales.flatMap((locale) =>
     subCategories.map((sub) => ({
-      url: `${baseUrl}/${locale}/products/${sub.categorySlug}/${encodeURIComponent(sub.slug)}`,
+      url: `${baseUrl}/${locale}/products/${encodeSegment(sub.categorySlug)}/${encodeURIComponent(sub.slug)}`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.65,
@@ -44,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products = (await getCatalogProducts()).filter((product) => product.subCategory);
   const productRoutes = locales.flatMap((locale) =>
     products.map((product) => ({
-      url: `${baseUrl}/${locale}/products/${product.category}/${encodeURIComponent(product.subCategory)}/${encodeURIComponent(product.model)}`,
+      url: `${baseUrl}/${locale}/products/${encodeSegment(product.category)}/${encodeURIComponent(product.subCategory)}/${encodeURIComponent(product.model)}`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.6,
