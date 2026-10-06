@@ -34,7 +34,7 @@ run('從產品目錄點含空白的分類 → 子分類 → 產品，每一頁�
     // 麵包屑與側欄連回分類
     const crumb = await page.locator('nav').getByRole('link', { name: '離合器系列' }).first().getAttribute('href');
     const res = await page.request.get(`${BASE_URL}${crumb}`);
-    assert(res.status() === 200, `麵包屑的分類連結可以開啟（${crumb}）`);
+    assert(res.status() === 200, `麵包屑的分類連結可以開啟（${crumb}，${res.status()}）`);
   })
 );
 
