@@ -42,6 +42,8 @@ PR：[#30](https://github.com/bouner-xh/xh-motorparts/pull/30)
 
 **建議：** 分類代號用英文小寫加連字號（例如 `clutch-housing`），網址比較乾淨；`SARTER MOTOR` 應為 `STARTER MOTOR`。修改代號會改變網址，舊連結會失效。
 
+**上線紀錄：** 合併當下因程式庫為私有，Vercel 擋下部署；改回公開後重新部署上線（2026-10-06）。
+
 **還原：** Revert 本批 PR。
 
 ---
