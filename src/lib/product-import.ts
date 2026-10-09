@@ -182,7 +182,8 @@ export function parseProductRows(objects: Record<string, string>[]): ParseResult
     const line = index + 2;
     if (Object.values(r).every((v) => !v)) return;
 
-    const modelNumber = pick(r, 'model_number', '型號');
+    // 型號一律存成大寫（與 product-form.ts 的 normalizeModelNumber 相同規則；這個檔案要能被單元測試直接載入，所以不 import）
+    const modelNumber = pick(r, 'model_number', '型號').trim().toUpperCase();
     if (!modelNumber) {
       errors.push(`第 ${line} 列：缺少型號（model_number）`);
       return;

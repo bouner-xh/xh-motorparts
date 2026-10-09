@@ -3,7 +3,7 @@ import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib
 import { isAdminEmail } from '@/lib/admin-auth';
 import { revalidateCatalog } from '@/lib/revalidate';
 import { getProductImageUrls, removeUnreferencedImages } from '@/lib/product-image-cleanup';
-import { MAX_STOCK_QUANTITY } from '@/lib/product-form';
+import { escapeLikePattern, MAX_STOCK_QUANTITY, normalizeModelNumber } from '@/lib/product-form';
 import { describeDbError, INVALID_INPUT_MESSAGE, type DbErrorLike } from '@/lib/admin-api-errors';
 
 // 每列的錯誤訊息：原始資料庫錯誤記在伺服器 log，畫面顯示中文說明（A9）
@@ -19,7 +19,7 @@ const batchProductSchema = z.object({
   categoryNameI18n: i18nSchema,
   subCategorySlug: z.string().trim().min(1).max(64),
   subCategoryNameI18n: i18nSchema,
-  modelNumber: z.string().trim().min(1).max(100),
+  modelNumber: z.string().trim().min(1).max(100).transform(normalizeModelNumber),
   nameI18n: i18nSchema,
   // 沒填（null／未提供）時：新產品用預設值，既有產品保留原本內容（A4）
   specifications: z.array(z.string().max(200)).max(50).nullish(),
@@ -148,11 +148,13 @@ export async function POST(request: Request) {
       }
 
       // 3. Upsert 產品資訊 (以 model_number 作為唯一鍵)
-      const { data: prodExisted } = await service
+      // 型號不分大小寫比對，舊資料是小寫時也會更新同一筆（並改存成大寫），不會重複建立
+      const { data: prodMatches } = await service
         .from('products')
         .select('id, name_i18n')
-        .eq('model_number', item.modelNumber)
-        .maybeSingle();
+        .ilike('model_number', escapeLikePattern(item.modelNumber))
+        .limit(1);
+      const prodExisted = prodMatches?.[0];
 
       let productId = '';
       if (prodExisted?.id) {
@@ -161,6 +163,7 @@ export async function POST(request: Request) {
         const update: Record<string, unknown> = {
           category_id: categoryId,
           sub_category_id: subCategoryId,
+          model_number: item.modelNumber,
           name_i18n: { ...(prodExisted.name_i18n || {}), ...item.nameI18n },
           is_active: item.isActive
         };
