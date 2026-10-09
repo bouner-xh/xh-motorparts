@@ -25,6 +25,18 @@
 
 ---
 
+## 2026-10-09（第三十八批）：分類自己上傳封面
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| L6 | 大分類表單新增「封面圖片」（資料庫變更：`categories.cover_image`，**需老闆在 Supabase 執行 `supabase/migrations/20261009_category_cover.sql`**）；API 讀寫封面、留空 = 移除；換圖、移除、刪除分類、取消編輯時清掉沒人使用的圖檔（`removeUnreferencedImages` 也檢查分類封面）；前台封面順序：分類封面 → 第一個產品照片 → 預設圖；刪除 `images/covers` 與對照表；資料庫沒有該欄位時網站與後台照常運作（讀取自動退回不含封面的查詢，儲存封面提示先執行更新語法） | `AdminCategoryManager.tsx`、`api/admin/categories/route.ts`、`src/lib/category-cover.ts`（新）、`catalog-service.ts`、`assets.ts`、`product-image-cleanup.ts`、`supabase/migrations/20261009_category_cover.sql`（新） | `admin-category-cover.e2e.cjs`、`category-covers.e2e.cjs`、`site-smoke.e2e.cjs` |
+
+- 測試用模擬資料庫新增 `POST /__mock/drop-column`（模擬缺少欄位）。
+- 不新增套件。還原：Revert 對應 PR（欄位留著不影響）。
+- 過程：第一次完整測試在「正式環境建置」失敗（`prefer-const` lint 錯誤，會讓 Vercel 部署失敗），已修正並重跑通過，才合併。
+
+---
+
 ## 2026-10-09（第三十七批）：型號自動轉大寫
 
 | 項目 | 內容 | 主要檔案 | 測試 |
