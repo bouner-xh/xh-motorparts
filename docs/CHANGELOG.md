@@ -25,6 +25,16 @@
 
 ---
 
+## 2026-10-09（第三十四批）：產品名稱以英文為主（P5）
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| P5 | 英文名稱必填，繁中、簡中選填；資料庫只存有填的語言（API 行為變更：原本三語都必填）；沒填時前台退回英文；後台表單英文欄位排第一並加提示；列表在沒有繁中時顯示英文名稱；批量匯入優先採用英文名稱 | `api/admin/products/route.ts`、`AdminProductManager.tsx`、`src/lib/product-form.ts`、`src/lib/product-import.ts` | `admin-product-names.e2e.cjs`、`product-form.test.mts` |
+
+- 不改資料庫結構，不新增套件。還原：Revert 對應 PR。
+
+---
+
 ## 2026-10-09（第三十三批）：sitemap 英文優先
 
 | 項目 | 內容 | 主要檔案 | 測試 |
