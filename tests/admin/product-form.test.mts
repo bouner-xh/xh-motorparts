@@ -3,6 +3,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  normalizeModelNumber,
+  escapeLikePattern,
   describeProductInputIssues,
   duplicateModelMessage,
   splitSpecifications,
@@ -41,4 +43,15 @@ test('送出前檢查：英文名稱必填，繁中、簡中選填', () => {
   const ok = { modelNumber: 'A', subCategoryId: 'x', nameZhTw: '', nameZhCn: '', nameEn: 'Cylinder', stockQuantity: 0 };
   assert.deepEqual(validateProductForm(ok), []);
   assert.deepEqual(validateProductForm({ ...ok, nameEn: '' }), ['名稱（en）不可為空']);
+});
+
+test('型號一律轉大寫並去掉頭尾空白', () => {
+  assert.equal(normalizeModelNumber('  2a6-17421-00 '), '2A6-17421-00');
+  assert.equal(normalizeModelNumber('DT125-4j3-17411-00'), 'DT125-4J3-17411-00');
+  assert.equal(normalizeModelNumber('ABC'), 'ABC');
+});
+
+test('不分大小寫比對用的字串會跳脫 % _ 與反斜線', () => {
+  assert.equal(escapeLikePattern('A_B%C\\D'), 'A\\_B\\%C\\\\D');
+  assert.equal(escapeLikePattern('1HV-11311-00'), '1HV-11311-00');
 });

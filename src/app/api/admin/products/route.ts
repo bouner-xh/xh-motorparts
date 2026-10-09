@@ -4,7 +4,7 @@ import {isAdminEmail} from '@/lib/admin-auth';
 import {revalidateCatalog} from '@/lib/revalidate';
 import {getProductImageUrls, removeUnreferencedImages} from '@/lib/product-image-cleanup';
 import {describeDbError, INVALID_ID_MESSAGE, INVALID_INPUT_MESSAGE, isUuid} from '@/lib/admin-api-errors';
-import {describeProductInputIssues, duplicateModelMessage, MAX_STOCK_QUANTITY} from '@/lib/product-form';
+import {describeProductInputIssues, duplicateModelMessage, escapeLikePattern, MAX_STOCK_QUANTITY, normalizeModelNumber} from '@/lib/product-form';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
 
@@ -34,7 +34,7 @@ interface ProductImageRow {
 const productPayloadSchema = z.object({
   id: z.string().uuid().optional(),
   category: z.string().trim().min(1).max(64),
-  modelNumber: z.string().trim().min(1).max(100),
+  modelNumber: z.string().trim().min(1).max(100).transform(normalizeModelNumber),
   // 英文名稱必填（英文為主要語言）；繁中、簡中選填，沒填時前台顯示英文名稱（P5）
   nameZhTw: z.string().trim().max(200).optional().default(''),
   nameZhCn: z.string().trim().max(200).optional().default(''),
@@ -208,6 +208,14 @@ function duplicateModelResponse(requestId: string, modelNumber: string, error: {
   return Response.json({error: duplicateModelMessage(modelNumber), requestId}, {status: 409});
 }
 
+// 型號不分大小寫比對是否已被其他產品使用（資料庫的唯一限制區分大小寫，舊資料可能是小寫）
+async function modelNumberTaken(service: ServiceClient, modelNumber: string, excludeId?: string) {
+  let query = service.from('products').select('id').ilike('model_number', escapeLikePattern(modelNumber)).limit(1);
+  if (excludeId) query = query.neq('id', excludeId);
+  const {data} = await query;
+  return Boolean(data?.length);
+}
+
 // 依代號找大分類；找不到時不再自動建立沒有名稱的分類（A9）
 async function findCategoryId(service: ServiceClient, slug: string) {
   const {data} = await service.from('categories').select('id').eq('slug', slug).maybeSingle();
@@ -287,6 +295,10 @@ export async function POST(request: Request) {
     return Response.json({error: '子分類不屬於所選的大分類，請重新選擇子分類', requestId}, {status: 400});
   }
 
+  if (await modelNumberTaken(service, payload.modelNumber)) {
+    return duplicateModelResponse(requestId, payload.modelNumber, {code: '23505', message: 'model number exists (case-insensitive)'});
+  }
+
   const {data: inserted, error} = await service
     .from('products')
     .insert({
@@ -345,6 +357,10 @@ export async function PUT(request: Request) {
 
   if (!(await checkSubCategoryInCategory(service, payload.subCategoryId, categoryId))) {
     return Response.json({error: '子分類不屬於所選的大分類，請重新選擇子分類', requestId}, {status: 400});
+  }
+
+  if (await modelNumberTaken(service, payload.modelNumber, productId)) {
+    return duplicateModelResponse(requestId, payload.modelNumber, {code: '23505', message: 'model number exists (case-insensitive)'});
   }
 
   const {data: updated, error} = await service

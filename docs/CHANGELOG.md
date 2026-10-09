@@ -25,6 +25,17 @@
 
 ---
 
+## 2026-10-09（第三十七批）：型號自動轉大寫
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| L8 | 型號一律存成大寫（API 行為變更：原本照輸入存）；新增與更新不分大小寫比對重複型號（`ilike`，跳脫 `% _ \`）；批量匯入不分大小寫找到舊產品並更新、改存大寫；表單離開欄位轉大寫；只有大小寫不同不跳「改型號」確認 | `src/lib/product-form.ts`（`normalizeModelNumber`、`escapeLikePattern`）、`api/admin/products`、`api/admin/products/batch`、`src/lib/product-import.ts`、`AdminProductManager.tsx` | `product-form.test.mts`、`admin-model-case.e2e.cjs` |
+
+- 測試用模擬資料庫新增 `ilike.`、`neq.` 篩選。
+- 不改資料庫結構，不新增套件。現有小寫型號需另外更新（見 PROGRESS 的語法）。還原：Revert 對應 PR。
+
+---
+
 ## 2026-10-09（第三十六批）：刪除沒作用的 middleware、產品網址不分大小寫
 
 | 項目 | 內容 | 主要檔案 | 測試 |

@@ -102,7 +102,7 @@ function expandRow(table, row, select) {
   return out;
 }
 
-// 支援 PostgREST 的 eq.、in.() 篩選（含 category.slug 這類巢狀欄位）
+// 支援 PostgREST 的 eq.、neq.、ilike.、in.() 篩選（含 category.slug 這類巢狀欄位）
 function filterRows(rows, params) {
   let result = rows;
   for (const [key, raw] of params) {
@@ -111,6 +111,22 @@ function filterRows(rows, params) {
     if (raw.startsWith('eq.')) {
       const value = raw.slice(3);
       result = result.filter((row) => String(get(row)) === value);
+    } else if (raw.startsWith('neq.')) {
+      const value = raw.slice(4);
+      result = result.filter((row) => String(get(row)) !== value);
+    } else if (raw.startsWith('ilike.')) {
+      // PostgreSQL ilike：不分大小寫，% 代表任意字串、_ 代表任一字元，\\ 跳脫下一個字元
+      const pattern = raw.slice(6);
+      let source = '';
+      for (let i = 0; i < pattern.length; i++) {
+        const ch = pattern[i];
+        if (ch === '\\' && i + 1 < pattern.length) source += pattern[++i].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        else if (ch === '%') source += '.*';
+        else if (ch === '_') source += '.';
+        else source += ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }
+      const re = new RegExp(`^${source}$`, 'i');
+      result = result.filter((row) => re.test(String(get(row))));
     } else if (raw.startsWith('in.(')) {
       const values = raw.slice(4, -1).split(',').map((v) => v.replace(/^"|"$/g, ''));
       result = result.filter((row) => values.includes(String(get(row))));

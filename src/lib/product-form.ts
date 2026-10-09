@@ -1,6 +1,16 @@
 // 後台產品表單：規格拆分與錯誤訊息（產品上架檢查 P4、P6）
 // 純函式、不依賴資料庫，前端表單與產品 API 共用（tests/admin/product-form.test.mts）
 
+// 型號一律存成大寫（原廠料號慣例），前端表單、產品 API 與批量匯入共用
+export function normalizeModelNumber(value: string): string {
+  return value.trim().toUpperCase();
+}
+
+// 組 PostgreSQL ilike 的比對字串：跳脫 \ % _，讓型號當成一般文字（不分大小寫比對）
+export function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
+
 // 規格可用半形逗號、全形逗號、頓號、分號或換行分隔（批量匯入原本就接受全形逗號）
 export function splitSpecifications(text: string): string[] {
   return text

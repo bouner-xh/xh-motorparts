@@ -97,6 +97,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `admin-product-names.e2e.cjs` | 產品名稱以英文為主：只填英文可新增、沒填的語言不存空字串、前台與後台列表顯示英文名稱、沒有英文名稱被擋下 | 模擬 Supabase |
 | `category-covers.e2e.cjs` | 分類卡片封面：挑好的封面 → 第一個產品的照片 → 預設圖，三種情況圖片都能載入 | 模擬 Supabase |
 | `product-url-case.e2e.cjs` | 產品網址不分大小寫：分類、子分類、型號大小寫寫錯會轉到正確網址（308、保留語系）；不存在的網址仍 404、不會無限轉址 | 模擬 Supabase |
+| `admin-model-case.e2e.cjs` | 型號一律存成大寫（表單離開欄位自動轉、API 與批量匯入）、不分大小寫比對重複型號、舊小寫型號重存不跳改型號確認、匯入不會重複建立 | 模擬 Supabase |
 | `root-redirect.e2e.cjs` | 根網址一律轉到 /en、語言切換列 EN 排第一、中文版網址照舊可用 | 無資料庫即可 |
 | `international-copy.e2e.cjs` | 英文聯絡頁（國際電話、WhatsApp、時區、訂購資訊）、關於頁無開發中說法、隱私政策保存期限三語一致、繁簡同步 | 無資料庫即可 |
 | `html-lang.e2e.cjs` | 各頁 `<html lang>` 與語系一致、未知網址 404、根網址仍轉 /en、語言切換後 lang 跟著變 | 無資料庫即可 |

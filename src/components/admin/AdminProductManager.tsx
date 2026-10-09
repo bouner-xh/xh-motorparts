@@ -3,7 +3,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {toProductImageUrl} from '@/lib/product-image-url';
 import {resizeProductImage} from '@/lib/image-resize';
-import {splitSpecifications, validateProductForm} from '@/lib/product-form';
+import {normalizeModelNumber, splitSpecifications, validateProductForm} from '@/lib/product-form';
 import type { Locale } from '@/lib/catalog';
 
 interface AdminCategoryItem {
@@ -173,9 +173,11 @@ export function AdminProductManager(_props: {locale: Locale}) {
 
   async function submitProduct() {
     // 改型號會讓舊的產品網址失效（別人收藏或客戶保存的連結會打不開），先請使用者確認（U3）
-    if (form.id && editingRow && editingRow.modelNumber !== form.modelNumber.trim() && form.modelNumber.trim()) {
+    // 只有大小寫不同不算改型號（型號一律存成大寫，舊網址也會自動轉址）
+    const newModel = normalizeModelNumber(form.modelNumber);
+    if (form.id && editingRow && newModel && editingRow.modelNumber.toUpperCase() !== newModel) {
       const ok = window.confirm(
-        `型號將從「${editingRow.modelNumber}」改為「${form.modelNumber.trim()}」。\n產品網址會跟著改變，舊網址將無法開啟。確定要儲存嗎？`
+        `型號將從「${editingRow.modelNumber}」改為「${newModel}」。\n產品網址會跟著改變，舊網址將無法開啟。確定要儲存嗎？`
       );
       if (!ok) return;
     }
@@ -189,7 +191,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
     const payload = {
       id: form.id,
       category: form.category,
-      modelNumber: form.modelNumber.trim(),
+      modelNumber: normalizeModelNumber(form.modelNumber),
       nameZhTw: form.nameZhTw.trim(),
       nameZhCn: form.nameZhCn.trim(),
       nameEn: form.nameEn.trim(),
@@ -502,6 +504,8 @@ export function AdminProductManager(_props: {locale: Locale}) {
             required
             value={form.modelNumber}
             onChange={(event) => setForm((prev) => ({...prev, modelNumber: event.target.value}))}
+            // 離開欄位時自動轉成大寫（原廠料號慣例）
+            onBlur={() => setForm((prev) => ({...prev, modelNumber: normalizeModelNumber(prev.modelNumber)}))}
           />
         </label>
 
