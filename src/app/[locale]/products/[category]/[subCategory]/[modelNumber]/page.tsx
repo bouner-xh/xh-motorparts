@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import {SafeImage} from '@/components/ui/SafeImage';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound, permanentRedirect } from 'next/navigation';
@@ -117,7 +117,7 @@ export default async function ProductDetailPage({
 
       <section className="detail-grid">
         <article className="card detail-media">
-          <Image
+          <SafeImage
             src={toProductImageUrl(product.image)}
             alt={`${product.model} ${product.name}`}
             width={900}

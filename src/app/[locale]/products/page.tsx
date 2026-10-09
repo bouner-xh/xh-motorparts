@@ -1,7 +1,7 @@
 import type {Metadata} from 'next';
 import {localeAlternates} from '@/lib/site';
 import Link from 'next/link';
-import Image from 'next/image';
+import {SafeImage} from '@/components/ui/SafeImage';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { locales, type Locale } from '@/lib/catalog';
 import { getCategoryCoverUrl } from '@/lib/assets';
@@ -47,7 +47,7 @@ export default async function ProductsPage({
           {categories.map((category) => (
             <article key={category.key} id={category.key} className="card category-card">
               <div className="category-card__media">
-                <Image src={getCategoryCoverUrl(category.key, category.coverImage)} alt={category.name} fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized />
+                <SafeImage src={getCategoryCoverUrl(category.key, category.coverImage)} alt={category.name} fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized />
                 <div className="category-card__overlay" />
               </div>
               <div className="category-card__body">
