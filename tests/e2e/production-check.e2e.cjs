@@ -48,8 +48,11 @@ run('正式網站：產品卡片、語系、標題與文字檢查', async () => 
     const local = images.filter((i) => i.local);
     assert(local.every((i) => i.ok), `D13 本站圖片 ${local.length} 張皆正常顯示（外部圖片 ${images.length - local.length} 張不檢查）`);
     // 以瀏覽器內的請求檢查（與真實訪客相同）
-    const placeholder = await page.evaluate(async () => (await fetch('/legacy-assets/no-image.jpg')).status);
-    assert(placeholder === 200, 'D13 預設圖 no-image.jpg 已部署');
+    const placeholder = await page.evaluate(async () => {
+      const res = await fetch('/no-image.svg');
+      return { status: res.status, type: res.headers.get('content-type') || '' };
+    });
+    assert(placeholder.status === 200 && placeholder.type.includes('image/svg+xml'), `D13 預設圖 no-image.svg 已部署（${placeholder.status} ${placeholder.type}）`);
 
     // D6：語系切換停留同頁
     await page.goto(`${BASE_URL}${product}`, { waitUntil: 'networkidle' });

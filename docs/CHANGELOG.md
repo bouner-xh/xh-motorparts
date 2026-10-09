@@ -25,6 +25,16 @@
 
 ---
 
+## 2026-10-09（第三十九批）：SVG 的 No Image 預設圖
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| L9 | 新增 `public/no-image.svg`（只有英文「NO IMAGE」）；`NO_IMAGE_URL`；空白或指向 `no-image.jpg` 的圖片路徑一律改用 SVG；`SafeImage` 在圖片載入失敗時自動換成 SVG（含頁面互動化前就已失敗的情況）；後台縮圖用 `fallbackToNoImage`；刪除 `images/no-image.jpg` | `public/no-image.svg`（新）、`src/components/ui/SafeImage.tsx`（新）、`src/lib/product-image-url.ts`、`assets.ts`、`catalog-service.ts`、`ProductCard.tsx`、產品頁、首頁與產品目錄頁、後台產品與分類管理 | `no-image-fallback.e2e.cjs`、`category-covers`、`admin-category-cover`、`production-check` |
+
+- 不改資料庫、API，不新增套件。還原：Revert 對應 PR。
+
+---
+
 ## 2026-10-09（第三十八批）：分類自己上傳封面
 
 | 項目 | 內容 | 主要檔案 | 測試 |

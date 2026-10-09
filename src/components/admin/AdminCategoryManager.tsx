@@ -5,6 +5,7 @@ import type { Locale } from '@/lib/catalog';
 import { normalizeSlug, SLUG_MESSAGE } from '@/lib/slug';
 import { resizeProductImage } from '@/lib/image-resize';
 import { toProductImageUrl } from '@/lib/product-image-url';
+import { fallbackToNoImage } from '@/components/ui/SafeImage';
 
 interface AdminCategoryItem {
   id: string;
@@ -284,7 +285,7 @@ export function AdminCategoryManager(_props: { locale: Locale }) {
         {form.coverImage ? (
           <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={toProductImageUrl(form.coverImage)} alt="目前的封面" width={96} height={64} style={{ objectFit: 'cover', borderRadius: '6px' }} />
+            <img src={toProductImageUrl(form.coverImage)} alt="目前的封面" onError={fallbackToNoImage} width={96} height={64} style={{ objectFit: 'cover', borderRadius: '6px' }} />
             <button type="button" onClick={removeCover} disabled={isUploading || isSubmitting} style={{ background: '#334155' }}>移除封面</button>
           </div>
         ) : null}

@@ -3,6 +3,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {toProductImageUrl} from '@/lib/product-image-url';
 import {resizeProductImage} from '@/lib/image-resize';
+import {fallbackToNoImage} from '@/components/ui/SafeImage';
 import {normalizeModelNumber, splitSpecifications, validateProductForm} from '@/lib/product-form';
 import type { Locale } from '@/lib/catalog';
 
@@ -601,7 +602,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
         <div style={{display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center'}}>
           {form.imagePath ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={toProductImageUrl(form.imagePath)} alt="目前的主圖" width={64} height={64} style={{objectFit: 'cover', borderRadius: '6px'}} />
+            <img src={toProductImageUrl(form.imagePath)} alt="目前的主圖" onError={fallbackToNoImage} width={64} height={64} style={{objectFit: 'cover', borderRadius: '6px'}} />
           ) : null}
           {form.imagePath ? (
             <button
@@ -735,7 +736,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
                 <tr key={row.id} style={row.id === form.id ? {background: 'rgba(29, 78, 216, 0.15)'} : undefined}>
                   <td>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={toProductImageUrl(row.imagePath)} alt="" width={48} height={48} loading="lazy" style={{objectFit: 'cover', borderRadius: '6px', display: 'block'}} />
+                    <img src={toProductImageUrl(row.imagePath)} alt="" onError={fallbackToNoImage} width={48} height={48} loading="lazy" style={{objectFit: 'cover', borderRadius: '6px', display: 'block'}} />
                   </td>
                   <td>{row.modelNumber}</td>
                   <td>

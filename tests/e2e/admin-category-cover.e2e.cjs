@@ -83,7 +83,7 @@ run('上傳封面：自動縮圖、儲存後前台分類卡片使用這張圖；
     state = await mockState();
     assert(uploads(state).length === 0, '移除後圖檔被刪除');
     assert(!state.tables.categories.find((c) => c.slug === 'cylinder').cover_image, '資料庫沒有封面');
-    assert((await homeCoverSrc(page, '汽缸')).includes('/legacy-assets/no-image.jpg'), '卡片退回預設圖');
+    assert((await homeCoverSrc(page, '汽缸')).includes('/no-image.svg'), '卡片退回預設圖');
   })
 );
 

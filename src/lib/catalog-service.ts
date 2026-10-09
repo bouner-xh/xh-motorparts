@@ -4,9 +4,10 @@ import {categoryDescriptions, categoryKeys, categoryNames, type CategoryKey, typ
 import {getSupabaseServerClient} from '@/lib/supabase/server';
 import {searchProducts} from '@/lib/product-search';
 import {matchCanonicalSegments} from '@/lib/canonical-path';
+import {NO_IMAGE_URL} from '@/lib/product-image-url';
 import {encodeSegment} from '@/lib/url-segment';
 
-const defaultImagePath = 'images/no-image.jpg';
+const defaultImagePath = NO_IMAGE_URL;
 
 function getPrimaryCategorySlug(categoryRef: {slug?: string} | Array<{slug?: string}> | null) {
   return Array.isArray(categoryRef) ? categoryRef[0]?.slug : categoryRef?.slug;

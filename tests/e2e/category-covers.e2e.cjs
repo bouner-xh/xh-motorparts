@@ -49,7 +49,7 @@ run('分類封面：自己上傳的封面、第一個產品的照片、預設圖
       for (const name of names) srcs.push(await coverSrc(page, path, name));
       assert(srcs[0].includes(`/legacy-assets/${OWN_COVER.replace(/^images\//, '')}`), `${path} 離合器系列使用自己上傳的封面（${srcs[0]}）`);
       assert(srcs[1].includes('/legacy-assets/products/cylinder/cylinder-003.jpg'), `${path} 啟動系統使用第一個產品的照片（${srcs[1]}）`);
-      assert(srcs[2].includes('/legacy-assets/no-image.jpg'), `${path} 沒有照片的分類使用預設圖（${srcs[2]}）`);
+      assert(srcs[2].includes('/no-image.svg'), `${path} 沒有照片的分類使用預設圖（${srcs[2]}）`);
       for (const src of srcs) {
         const res = await page.request.get(new URL(src, BASE_URL).toString());
         assert(res.status() === 200 && (res.headers()['content-type'] || '').startsWith('image/'), `${path} 圖片可載入：${src}`);
