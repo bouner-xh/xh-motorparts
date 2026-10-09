@@ -25,6 +25,21 @@
 
 ---
 
+## 2026-10-09（第三十、三十一批）：英文與中文文案
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| 聯絡頁 | 國際電話 +886 930 797 299、WhatsApp、營業時間標示台灣時間 GMT+8、工作日 24 小時內回覆、訂購資訊七項（MOQ、交期、付款、貿易條件與台中港、包裝、檢驗、保固退換） | `src/lib/site-content.ts`、`contact/page.tsx`、`messages/*.json`、`Footer.tsx` | `international-copy.e2e.cjs` |
+| 關於我們 | 換成實際資訊（1990 年、台中、摩托車內部零組件、OEM／ODM、全球）；移除「新版網站正在重建」等開發中文字；統計列改為 1990／Worldwide／OEM-ODM | `site-content.ts` | 同上 |
+| 隱私政策 | 資料保存期限三語統一：處理詢價與商業往來所需期間內保存，依要求刪除；更新日期 2026 年 10 月 | `src/lib/privacy-content.ts` | 同上 |
+| 詢價頁 | 驗證服務提示改為「暫時無法使用，請稍後再試或寄信到 sales@」 | `messages/*.json` | — |
+| 首頁品類 | 標題與副標題不寫死數量與品項（原寫「9 大品類」「密封件到電氣線材」） | `site-content.ts` | `international-copy.e2e.cjs`、`home-section-order.e2e.cjs` |
+
+- 不改資料庫、API，不新增套件。還原：Revert 對應 PR（#35 與下一個）。
+- 測試提醒：`home-section-order` 要在無資料庫模式（run-all 第 2 組）執行，用模擬資料庫會誤報「9 個產品分類」失敗。
+
+---
+
 ## 2026-10-09（第二十九批）：網站預設英文
 
 | 項目 | 內容 | 主要檔案 | 測試 |
