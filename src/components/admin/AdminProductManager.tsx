@@ -179,6 +179,10 @@ export function AdminProductManager(_props: {locale: Locale}) {
       );
       if (!ok) return;
     }
+    // 上架時沒有圖片，前台會顯示預設圖；提醒一次讓使用者決定（U8，已經上架的產品重複編輯不再提醒）
+    if (form.isActive && !form.imagePath.trim() && !editingRow?.isActive) {
+      if (!window.confirm('這個產品還沒有圖片，上架後前台會顯示預設圖片。\n仍要上架嗎？（按取消可回去上傳圖片）')) return;
+    }
     setIsSubmitting(true);
     setStatus('info', form.id ? '更新產品中...' : '新增產品中...');
 
@@ -356,6 +360,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
   // 列表上直接上架／下架，不用開編輯表單（U6）
   async function toggleActive(row: AdminProductItem) {
     const next = !row.isActive;
+    if (next && !row.imagePath && !window.confirm(`「${row.modelNumber}」還沒有圖片，上架後前台會顯示預設圖片。\n仍要上架嗎？`)) return;
     setStatus('info', `${next ? '上架' : '下架'}中：${row.modelNumber}`);
     try {
       const response = await fetch('/api/admin/products', {
@@ -592,6 +597,21 @@ export function AdminProductManager(_props: {locale: Locale}) {
           {form.imagePath ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={toProductImageUrl(form.imagePath)} alt="目前的主圖" width={64} height={64} style={{objectFit: 'cover', borderRadius: '6px'}} />
+          ) : null}
+          {form.imagePath ? (
+            <button
+              type="button"
+              style={{background: '#334155'}}
+              disabled={isUploading || isSubmitting}
+              onClick={() => {
+                discardUnsavedUpload();
+                setSelectedFile(null);
+                setForm((prev) => ({...prev, imagePath: ''}));
+                setStatus('info', form.id ? '已移除圖片，按下「更新產品」後才會儲存' : '已移除圖片');
+              }}
+            >
+              移除圖片
+            </button>
           ) : null}
           <span className="muted">
             {isUploading

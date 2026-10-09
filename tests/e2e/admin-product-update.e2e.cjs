@@ -128,10 +128,66 @@ run('刪除確認寫出型號；列表可直接下架與上架', () =>
     await page.getByText(`${P1.model} 已下架`).waitFor({ timeout: 30000 });
     ({ tables } = await mockState());
     assert(tables.products.find((p) => p.model_number === P1.model).is_active === false, '資料庫已改為未上架');
+    // 沒有圖片的產品上架時會提醒（U8）：先取消，再確定
+    await rowOf(page, P1.model).getByRole('button', { name: '上架' }).click();
+    await page.waitForTimeout(500);
+    assert(dialogs[1]?.includes('還沒有圖片'), `沒有圖片時上架會提醒（${dialogs[1]}）`);
+    ({ tables } = await mockState());
+    assert(tables.products.find((p) => p.model_number === P1.model).is_active === false, '按取消：維持下架');
+    page.removeAllListeners('dialog');
+    recordDialogs(page, true);
     await rowOf(page, P1.model).getByRole('button', { name: '上架' }).click();
     await page.getByText(`${P1.model} 已上架`).waitFor({ timeout: 30000 });
     ({ tables } = await mockState());
     assert(tables.products.find((p) => p.model_number === P1.model).is_active === true, '資料庫已改回上架');
     assert(tables.products.find((p) => p.model_number === P1.model).name_i18n.en === 'Cylinder Body', '其他欄位沒有被改到');
+  })
+);
+
+const seedImage = (rows) =>
+  fetch(`${MOCK_URL}/__mock/seed`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'product_images', rows }) });
+const IMG = 'https://example.supabase.co/storage/v1/object/public/product-images/products/2026-10-09/a.jpg';
+
+run('新增並上架但沒有圖片：提醒，取消不儲存；有圖片或未上架不提醒', () =>
+  withPage(async (page) => {
+    await resetMock();
+    const form = await openProducts(page);
+    await form.getByLabel('型號').fill('NOIMG-1');
+    await form.getByLabel('名稱（zh-TW）').fill('無圖');
+    await form.getByLabel('名稱（zh-CN）').fill('无图');
+    await form.getByLabel('名稱（en）').fill('No image');
+    await form.getByLabel('子分類').selectOption(CYLINDER_SUB);
+    await form.getByLabel('上架').check();
+    const dialogs = recordDialogs(page, false);
+    await form.getByRole('button', { name: '新增產品' }).click();
+    await page.waitForTimeout(800);
+    assert(dialogs.length === 1 && dialogs[0].includes('還沒有圖片'), `提醒沒有圖片（${dialogs[0]}）`);
+    let { tables } = await mockState();
+    assert(!tables.products.some((p) => p.model_number === 'NOIMG-1'), '按取消：沒有新增');
+
+    await form.getByLabel('上架').uncheck();
+    await form.getByRole('button', { name: '新增產品' }).click();
+    await page.getByText('產品新增成功').waitFor({ timeout: 30000 });
+    assert(dialogs.length === 1, '未上架時不提醒');
+    ({ tables } = await mockState());
+    assert(tables.products.some((p) => p.model_number === 'NOIMG-1' && p.is_active === false), '未上架可以直接新增');
+  })
+);
+
+run('移除圖片：按下「移除圖片」並更新後，圖片紀錄被清除', () =>
+  withPage(async (page) => {
+    await resetMock();
+    await seedImage([{ id: '40000000-0000-4000-8000-000000000001', product_id: P1.id, storage_path: IMG, sort_order: 0 }]);
+    const form = await openProducts(page);
+    await rowOf(page, P1.model).getByRole('button', { name: '編輯' }).click();
+    await form.getByRole('button', { name: '移除圖片' }).click();
+    assert((await form.getByRole('button', { name: '移除圖片' }).count()) === 0, '按鈕在移除後消失');
+    let { tables } = await mockState();
+    assert(tables.product_images.length === 1, '還沒按更新前，圖片仍在資料庫');
+    await form.getByRole('button', { name: '更新產品' }).click();
+    await page.getByText('產品更新成功').waitFor({ timeout: 30000 });
+    ({ tables } = await mockState());
+    assert(!tables.product_images.some((i) => i.product_id === P1.id), '圖片紀錄已刪除');
+    assert(tables.products.some((p) => p.id === P1.id), '產品本身還在');
   })
 );
