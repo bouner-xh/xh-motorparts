@@ -72,7 +72,7 @@ stop_server
 
 echo "== 3. 開發模式 + 模擬 Supabase（管理員名單：admin@example.com）"
 start_mock
-start_server env "${MOCK_ENV[@]}" "${MAIL_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next dev -p $PORT && e2e admin-access product-card-inquiry language-switch locale-text page-h1 hreflang admin-product-form admin-product-category admin-product-import admin-delete admin-inquiries admin-product-list admin-api-errors admin-dashboard-tabs product-detail-cta admin-inquiry-export admin-customers admin-inquiry-events admin-inquiry-reply inquiry-limits inquiry-confirmation-email admin-image-resize admin-product-input product-availability product-search product-urls category-slug-spaces product-seo admin-slug admin-product-update root-redirect sitemap-languages admin-product-names category-covers product-url-case admin-model-case
+start_server env "${MOCK_ENV[@]}" "${MAIL_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next dev -p $PORT && e2e admin-access product-card-inquiry language-switch locale-text page-h1 hreflang admin-product-form admin-product-category admin-product-import admin-delete admin-inquiries admin-product-list admin-api-errors admin-dashboard-tabs product-detail-cta admin-inquiry-export admin-customers admin-inquiry-events admin-inquiry-reply inquiry-limits inquiry-confirmation-email admin-image-resize admin-product-input product-availability product-search product-urls category-slug-spaces product-seo admin-slug admin-product-update root-redirect sitemap-languages admin-product-names category-covers product-url-case admin-model-case admin-category-cover
 stop_server
 
 echo "== 4. 開發模式 + 模擬 Supabase（未設定管理員名單）+ 模擬 Upstash 與每日排程"

@@ -1,5 +1,6 @@
 import {getSupabaseServiceRoleClient} from '@/lib/supabase/server';
 import {storageObjectPath} from '@/lib/storage-path';
+import {isMissingCoverColumn} from '@/lib/category-cover';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
 
@@ -17,7 +18,14 @@ export async function removeUnreferencedImages(service: ServiceClient, urls: str
       console.error('[image-cleanup] reference check failed', error.message);
       continue;
     }
-    if (!data?.length) paths.push(objectPath);
+    if (data?.length) continue;
+    // 分類封面也算使用中（資料庫還沒有封面欄位時，查詢會失敗，代表沒有分類在使用）
+    const {data: categoryUse, error: categoryError} = await service.from('categories').select('id').eq('cover_image', url).limit(1);
+    if (categoryError && !isMissingCoverColumn(categoryError)) {
+      console.error('[image-cleanup] category reference check failed', categoryError.message);
+      continue;
+    }
+    if (!categoryUse?.length) paths.push(objectPath);
   }
 
   if (!paths.length) return;

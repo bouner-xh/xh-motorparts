@@ -1,5 +1,5 @@
 // E2E：分類卡片的封面圖不會破圖
-// 封面順序：已挑好的封面 → 該分類第一個產品的照片 → 預設圖
+// 封面順序：分類自己上傳的封面 → 該分類第一個產品的照片 → 預設圖
 // 使用模擬 Supabase（啟動方式同 product-urls.e2e.cjs）
 const { BASE_URL, withPage, assert, run } = require('./helpers.cjs');
 const { MOCK_URL } = require('./mock-supabase.cjs');
@@ -12,11 +12,12 @@ const i18n = (tw, en) => ({ 'zh-TW': tw, 'zh-CN': tw, en });
 const CAT = { clutch: '10000000-0000-4000-8000-0000000000a1', starter: '10000000-0000-4000-8000-0000000000a2', fork: '10000000-0000-4000-8000-0000000000a3' };
 const SUB = { clutch: '20000000-0000-4000-8000-0000000000a1', starter: '20000000-0000-4000-8000-0000000000a2', fork: '20000000-0000-4000-8000-0000000000a3' };
 const PRODUCT_PHOTO = 'images/products/cylinder/cylinder-003.jpg';
+const OWN_COVER = 'images/products/chain/' + require('node:fs').readdirSync('images/products/chain')[0];
 
 async function seedCategories() {
   await resetMock();
   await seed('categories', [
-    { id: CAT.clutch, slug: 'clutch-housing', sort_order: 10, name_i18n: i18n('離合器系列', 'Clutch'), description_i18n: i18n('離合器', 'Clutch parts') },
+    { id: CAT.clutch, slug: 'clutch-housing', sort_order: 10, name_i18n: i18n('離合器系列', 'Clutch'), description_i18n: i18n('離合器', 'Clutch parts'), cover_image: OWN_COVER },
     { id: CAT.starter, slug: 'starter-motor', sort_order: 11, name_i18n: i18n('啟動系統', 'Starter'), description_i18n: i18n('啟動', 'Starter parts') },
     { id: CAT.fork, slug: 'drum-fork', sort_order: 12, name_i18n: i18n('變數鼓撥插', 'Drum fork'), description_i18n: i18n('撥插', 'Drum fork parts') }
   ]);
@@ -38,7 +39,7 @@ const coverSrc = async (page, path, name) => {
   return img.first().getAttribute('src');
 };
 
-run('分類封面：已挑好的封面、第一個產品的照片、預設圖，三種情況都能載入', () =>
+run('分類封面：自己上傳的封面、第一個產品的照片、預設圖，三種情況都能載入', () =>
   withPage(async (page) => {
     await seedCategories();
     for (const path of ['/zh-TW', '/zh-TW/products', '/en/products']) {
@@ -46,7 +47,7 @@ run('分類封面：已挑好的封面、第一個產品的照片、預設圖，
       const names = en ? ['Clutch', 'Starter', 'Drum fork'] : ['離合器系列', '啟動系統', '變數鼓撥插'];
       const srcs = [];
       for (const name of names) srcs.push(await coverSrc(page, path, name));
-      assert(srcs[0].includes('/legacy-assets/covers/clutch.jpg'), `${path} 離合器系列使用挑好的封面（${srcs[0]}）`);
+      assert(srcs[0].includes(`/legacy-assets/${OWN_COVER.replace(/^images\//, '')}`), `${path} 離合器系列使用自己上傳的封面（${srcs[0]}）`);
       assert(srcs[1].includes('/legacy-assets/products/cylinder/cylinder-003.jpg'), `${path} 啟動系統使用第一個產品的照片（${srcs[1]}）`);
       assert(srcs[2].includes('/legacy-assets/no-image.jpg'), `${path} 沒有照片的分類使用預設圖（${srcs[2]}）`);
       for (const src of srcs) {

@@ -4,6 +4,8 @@ import { isAdminEmail } from '@/lib/admin-auth';
 import { normalizeSlug } from '@/lib/slug';
 import { revalidateCatalog } from '@/lib/revalidate';
 import { dbErrorResponse, invalidInputResponse, isUuid, INVALID_ID_MESSAGE } from '@/lib/admin-api-errors';
+import { COVER_COLUMN_MISSING_MESSAGE, isMissingCoverColumn } from '@/lib/category-cover';
+import { removeUnreferencedImages } from '@/lib/product-image-cleanup';
 
 // 欄位長度上限（A9）
 const categoryPayloadSchema = z.object({
@@ -16,6 +18,8 @@ const categoryPayloadSchema = z.object({
   descriptionZhCn: z.string().max(2000).optional().default(''),
   descriptionEn: z.string().max(2000).optional().default(''),
   sortOrder: z.number().int().default(0),
+  // 封面圖片網址；留空 = 沒有自己的封面（前台改用該分類第一個產品的照片）
+  coverImage: z.string().trim().max(1000).optional().default(''),
 });
 
 async function getAuthenticatedUser() {
@@ -46,10 +50,18 @@ export async function GET() {
   const service = getSupabaseServiceRoleClient();
   if (!service) return Response.json({ error: 'Missing service role' }, { status: 500 });
 
-  const { data, error } = await service
+  // 資料庫還沒有封面欄位時，改用不含封面的查詢
+  let withCover = await service
     .from('categories')
-    .select('id, slug, name_i18n, description_i18n, sort_order')
+    .select('id, slug, name_i18n, description_i18n, sort_order, cover_image')
     .order('sort_order', { ascending: true });
+  if (withCover.error && isMissingCoverColumn(withCover.error)) {
+    withCover = await service
+      .from('categories')
+      .select('id, slug, name_i18n, description_i18n, sort_order')
+      .order('sort_order', { ascending: true }) as typeof withCover;
+  }
+  const { data, error } = withCover;
 
   if (error) return dbErrorResponse('categories GET', error);
 
@@ -59,6 +71,7 @@ export async function GET() {
     name_i18n: Record<string, string> | null;
     description_i18n: Record<string, string> | null;
     sort_order: number | null;
+    cover_image?: string | null;
   }
 
   const [subCategoryCounts, productCounts] = await Promise.all([
@@ -76,6 +89,7 @@ export async function GET() {
     descriptionZhCn: item.description_i18n?.['zh-CN'] || '',
     descriptionEn: item.description_i18n?.en || '',
     sortOrder: item.sort_order ?? 0,
+    coverImage: item.cover_image || '',
     subCategoryCount: subCategoryCounts.get(item.id) || 0,
     productCount: productCounts.get(item.id) || 0
   }));
@@ -94,16 +108,22 @@ export async function POST(request: Request) {
   if (!parsed.success) return invalidInputResponse();
   const payload = parsed.data;
 
-  const { data: inserted, error } = await service
+  const baseRow: Record<string, unknown> = {
+    slug: payload.slug,
+    name_i18n: { 'zh-TW': payload.nameZhTw, 'zh-CN': payload.nameZhCn, en: payload.nameEn },
+    description_i18n: { 'zh-TW': payload.descriptionZhTw, 'zh-CN': payload.descriptionZhCn, en: payload.descriptionEn },
+    sort_order: payload.sortOrder
+  };
+  // 有封面才寫入封面欄位；資料庫還沒有該欄位時，沒有封面的新增照常成功，有封面則提示先執行更新語法
+  const insertResult = await service
     .from('categories')
-    .insert({
-      slug: payload.slug,
-      name_i18n: { 'zh-TW': payload.nameZhTw, 'zh-CN': payload.nameZhCn, en: payload.nameEn },
-      description_i18n: { 'zh-TW': payload.descriptionZhTw, 'zh-CN': payload.descriptionZhCn, en: payload.descriptionEn },
-      sort_order: payload.sortOrder
-    })
+    .insert(payload.coverImage ? { ...baseRow, cover_image: payload.coverImage } : baseRow)
     .select('id')
     .single();
+  if (insertResult.error && isMissingCoverColumn(insertResult.error)) {
+    return Response.json({ error: COVER_COLUMN_MISSING_MESSAGE }, { status: 409 });
+  }
+  const { data: inserted, error } = insertResult;
 
   if (error) return dbErrorResponse('categories POST', error);
   revalidateCatalog();
@@ -142,17 +162,28 @@ export async function PUT(request: Request) {
   if (!parsed.success || !parsed.data.id) return invalidInputResponse();
   const payload = parsed.data;
 
+  const updateRow: Record<string, unknown> = {
+    slug: payload.slug,
+    name_i18n: { 'zh-TW': payload.nameZhTw, 'zh-CN': payload.nameZhCn, en: payload.nameEn },
+    description_i18n: { 'zh-TW': payload.descriptionZhTw, 'zh-CN': payload.descriptionZhCn, en: payload.descriptionEn },
+    sort_order: payload.sortOrder
+  };
+  // 先記下目前的封面，換掉或移除後清掉沒人使用的舊圖檔
+  const { data: current, error: currentError } = await service.from('categories').select('cover_image').eq('id', payload.id).maybeSingle();
+  const hasCoverColumn = !currentError;
+  const oldCover = ((current as { cover_image?: string | null } | null)?.cover_image) || '';
+
+  // 資料庫有封面欄位才一起寫入（留空 = 移除封面）；沒有欄位時：沒填封面照常儲存，填了就提示先執行更新語法
+  if (!hasCoverColumn && payload.coverImage) {
+    return Response.json({ error: COVER_COLUMN_MISSING_MESSAGE }, { status: 409 });
+  }
   const { error } = await service
     .from('categories')
-    .update({
-      slug: payload.slug,
-      name_i18n: { 'zh-TW': payload.nameZhTw, 'zh-CN': payload.nameZhCn, en: payload.nameEn },
-      description_i18n: { 'zh-TW': payload.descriptionZhTw, 'zh-CN': payload.descriptionZhCn, en: payload.descriptionEn },
-      sort_order: payload.sortOrder
-    })
+    .update(hasCoverColumn ? { ...updateRow, cover_image: payload.coverImage || null } : updateRow)
     .eq('id', payload.id);
 
   if (error) return dbErrorResponse('categories PUT', error);
+  if (oldCover && oldCover !== payload.coverImage) await removeUnreferencedImages(service, [oldCover]);
   revalidateCatalog();
   return Response.json({ ok: true });
 }
@@ -177,8 +208,12 @@ export async function DELETE(request: Request) {
     );
   }
 
+  const { data: current } = await service.from('categories').select('cover_image').eq('id', id).maybeSingle();
+  const oldCover = ((current as { cover_image?: string | null } | null)?.cover_image) || '';
+
   const { error } = await service.from('categories').delete().eq('id', id);
   if (error) return dbErrorResponse('categories DELETE', error);
+  if (oldCover) await removeUnreferencedImages(service, [oldCover]);
 
   revalidateCatalog();
   return Response.json({ ok: true });
