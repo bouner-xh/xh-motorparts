@@ -48,6 +48,30 @@ export interface CategorySummary {
   key: CategoryKey;
   name: string;
   description: string;
+  // 該分類第一個已上架且有照片的產品的照片（分類沒有挑好封面時使用）
+  coverImage?: string;
+}
+
+// 每個分類取第一個已上架且有照片的產品的照片，給分類卡片當封面
+async function getCategoryCoverImages(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>) {
+  const covers = new Map<string, string>();
+  try {
+    const {data} = await supabase
+      .from('products')
+      .select('id,category:categories!inner(slug)')
+      .eq('is_active', true)
+      .order('model_number', {ascending: true});
+    const rows = (data || []) as Array<{id: string; category: {slug?: string} | Array<{slug?: string}> | null}>;
+    const imageMap = await getPrimaryImageMap(supabase, rows.map((row) => row.id));
+    for (const row of rows) {
+      const slug = getPrimaryCategorySlug(row.category);
+      const image = imageMap.get(row.id);
+      if (slug && image && image !== defaultImagePath && !covers.has(slug)) covers.set(slug, image);
+    }
+  } catch {
+    // 查不到就用預設圖
+  }
+  return covers;
 }
 
 export const getCategorySummaries = cache(async (locale: Locale): Promise<CategorySummary[]> => {
@@ -71,11 +95,13 @@ export const getCategorySummaries = cache(async (locale: Locale): Promise<Catego
       throw error;
     }
 
+    const covers = await getCategoryCoverImages(supabase);
     return data.map((item) => ({
       key: item.slug as CategoryKey,
       name: item.name_i18n?.[locale] || categoryNames[locale][item.slug as CategoryKey] || item.slug,
       description:
-        item.description_i18n?.[locale] || categoryDescriptions[locale][item.slug as CategoryKey] || ''
+        item.description_i18n?.[locale] || categoryDescriptions[locale][item.slug as CategoryKey] || '',
+      coverImage: covers.get(item.slug)
     }));
   } catch {
     return categoryKeys.map((key) => ({

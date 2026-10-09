@@ -68,7 +68,7 @@ export default async function LocaleHome({
         {categories.map((category) => (
           <Link key={category.key} className="card category-card" href={`/${localeValue}/products/${encodeSegment(category.key)}`}>
             <div className="category-card__media">
-              <Image src={getCategoryCoverUrl(category.key)} alt={category.name} fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized />
+              <Image src={getCategoryCoverUrl(category.key, category.coverImage)} alt={category.name} fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized />
               <div className="category-card__overlay" />
             </div>
             <div className="category-card__body">
