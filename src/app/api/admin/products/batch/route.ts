@@ -3,6 +3,7 @@ import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib
 import { isAdminEmail } from '@/lib/admin-auth';
 import { revalidateCatalog } from '@/lib/revalidate';
 import { getProductImageUrls, removeUnreferencedImages } from '@/lib/product-image-cleanup';
+import { MAX_STOCK_QUANTITY } from '@/lib/product-form';
 import { describeDbError, INVALID_INPUT_MESSAGE, type DbErrorLike } from '@/lib/admin-api-errors';
 
 // 每列的錯誤訊息：原始資料庫錯誤記在伺服器 log，畫面顯示中文說明（A9）
@@ -22,7 +23,7 @@ const batchProductSchema = z.object({
   nameI18n: i18nSchema,
   // 沒填（null／未提供）時：新產品用預設值，既有產品保留原本內容（A4）
   specifications: z.array(z.string().max(200)).max(50).nullish(),
-  stockQuantity: z.number().int().nonnegative().nullish(),
+  stockQuantity: z.number().int().nonnegative().max(MAX_STOCK_QUANTITY).nullish(),
   isActive: z.boolean().default(true),
   imagePath: z.string().max(1000).optional().default('')
 });

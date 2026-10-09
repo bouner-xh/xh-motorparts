@@ -54,7 +54,7 @@ run('錯誤訊息指出欄位：庫存小數、型號重複、欄位太長', () 
     await fillBasics(form, 'STOCK-01');
     await form.getByLabel('庫存').fill('1.5');
     await form.getByRole('button', { name: '新增產品' }).click();
-    await page.getByText('庫存必須是 0 以上的整數').waitFor({ timeout: 10000 });
+    await page.getByText('庫存必須是 0 到 1,000,000 的整數').waitFor({ timeout: 10000 });
     assert(!(await mockState()).tables.products.some((p) => p.model_number === 'STOCK-01'), '庫存填小數：提示並且沒有存檔');
 
     await form.getByLabel('庫存').fill('3');

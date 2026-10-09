@@ -92,6 +92,8 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `admin-inquiries.e2e.cjs` | 詢價狀態篩選與筆數、搜尋（含型號）、分頁、Esc 關閉、最後更新時間（A6） | 模擬 Supabase |
 | `admin-product-list.e2e.cjs` | 產品搜尋篩選分頁縮圖、正在編輯與取消、複製、未存檔圖片清除（A7） | 模擬 Supabase |
 | `admin-api-errors.e2e.cjs` | 錯誤訊息為中文說明、長度與 ID 檢查、不自動建立分類（A9） | 模擬 Supabase |
+| `admin-slug.e2e.cjs` | 後台分類／子分類代號自動轉小寫加連字號、中文代號被擋下、API 也會轉換 | 模擬 Supabase |
+| `admin-product-update.e2e.cjs` | 更新產品：已刪除的產品不回報成功、庫存上限、改型號確認、切換前確認未儲存內容、刪除確認、列表上架／下架 | 模擬 Supabase |
 | `admin-dashboard-tabs.e2e.cjs` | 後台分頁與總覽、網址記住分頁、鍵盤操作、切換不遺失表單、待處理數量同步、手機版、登出（A8） | 模擬 Supabase |
 | `product-detail-cta.e2e.cjs` | 產品頁不用捲動就看得到「加入詢價清單」、照片 1:1（D15） | 模擬 Supabase |
 | `admin-inquiry-export.e2e.cjs` | 詢價匯出 CSV：篩選結果、每個品項一列、BOM、防公式注入、未登入 401（A6 ①） | 模擬 Supabase |
