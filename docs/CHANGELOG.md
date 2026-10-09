@@ -25,6 +25,17 @@
 
 ---
 
+## 2026-10-09（第三十二批）：每頁 html lang 與網址語系一致
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| L2 | `<html lang>` 改由 `[locale]/layout` 輸出，英文頁不再是 `zh-TW`；移除 `src/app/layout.tsx` 與 `src/app/page.tsx`；根網址轉 `/en` 改放 `next.config.ts` 的 `redirects()`（307）；預設 `description` 移到 `[locale]/layout` | `src/app/[locale]/layout.tsx`、`next.config.ts` | `html-lang.e2e.cjs`、`root-redirect.e2e.cjs` |
+
+- 發現：專案根目錄的 `middleware.ts` 不會被載入（程式在 `src/` 底下，Next 只認 `src/middleware.ts`），所以語言偵測從未運作；這次不啟用，列為 PROGRESS 的 L5 待決定。
+- 不改資料庫、API，不新增套件。還原：Revert 對應 PR。
+
+---
+
 ## 2026-10-09（第三十、三十一批）：英文與中文文案
 
 | 項目 | 內容 | 主要檔案 | 測試 |

@@ -41,6 +41,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // 根網址一律轉到英文（預設語系）。沒有根頁面，<html> 由 [locale]/layout 提供，
+  // 所以轉址放在這裡；專案根目錄的 middleware.ts 因為程式在 src/ 底下而不會被載入
+  async redirects() {
+    return [{ source: '/', destination: '/en', permanent: false }];
+  },
   async headers() {
     return [
       {
