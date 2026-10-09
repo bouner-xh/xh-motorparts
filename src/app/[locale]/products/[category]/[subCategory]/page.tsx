@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
 import { getBaseUrl, localeAlternates } from '@/lib/site';
-import { getCategoryBySlug, getCategoryProducts, getSubCategoryBySlug, getCategorySummaries, getSubCategories } from '@/lib/catalog-service';
+import { getCategoryBySlug, getCategoryProducts, getSubCategoryBySlug, getCategorySummaries, getSubCategories, resolveCanonicalProductPath } from '@/lib/catalog-service';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { ProductCard } from '@/components/products/ProductCard';
@@ -71,6 +71,9 @@ export default async function SubCategoryPage({
   ]);
 
   if (!categoryData || !subCategoryData) {
+    // 網址大小寫寫錯時轉到正確的網址
+    const canonical = await resolveCanonicalProductPath([category, decodedSubCategory]);
+    if (canonical) permanentRedirect(`/${localeValue}${canonical}`);
     notFound();
   }
 

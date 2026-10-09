@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { InquiryForm } from '@/components/products/InquiryForm';
 import { ProductSchema } from '@/components/products/ProductSchema';
 import { toProductImageUrl } from '@/lib/assets';
-import { getCatalogProduct, getCategoryBySlug, getSubCategoryBySlug } from '@/lib/catalog-service';
+import { getCatalogProduct, getCategoryBySlug, getSubCategoryBySlug, resolveCanonicalProductPath } from '@/lib/catalog-service';
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
 import { getBaseUrl, localeAlternates } from '@/lib/site';
 import { localized } from '@/lib/localized-text';
@@ -96,6 +96,9 @@ export default async function ProductDetailPage({
   ]);
 
   if (!categoryData || !product || !subCategoryData) {
+    // 網址大小寫寫錯時轉到正確的網址（分類、子分類、型號都不分大小寫）
+    const canonical = await resolveCanonicalProductPath([category, decodedSubCategory, decodedModel]);
+    if (canonical) permanentRedirect(`/${localeValue}${canonical}`);
     notFound();
   }
 
