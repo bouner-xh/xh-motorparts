@@ -25,6 +25,16 @@
 
 ---
 
+## 2026-10-09（第三十三批）：sitemap 英文優先
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| L4 | 英文排最前；每個網址附 en／zh-TW／zh-CN／x-default 對應頁；移除每次都是「現在」的 lastmod 與 changefreq | `src/app/sitemap.ts` | `sitemap-languages.e2e.cjs`、`product-urls`、`category-slug-spaces` |
+
+- 不改資料庫、API，不新增套件。還原：Revert 對應 PR。
+
+---
+
 ## 2026-10-09（第三十二批）：每頁 html lang 與網址語系一致
 
 | 項目 | 內容 | 主要檔案 | 測試 |
