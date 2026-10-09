@@ -95,7 +95,8 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `admin-slug.e2e.cjs` | 後台分類／子分類代號自動轉小寫加連字號、中文代號被擋下、API 也會轉換 | 模擬 Supabase |
 | `admin-product-update.e2e.cjs` | 更新產品：已刪除的產品不回報成功、庫存上限、改型號確認、切換前確認未儲存內容、刪除確認、列表上架／下架 | 模擬 Supabase |
 | `admin-product-names.e2e.cjs` | 產品名稱以英文為主：只填英文可新增、沒填的語言不存空字串、前台與後台列表顯示英文名稱、沒有英文名稱被擋下 | 模擬 Supabase |
-| `category-covers.e2e.cjs` | 分類卡片封面：挑好的封面 → 第一個產品的照片 → 預設圖，三種情況圖片都能載入 | 模擬 Supabase |
+| `category-covers.e2e.cjs` | 分類卡片封面：自己上傳的封面 → 第一個產品的照片 → 預設圖，三種情況圖片都能載入 | 模擬 Supabase |
+| `admin-category-cover.e2e.cjs` | 後台大分類上傳封面：自動縮圖、前台卡片使用、換圖與移除後清掉舊圖檔、取消編輯刪除沒存檔的圖、資料庫沒有封面欄位時網站與後台照常運作並提示先執行更新語法 | 模擬 Supabase |
 | `product-url-case.e2e.cjs` | 產品網址不分大小寫：分類、子分類、型號大小寫寫錯會轉到正確網址（308、保留語系）；不存在的網址仍 404、不會無限轉址 | 模擬 Supabase |
 | `admin-model-case.e2e.cjs` | 型號一律存成大寫（表單離開欄位自動轉、API 與批量匯入）、不分大小寫比對重複型號、舊小寫型號重存不跳改型號確認、匯入不會重複建立 | 模擬 Supabase |
 | `root-redirect.e2e.cjs` | 根網址一律轉到 /en、語言切換列 EN 排第一、中文版網址照舊可用 | 無資料庫即可 |

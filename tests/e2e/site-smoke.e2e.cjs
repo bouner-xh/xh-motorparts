@@ -26,9 +26,12 @@ run('主要頁面與本站資源都能正常載入', () =>
     }
 
     await page.goto(`${BASE_URL}/zh-TW`, { waitUntil: 'networkidle' });
-    const covers = await page.locator('img[src*="legacy-assets/covers"], img[src*="covers%2F"]').evaluateAll((imgs) =>
-      imgs.map((img) => ({ src: img.currentSrc || img.src, ok: img.complete && img.naturalWidth > 0 }))
-    );
-    assert(covers.length > 0 && covers.every((c) => c.ok), `首頁分類封面圖 ${covers.length} 張皆正常顯示`);
+    // 分類卡片的封面圖（沒有封面時是預設圖）都要能載入
+    const srcs = await page.locator('.category-card img').evaluateAll((imgs) => imgs.map((img) => img.getAttribute('src')));
+    assert(srcs.length > 0, `首頁有分類卡片（${srcs.length} 張）`);
+    for (const src of srcs) {
+      const res = await page.request.get(new URL(src, BASE_URL).toString());
+      assert(res.status() === 200 && (res.headers()['content-type'] || '').startsWith('image/'), `首頁分類封面圖可載入：${src}`);
+    }
   })
 );

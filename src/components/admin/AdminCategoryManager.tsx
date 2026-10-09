@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Locale } from '@/lib/catalog';
 import { normalizeSlug, SLUG_MESSAGE } from '@/lib/slug';
+import { resizeProductImage } from '@/lib/image-resize';
+import { toProductImageUrl } from '@/lib/product-image-url';
 
 interface AdminCategoryItem {
   id: string;
@@ -14,6 +16,7 @@ interface AdminCategoryItem {
   descriptionZhCn: string;
   descriptionEn: string;
   sortOrder: number;
+  coverImage: string;
   subCategoryCount: number;
   productCount: number;
 }
@@ -28,6 +31,7 @@ interface CategoryFormState {
   descriptionZhCn: string;
   descriptionEn: string;
   sortOrder: number;
+  coverImage: string;
 }
 
 type StatusType = 'idle' | 'info' | 'success' | 'error';
@@ -40,7 +44,8 @@ const emptyFormState: CategoryFormState = {
   descriptionZhTw: '',
   descriptionZhCn: '',
   descriptionEn: '',
-  sortOrder: 0
+  sortOrder: 0,
+  coverImage: ''
 };
 
 // locale 由後台頁面傳入，目前分類表單固定顯示繁中
@@ -51,6 +56,9 @@ export function AdminCategoryManager(_props: { locale: Locale }) {
   const [statusType, setStatusType] = useState<StatusType>('idle');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  // 已上傳但還沒存檔的封面；換圖、移除或取消時刪除，避免留在儲存空間
+  const [unsavedUpload, setUnsavedUpload] = useState('');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
@@ -85,6 +93,46 @@ export function AdminCategoryManager(_props: { locale: Locale }) {
     };
   }, [loadCategories]);
 
+  // 刪除已上傳但沒有存檔的封面（伺服器只會刪除沒有分類或產品使用的檔案）
+  function discardUnsavedUpload() {
+    if (!unsavedUpload) return;
+    void fetch(`/api/admin/upload-image?url=${encodeURIComponent(unsavedUpload)}`, { method: 'DELETE' });
+    setUnsavedUpload('');
+  }
+
+  async function uploadCover(file: File) {
+    setIsUploading(true);
+    setStatus('info', `封面上傳中：${file.name}`);
+    try {
+      // 上傳前先縮小照片，買家瀏覽時不用下載數 MB 的原檔
+      const prepared = await resizeProductImage(file);
+      const body = new FormData();
+      body.append('file', prepared);
+      const response = await fetch('/api/admin/upload-image', { method: 'POST', body });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.imagePath) throw new Error(result.error || `封面上傳失敗（HTTP ${response.status}）`);
+      discardUnsavedUpload();
+      setUnsavedUpload(result.imagePath);
+      setForm((p) => ({ ...p, coverImage: result.imagePath }));
+      setStatus('success', '封面上傳成功，按下「更新大分類」後才會儲存');
+    } catch (error) {
+      setStatus('error', error instanceof Error ? error.message : '封面上傳失敗');
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  function removeCover() {
+    discardUnsavedUpload();
+    setForm((p) => ({ ...p, coverImage: '' }));
+    setStatus('info', form.id ? '已移除封面，按下「更新大分類」後才會儲存' : '已移除封面');
+  }
+
+  function clearForm() {
+    discardUnsavedUpload();
+    setForm(emptyFormState);
+  }
+
   async function submitCategory(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!normalizeSlug(form.slug)) {
@@ -103,7 +151,8 @@ export function AdminCategoryManager(_props: { locale: Locale }) {
       descriptionZhTw: form.descriptionZhTw.trim(),
       descriptionZhCn: form.descriptionZhCn.trim(),
       descriptionEn: form.descriptionEn.trim(),
-      sortOrder: Number(form.sortOrder)
+      sortOrder: Number(form.sortOrder),
+      coverImage: form.coverImage.trim()
     };
 
     const method = form.id ? 'PUT' : 'POST';
@@ -119,6 +168,7 @@ export function AdminCategoryManager(_props: { locale: Locale }) {
       if (!response.ok) throw new Error(result.error || '儲存失敗');
 
       setStatus('success', '儲存成功');
+      setUnsavedUpload('');
       setForm(emptyFormState);
       await loadCategories();
       // 通知其他元件分類已更新 (如子目錄管理和產品管理)
@@ -131,6 +181,7 @@ export function AdminCategoryManager(_props: { locale: Locale }) {
   }
 
   function startEdit(row: AdminCategoryItem) {
+    discardUnsavedUpload();
     setForm({
       id: row.id,
       slug: row.slug,
@@ -140,7 +191,8 @@ export function AdminCategoryManager(_props: { locale: Locale }) {
       descriptionZhTw: row.descriptionZhTw,
       descriptionZhCn: row.descriptionZhCn,
       descriptionEn: row.descriptionEn,
-      sortOrder: row.sortOrder
+      sortOrder: row.sortOrder,
+      coverImage: row.coverImage
     });
   }
 
@@ -215,9 +267,31 @@ export function AdminCategoryManager(_props: { locale: Locale }) {
           <input type="number" value={form.sortOrder} onChange={e => setForm(p => ({ ...p, sortOrder: Number(e.target.value) }))} />
         </label>
 
+        <label>
+          封面圖片
+          <small>選填；沒有上傳時，首頁與產品目錄的分類卡片會用該分類第一個產品的照片。照片會自動縮小後再上傳。</small>
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            disabled={isUploading}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) void uploadCover(file);
+            }}
+          />
+        </label>
+        {form.coverImage ? (
+          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={toProductImageUrl(form.coverImage)} alt="目前的封面" width={96} height={64} style={{ objectFit: 'cover', borderRadius: '6px' }} />
+            <button type="button" onClick={removeCover} disabled={isUploading || isSubmitting} style={{ background: '#334155' }}>移除封面</button>
+          </div>
+        ) : null}
+
         <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1rem' }}>
-          <button type="submit" disabled={isSubmitting}>{form.id ? '更新大分類' : '新增大分類'}</button>
-          <button type="button" onClick={() => setForm(emptyFormState)} style={{ background: '#334155' }}>清空表單</button>
+          <button type="submit" disabled={isSubmitting || isUploading}>{form.id ? '更新大分類' : '新增大分類'}</button>
+          <button type="button" onClick={clearForm} style={{ background: '#334155' }}>清空表單</button>
         </div>
       </form>
 

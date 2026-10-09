@@ -50,7 +50,7 @@ export interface CategorySummary {
   key: CategoryKey;
   name: string;
   description: string;
-  // 該分類第一個已上架且有照片的產品的照片（分類沒有挑好封面時使用）
+  // 分類封面圖：分類自己上傳的封面，沒有就用第一個已上架且有照片的產品的照片
   coverImage?: string;
 }
 
@@ -88,10 +88,15 @@ export const getCategorySummaries = cache(async (locale: Locale): Promise<Catego
   }
 
   try {
-    const {data, error} = await supabase
+    // 資料庫還沒有封面欄位時，改用不含封面的查詢，網站照常運作
+    let result: {data: Array<{slug: string; name_i18n: Record<string, string> | null; description_i18n: Record<string, string> | null; cover_image?: string | null}> | null; error: unknown} = await supabase
       .from('categories')
-      .select('slug,name_i18n,description_i18n')
+      .select('slug,name_i18n,description_i18n,cover_image')
       .order('sort_order', {ascending: true});
+    if (result.error) {
+      result = await supabase.from('categories').select('slug,name_i18n,description_i18n').order('sort_order', {ascending: true});
+    }
+    const {data, error} = result;
 
     if (error || !data?.length) {
       throw error;
@@ -103,7 +108,8 @@ export const getCategorySummaries = cache(async (locale: Locale): Promise<Catego
       name: item.name_i18n?.[locale] || categoryNames[locale][item.slug as CategoryKey] || item.slug,
       description:
         item.description_i18n?.[locale] || categoryDescriptions[locale][item.slug as CategoryKey] || '',
-      coverImage: covers.get(item.slug)
+      // 封面順序：分類自己上傳的封面 → 該分類第一個已上架且有照片的產品的照片
+      coverImage: item.cover_image || covers.get(item.slug)
     }));
   } catch {
     return categoryKeys.map((key) => ({

@@ -50,6 +50,8 @@ const FOREIGN_KEYS = [
   { table: 'product_images', column: 'product_id', ref: 'products', onDelete: 'cascade' },
   { table: 'inquiry_events', column: 'inquiry_id', ref: 'inquiry_requests', onDelete: 'set null' }
 ];
+// 模擬「資料表缺少某個欄位」（POST /__mock/drop-column {table, column}）：選取或寫入該欄位時回 42703，其他照常
+let MISSING_COLUMNS = {};
 // 模擬「資料表尚未建立」（POST /__mock/drop），測試功能在資料表不存在時的行為
 let MISSING = new Set();
 // 模擬 Resend 寄信（測試時設定 RESEND_API_URL=http://127.0.0.1:54321）：記錄寄出的信，可模擬寄信失敗
@@ -179,6 +181,20 @@ function handleRest(req, url, raw) {
   const table = url.pathname.slice('/rest/v1/'.length);
   REST_LOG.push(`${req.method} ${table}`);
   if (MISSING.has(table)) return dbError(404, 'PGRST205', `Could not find the table 'public.${table}' in the schema cache`);
+  for (const column of MISSING_COLUMNS[table] || []) {
+    const selected = (url.searchParams.get('select') || '*').split(',').map((token) => token.trim()).includes(column);
+    let written = false;
+    if (req.method === 'POST' || req.method === 'PATCH') {
+      try {
+        const body = JSON.parse(raw || '{}');
+        written = (Array.isArray(body) ? body : [body]).some((item) => item && column in item);
+      } catch {
+        written = false;
+      }
+    }
+    const filtered = url.searchParams.has(column);
+    if (selected || written || filtered) return dbError(400, '42703', `column ${table}.${column} does not exist`);
+  }
   if (!TABLES[table]) TABLES[table] = [];
   const select = url.searchParams.get('select') || '*';
   const now = new Date().toISOString();
@@ -330,6 +346,7 @@ const server = http.createServer((req, res) => {
 
     // 測試用：重設資料、查看目前資料與已上傳檔案
     if (url.pathname === '/__mock/reset') {
+      MISSING_COLUMNS = {};
       TABLES = seedTables();
       STORAGE = new Set();
       STORAGE_META = {};
@@ -371,6 +388,11 @@ const server = http.createServer((req, res) => {
       const message = JSON.parse(raw || '{}');
       EMAILS.push({ ...message, authorization: req.headers.authorization });
       return send(res, 200, { id: `mock-email-${EMAILS.length}` });
+    }
+    if (url.pathname === '/__mock/drop-column' && req.method === 'POST') {
+      const { table, column } = JSON.parse(raw || '{}');
+      MISSING_COLUMNS[table] = [...(MISSING_COLUMNS[table] || []), column];
+      return send(res, 200, { ok: true });
     }
     if (url.pathname === '/__mock/drop' && req.method === 'POST') {
       const { table } = JSON.parse(raw || '{}');
