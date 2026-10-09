@@ -25,6 +25,20 @@
 
 ---
 
+## 2026-10-09（第二十七批）：後台分類代號自動轉換、更新產品改善
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| 分類代號 | 輸入時離開欄位自動轉小寫加連字號（`Clutch Housing` → `clutch-housing`）；API 儲存前也轉換；沒有任何英數字的代號擋下並說明。子分類的「上層分類」欄位不轉換 | `src/lib/slug.ts`（新）、`AdminCategoryManager.tsx`、`AdminSubCategoryManager.tsx`、`api/admin/categories`、`api/admin/sub-categories` | `tests/admin/slug.test.mts`、`admin-slug.e2e.cjs` |
+| U1 | 更新不存在的產品回 404 | `api/admin/products/route.ts` | `admin-product-update.e2e.cjs` |
+| U2 | 庫存上限 1,000,000 | `product-form.ts`、`api/admin/products`、`api/admin/products/batch` | `product-form.test.mts`、`admin-product-update`、`admin-product-input` |
+| U3–U6 | 改型號確認、未儲存內容確認、刪除確認寫出型號、列表上架／下架 | `AdminProductManager.tsx` | `admin-product-update.e2e.cjs` |
+
+- 不改資料庫結構，不新增套件。API 變更：分類 API 的 `slug` 儲存前會被轉成標準格式；產品 PUT 對不存在的產品改回 404、庫存超過上限回 400。
+- 還原：Revert 對應 PR。
+
+---
+
 ## 2026-10-06（第二十六批）：產品頁標題與描述、robots.txt（SEO 調整）
 
 PR：[#31](https://github.com/bouner-xh/xh-motorparts/pull/31)（2026-10-06 正式站確認標題、描述與 robots.txt 已更新）
