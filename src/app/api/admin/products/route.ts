@@ -130,6 +130,22 @@ async function bindPrimaryImage(service: ServiceClient, productId: string, image
   }
 }
 
+// 移除產品的圖片紀錄，並刪除沒有其他產品使用的圖檔（U7）
+async function clearProductImages(service: ServiceClient, productId: string) {
+  try {
+    const urls = await getProductImageUrls(service, productId);
+    if (!urls.length) return;
+    const {error} = await service.from('product_images').delete().eq('product_id', productId);
+    if (error) {
+      console.error('clearProductImages delete error:', error.message);
+      return;
+    }
+    await removeUnreferencedImages(service, urls);
+  } catch (err) {
+    console.error('clearProductImages exception:', err);
+  }
+}
+
 async function buildImageMap(service: ServiceClient, productIds: string[]) {
   const map = new Map<string, string>();
 
@@ -351,7 +367,12 @@ export async function PUT(request: Request) {
     return Response.json({error: '找不到這筆產品，可能已被刪除，請重新載入列表', requestId}, {status: 404});
   }
 
-  await bindPrimaryImage(service, productId, payload.imagePath);
+  // 圖片網址留空 = 移除主圖（U7）；其他情況綁定新圖
+  if (payload.imagePath.trim()) {
+    await bindPrimaryImage(service, productId, payload.imagePath);
+  } else {
+    await clearProductImages(service, productId);
+  }
 
   revalidateCatalog();
   return Response.json({ok: true, requestId});
