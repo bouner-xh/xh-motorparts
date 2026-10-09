@@ -3,7 +3,7 @@
 const { chromium } = require('playwright');
 const { BASE_URL, assert, run } = require('./helpers.cjs');
 
-const ORDER = ['9 大品類', '開始合作', '全球採購商選擇協皇', '我們不是最大的'];
+const ORDER = ['摩托車核心零件，依品類一站查詢', '開始合作', '全球採購商選擇協皇', '我們不是最大的'];
 const MUST_KEEP = ['我們的名字不會出現在你的摩托車上', '— 協皇企業，台灣，1990 至今', '摩托車零件產業裡，有太多廠商以價格競爭。', '那些每年回來找我們的採購夥伴。'];
 
 run('首頁區塊順序與內容', async () => {

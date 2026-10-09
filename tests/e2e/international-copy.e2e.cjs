@@ -60,3 +60,20 @@ run('繁中、簡中聯絡頁與關於頁同步', () =>
     }
   })
 );
+
+run('首頁品類區塊的標題與說明：不寫死品類數量或品項（三種語言）', () =>
+  withPage(async (page) => {
+    // 只檢查標題與說明文字；沒有資料庫時下方的分類卡片是備用的固定清單，不在檢查範圍
+    for (const [loc, title, bad] of [
+      ['en', 'Core Motorcycle Parts, Organized by Category', /\b9 Major|seals|electrical cables/i],
+      ['zh-TW', '摩托車核心零件，依品類一站查詢', /9 大品類|密封件|電氣線材/],
+      ['zh-CN', '摩托车核心零件，按品类一站查询', /9 大品类|密封件|电气线材/]
+    ]) {
+      await page.goto(`${BASE_URL}/${loc}`);
+      const intro = page.locator('main h2', { hasText: title }).locator('xpath=..');
+      await intro.waitFor();
+      const intro_text = await intro.innerText();
+      assert(!bad.test(intro_text), `${loc} 標題與說明沒有寫死的品類數量或品項`);
+    }
+  })
+);

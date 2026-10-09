@@ -50,8 +50,8 @@ export const homeContent: Record<Locale, {
       ]
     },
     categoryIntro: {
-      title: '9 大品類，涵蓋摩托車核心零件需求',
-      subtitle: '從引擎內部到傳動系統，從密封件到電氣線材，我們的產品線設計只有一個邏輯：讓採購商不需要東奔西跑，一站解決。'
+      title: '摩托車核心零件，依品類一站查詢',
+      subtitle: '從引擎內部到傳動系統，我們的產品線只有一個設計邏輯：讓採購商不需要東奔西跑，一站解決。'
     },
     whyChooseUs: {
       title: '全球採購商選擇協皇的理由，不是因為我們最便宜。',
@@ -97,8 +97,8 @@ export const homeContent: Record<Locale, {
       ]
     },
     categoryIntro: {
-      title: '9 大品类，涵盖摩托车核心零件需求',
-      subtitle: '从引擎内部到传动系统，从密封件到电气线材，我们的产品线设计只有一个逻辑：让采购商不需要东奔西跑，一站解决。'
+      title: '摩托车核心零件，按品类一站查询',
+      subtitle: '从引擎内部到传动系统，我们的产品线只有一个设计逻辑：让采购商不需要东奔西跑，一站解决。'
     },
     whyChooseUs: {
       title: '全球采购商选择协皇的理由，不是因为我们最便宜。',
@@ -144,8 +144,8 @@ export const homeContent: Record<Locale, {
       ]
     },
     categoryIntro: {
-      title: '9 Major Categories, Covering Core Motorcycle Parts',
-      subtitle: 'From engine internals to transmission systems, from seals to electrical cables, our product line is designed with one logic: allowing buyers to solve everything in one stop.'
+      title: 'Core Motorcycle Parts, Organized by Category',
+      subtitle: 'From engine internals to transmission systems, our product line is designed around one idea: letting buyers find what they need in one place.'
     },
     whyChooseUs: {
       title: 'The reason global buyers choose Xie Huang is not because we are the cheapest.',
