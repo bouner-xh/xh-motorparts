@@ -3,6 +3,6 @@ import {locales} from '../lib/catalog';
 
 export const routing = defineRouting({
   locales: locales as unknown as string[],
-  defaultLocale: 'zh-TW',
+  defaultLocale: 'en',
   localePrefix: 'always'
 });

@@ -16,7 +16,7 @@ import { INQUIRY_LIMITS } from '@/lib/inquiry-limits';
 export default function InquiryCartPage() {
   const t = useTranslations('inquiry');
   const params = useParams();
-  const locale = (params.locale as string) || 'zh-TW';
+  const locale = (params.locale as string) || 'en';
 
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
   const [status, setStatus] = useState<string>('');

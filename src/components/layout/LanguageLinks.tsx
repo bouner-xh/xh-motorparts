@@ -3,9 +3,9 @@
 import { Link, usePathname } from '@/i18n/navigation';
 
 const languages = [
+  { locale: 'en', label: 'EN' },
   { locale: 'zh-TW', label: '繁中' },
   { locale: 'zh-CN', label: '简中' },
-  { locale: 'en', label: 'EN' },
 ] as const;
 
 /**

@@ -15,7 +15,7 @@ function getLocalizedName(nameI18n: Record<string, string> | undefined, locale: 
     return modelNumber;
   }
 
-  return nameI18n[locale] || nameI18n['zh-TW'] || nameI18n.en || modelNumber;
+  return nameI18n[locale] || nameI18n.en || nameI18n['zh-TW'] || modelNumber;
 }
 
 async function getPrimaryImageMap(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>, productIds: string[]) {
@@ -86,7 +86,7 @@ export const getCategorySummaries = cache(async (locale: Locale): Promise<Catego
   }
 });
 
-export const getCategoryProducts = cache(async (category: CategoryKey, subCategoryId: string | null = null, locale: Locale = 'zh-TW') => {
+export const getCategoryProducts = cache(async (category: CategoryKey, subCategoryId: string | null = null, locale: Locale = 'en') => {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -130,7 +130,7 @@ export const getCategoryProducts = cache(async (category: CategoryKey, subCatego
   }
 });
 
-export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber: string, locale: Locale = 'zh-TW') => {
+export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber: string, locale: Locale = 'en') => {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -167,7 +167,7 @@ export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber
 });
 
 // 所有已上架產品（sitemap 使用）；subCategory 為子分類代號，用來組出實際的產品網址（P10）
-export const getCatalogProducts = cache(async (locale: Locale = 'zh-TW'): Promise<Array<Product & {subCategory: string}>> => {
+export const getCatalogProducts = cache(async (locale: Locale = 'en'): Promise<Array<Product & {subCategory: string}>> => {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -224,7 +224,7 @@ export interface ProductSearchResult {
 }
 
 // 前台產品搜尋（P2）：只搜尋已上架產品；型號、三種語言名稱、規格都可以搜
-export async function searchCatalogProducts(query: string, locale: Locale = 'zh-TW'): Promise<ProductSearchResult[]> {
+export async function searchCatalogProducts(query: string, locale: Locale = 'en'): Promise<ProductSearchResult[]> {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -272,7 +272,7 @@ export interface SubCategorySummary {
   name: string;
 }
 
-export const getSubCategories = cache(async (category: CategoryKey, locale: Locale = 'zh-TW'): Promise<SubCategorySummary[]> => {
+export const getSubCategories = cache(async (category: CategoryKey, locale: Locale = 'en'): Promise<SubCategorySummary[]> => {
   const supabase = getSupabaseServerClient();
   if (!supabase) return [];
 
@@ -295,7 +295,7 @@ export const getSubCategories = cache(async (category: CategoryKey, locale: Loca
   }
 });
 
-export const getSubCategoryBySlug = cache(async (category: CategoryKey, slug: string, locale: Locale = 'zh-TW'): Promise<SubCategorySummary | null> => {
+export const getSubCategoryBySlug = cache(async (category: CategoryKey, slug: string, locale: Locale = 'en'): Promise<SubCategorySummary | null> => {
   const supabase = getSupabaseServerClient();
   if (!supabase) return null;
 

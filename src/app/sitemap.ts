@@ -20,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
 
   // 2. 大分類路由 (動態從資料庫讀取)
-  const categories = await getCategorySummaries('zh-TW');
+  const categories = await getCategorySummaries('en');
   const categoryRoutes = locales.flatMap((locale) =>
     categories.map((c) => ({
       url: `${baseUrl}/${locale}/products/${encodeSegment(c.key)}`,
