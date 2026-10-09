@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin-auth';
+import { normalizeSlug } from '@/lib/slug';
 import { revalidateCatalog } from '@/lib/revalidate';
 import { dbErrorResponse, invalidInputResponse, isUuid, INVALID_ID_MESSAGE } from '@/lib/admin-api-errors';
 
@@ -8,7 +9,7 @@ import { dbErrorResponse, invalidInputResponse, isUuid, INVALID_ID_MESSAGE } fro
 const subCategoryPayloadSchema = z.object({
   id: z.string().uuid().optional(),
   category: z.string().trim().min(1).max(64),
-  slug: z.string().trim().min(1).max(64),
+  slug: z.string().max(200).transform(normalizeSlug).pipe(z.string().min(1).max(64)),
   nameZhTw: z.string().trim().min(1).max(200),
   nameZhCn: z.string().trim().min(1).max(200),
   nameEn: z.string().trim().min(1).max(200),

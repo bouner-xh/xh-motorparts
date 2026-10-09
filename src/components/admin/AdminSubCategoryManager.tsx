@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Locale } from '@/lib/catalog';
+import { normalizeSlug, SLUG_MESSAGE } from '@/lib/slug';
 
 interface AdminCategoryItem {
   id: string;
@@ -110,13 +111,17 @@ export function AdminSubCategoryManager(_props: { locale: Locale }) {
 
   async function submitSubCategory(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!normalizeSlug(form.slug)) {
+      setStatus('error', SLUG_MESSAGE);
+      return;
+    }
     setIsSubmitting(true);
     setStatus('info', '儲存中...');
 
     const payload = {
       id: form.id,
       category: form.category,
-      slug: form.slug.trim(),
+      slug: normalizeSlug(form.slug),
       nameZhTw: form.nameZhTw.trim(),
       nameZhCn: form.nameZhCn.trim(),
       nameEn: form.nameEn.trim(),
@@ -198,7 +203,8 @@ export function AdminSubCategoryManager(_props: { locale: Locale }) {
 
         <label>
           Slug (網址代號)
-          <input required value={form.slug} onChange={e => setForm(p => ({ ...p, slug: e.target.value }))} placeholder="例如: cylinder-a" />
+          <input required value={form.slug} onChange={e => setForm(p => ({ ...p, slug: e.target.value }))} onBlur={() => setForm(p => ({ ...p, slug: normalizeSlug(p.slug) || p.slug }))} placeholder="例如: cylinder-a" />
+          <small>只能用小寫英文、數字與連字號，輸入空白或大寫會自動轉換</small>
         </label>
 
         <label>
