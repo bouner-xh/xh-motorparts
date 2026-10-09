@@ -115,7 +115,7 @@ export async function POST(request: Request) {
     sort_order: payload.sortOrder
   };
   // 有封面才寫入封面欄位；資料庫還沒有該欄位時，沒有封面的新增照常成功，有封面則提示先執行更新語法
-  let insertResult = await service
+  const insertResult = await service
     .from('categories')
     .insert(payload.coverImage ? { ...baseRow, cover_image: payload.coverImage } : baseRow)
     .select('id')
