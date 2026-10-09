@@ -38,7 +38,7 @@
   "contact": {
     "title": "Contact Us",
     "address": "Address: No. 533-2, Sec. 1, Liming Rd., Nantun Dist., Taichung City, Taiwan",
-    "phone": "Phone: 0930 797 299",
+    "phone": "Phone: +886 930 797 299",
     "email": "Email: sales@xh-motorparts.com"
   },
   "privacy": {
@@ -59,7 +59,7 @@
     "sending": "Sending...",
     "success": "Inquiry submitted. We will get back to you as soon as possible.",
     "error": "Submission failed. Please try again later.",
-    "captchaPending": "Verification service is not enabled yet. Please confirm the environment settings before submitting.",
+    "captchaPending": "The verification service is temporarily unavailable. Please try again later, or email sales@xh-motorparts.com.",
     "addToCart": "Add to Inquiry List",
     "addedToCart": "✓ Added — tap to remove",
     "removeFromCart": "Remove",

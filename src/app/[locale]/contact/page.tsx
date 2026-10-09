@@ -3,7 +3,7 @@ import {localeAlternates} from '@/lib/site';
 import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {locales, type Locale} from '@/lib/catalog';
-import {contactMeta} from '@/lib/site-content';
+import {contactMeta, orderingInfo} from '@/lib/site-content';
 import { localized } from '@/lib/localized-text';
 
 // canonical 與 hreflang 指向本頁（D14）；標題沿用 layout
@@ -26,6 +26,7 @@ export default async function ContactPage({
   setRequestLocale(localeValue);
   const t = await getTranslations({locale: localeValue, namespace: 'contact'});
   const meta = contactMeta[localeValue];
+  const ordering = orderingInfo[localeValue];
 
   return (
     <main>
@@ -46,6 +47,12 @@ export default async function ContactPage({
           <p className="muted">{t('phone')}</p>
         </article>
         <article className="card info-card">
+          <h3>WhatsApp</h3>
+          <p className="muted">
+            <a href="https://wa.me/886930797299" target="_blank" rel="noopener noreferrer">+886 930 797 299</a>
+          </p>
+        </article>
+        <article className="card info-card">
           <h3>Email</h3>
           <p className="muted">{t('email')}</p>
         </article>
@@ -53,6 +60,20 @@ export default async function ContactPage({
           <h3>{localized(localeValue, { 'zh-TW': '營業時間', 'zh-CN': '营业时间', en: 'Business Hours' })}</h3>
           <p className="muted">{meta.hours}</p>
         </article>
+      </section>
+
+      <div className="section-heading">
+        <div>
+          <h2 className="page-title">{ordering.title}</h2>
+        </div>
+      </div>
+      <section className="info-grid">
+        {ordering.items.map((item) => (
+          <article key={item.title} className="card info-card">
+            <h3>{item.title}</h3>
+            <p className="muted">{item.body}</p>
+          </article>
+        ))}
       </section>
     </main>
   );

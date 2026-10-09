@@ -33,7 +33,7 @@ export const privacyContent: Record<Locale, PrivacyContent> = {
   'zh-TW': {
     title: '隱私權保護政策',
     subtitle: '我們重視您的個人隱私與資料安全，並依循中華民國個人資料保護法及國際隱私標準保護您的資訊。',
-    lastUpdated: '最後更新日期：2026 年 6 月',
+    lastUpdated: '最後更新日期：2026 年 10 月',
     tableHeaders: {
       service: '服務名稱',
       purpose: '資料用途',
@@ -96,7 +96,7 @@ export const privacyContent: Record<Locale, PrivacyContent> = {
         bullets: [
           '傳輸安全：本網站全面採用傳輸層安全協議（HTTPS - SSL/TLS 1.3）進行加密傳輸，防止資料於傳輸過程中遭竊聽或竄改。',
           '權限管制：本公司僅允許因業務運作需要、且經過授權的內部人員存取詢價資料，並設有嚴格的存取控制機制。',
-          '保存期限：商務詢價資料將保存至雙方商務往來結束後 3 年，或直到您提出刪除要求為止。屆期後，系統將安全地予以刪除或進行不可逆之匿名化處理。',
+          '保存期限：商務詢價資料將在處理您的詢價及雙方商務往來所需期間內保存，並於您提出刪除要求時刪除或進行不可逆之匿名化處理（法律另有保存規定者除外）。',
           '外洩通報：若不幸發生資料安全性事件，我們將於發現後 72 小時內，依法通報主管機關，並透過您留下的聯絡方式通知受影響的當事人。'
         ]
       },
@@ -148,7 +148,7 @@ export const privacyContent: Record<Locale, PrivacyContent> = {
   'zh-CN': {
     title: '隐私权保护政策',
     subtitle: '我们重视您的个人隐私与数据安全，並遵循中华民国个人资料保护法及国际隐私标准保护您的信息。',
-    lastUpdated: '最后更新日期：2026 年 6 月',
+    lastUpdated: '最后更新日期：2026 年 10 月',
     tableHeaders: {
       service: '服务名称',
       purpose: '数据用途',
@@ -211,7 +211,7 @@ export const privacyContent: Record<Locale, PrivacyContent> = {
         bullets: [
           '传输安全：本网站全面采用传输层安全协议（HTTPS - SSL/TLS 1.3）进行加密传输，防止数据在传输过程中遭窃听或篡改。',
           '权限管制：本公司仅允许因业务运作需要、且经过授权的内部人员访问询价数据，并设有严格的访问控制机制。',
-          '保存期限：商务询价数据将保存至双方商务往来结束后 3 年，或直到您提出删除要求为止。届期后，系统将安全地予以删除或进行不可逆之匿名化处理。',
+          '保存期限：商务询价数据将在处理您的询价及双方商务往来所需期间内保存，并于您提出删除要求时删除或进行不可逆之匿名化处理（法律另有保存规定者除外）。',
           '泄露通报：若不幸发生数据安全性事件，我们将于发现后 72 小时内，依法通报主管机关，并通过您留下的联系方式通知受影响的当事人。'
         ]
       },
@@ -263,7 +263,7 @@ export const privacyContent: Record<Locale, PrivacyContent> = {
   'en': {
     title: 'Privacy Policy',
     subtitle: 'We value your privacy and security. We process and protect your information in compliance with international data privacy standards and applicable regulations.',
-    lastUpdated: 'Last Updated: June 2026',
+    lastUpdated: 'Last Updated: October 2026',
     tableHeaders: {
       service: 'Service Provider',
       purpose: 'Purpose',
@@ -326,7 +326,7 @@ export const privacyContent: Record<Locale, PrivacyContent> = {
         bullets: [
           'Transmission Security: Our website uses HTTPS (SSL/TLS 1.3) to encrypt all data in transit, preventing eavesdropping and tampering.',
           'Access Control: Only authorized personnel who have a business need-to-know are allowed access to inquiry data, governed by access controls.',
-          'Retention Period: Business inquiries will be retained for 3 years after the termination of our business relationship, or until you request deletion. Stale data will be deleted or anonymized irreversibly.',
+          'Retention Period: We keep business inquiry data for as long as needed to handle your inquiry and our business relationship, and delete or irreversibly anonymize it when you ask us to (unless the law requires us to keep it).',
           'Breach Notification: In the event of a data security breach, we will notify competent regulatory authorities and affected users within 72 hours of discovery as required by law.'
         ]
       },
