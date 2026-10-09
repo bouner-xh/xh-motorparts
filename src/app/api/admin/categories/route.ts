@@ -1,13 +1,14 @@
 import { z } from 'zod';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin-auth';
+import { normalizeSlug } from '@/lib/slug';
 import { revalidateCatalog } from '@/lib/revalidate';
 import { dbErrorResponse, invalidInputResponse, isUuid, INVALID_ID_MESSAGE } from '@/lib/admin-api-errors';
 
 // 欄位長度上限（A9）
 const categoryPayloadSchema = z.object({
   id: z.string().uuid().optional(),
-  slug: z.string().trim().min(1).max(64),
+  slug: z.string().max(200).transform(normalizeSlug).pipe(z.string().min(1).max(64)),
   nameZhTw: z.string().trim().min(1).max(200),
   nameZhCn: z.string().trim().min(1).max(200),
   nameEn: z.string().trim().min(1).max(200),

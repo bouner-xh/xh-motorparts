@@ -9,6 +9,10 @@ export function splitSpecifications(text: string): string[] {
     .filter(Boolean);
 }
 
+// 庫存上限：避免輸入過大的數字造成資料庫錯誤（U2）
+export const MAX_STOCK_QUANTITY = 1_000_000;
+export const STOCK_MESSAGE = `庫存必須是 0 到 ${MAX_STOCK_QUANTITY.toLocaleString('en-US')} 的整數`;
+
 const FIELD_LABELS: Record<string, string> = {
   category: '大分類',
   subCategoryId: '子分類',
@@ -30,7 +34,7 @@ export interface InputIssue {
 function describeIssue(issue: InputIssue) {
   const field = String(issue.path[0] ?? '');
   const label = FIELD_LABELS[field] || field || '資料';
-  if (field === 'stockQuantity') return '庫存必須是 0 以上的整數';
+  if (field === 'stockQuantity') return STOCK_MESSAGE;
   if (field === 'specifications') {
     return issue.path.length > 1 ? '每個規格最多 200 字' : `規格最多 ${issue.maximum ?? 50} 項`;
   }
@@ -66,6 +70,6 @@ export function validateProductForm(input: ProductFormInput): string[] {
   if (!input.nameZhTw) errors.push('名稱（zh-TW）不可為空');
   if (!input.nameZhCn) errors.push('名稱（zh-CN）不可為空');
   if (!input.nameEn) errors.push('名稱（en）不可為空');
-  if (!Number.isInteger(input.stockQuantity) || input.stockQuantity < 0) errors.push('庫存必須是 0 以上的整數');
+  if (!Number.isInteger(input.stockQuantity) || input.stockQuantity < 0 || input.stockQuantity > MAX_STOCK_QUANTITY) errors.push(STOCK_MESSAGE);
   return errors;
 }

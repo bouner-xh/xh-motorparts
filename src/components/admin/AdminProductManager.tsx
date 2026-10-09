@@ -172,6 +172,13 @@ export function AdminProductManager(_props: {locale: Locale}) {
   const submitLabel = useMemo(() => (form.id ? '更新產品' : '新增產品'), [form.id]);
 
   async function submitProduct() {
+    // 改型號會讓舊的產品網址失效（別人收藏或客戶保存的連結會打不開），先請使用者確認（U3）
+    if (form.id && editingRow && editingRow.modelNumber !== form.modelNumber.trim() && form.modelNumber.trim()) {
+      const ok = window.confirm(
+        `型號將從「${editingRow.modelNumber}」改為「${form.modelNumber.trim()}」。\n產品網址會跟著改變，舊網址將無法開啟。確定要儲存嗎？`
+      );
+      if (!ok) return;
+    }
     setIsSubmitting(true);
     setStatus('info', form.id ? '更新產品中...' : '新增產品中...');
 
@@ -245,6 +252,29 @@ export function AdminProductManager(_props: {locale: Locale}) {
     modelInputRef.current?.focus({preventScroll: true});
   }
 
+  // 表單有尚未儲存的內容時，切換到其他產品前先確認，避免辛苦輸入的資料消失（U5）
+  function hasUnsavedChanges() {
+    const text = [form.modelNumber, form.nameZhTw, form.nameZhCn, form.nameEn, form.specifications].map((v) => v.trim());
+    if (!form.id) return text.some(Boolean) || Boolean(form.imagePath.trim()) || Boolean(unsavedUpload);
+    if (!editingRow) return false;
+    return (
+      text[0] !== editingRow.modelNumber ||
+      text[1] !== editingRow.nameZhTw ||
+      text[2] !== editingRow.nameZhCn ||
+      text[3] !== editingRow.nameEn ||
+      splitSpecifications(form.specifications).join('|') !== editingRow.specifications.join('|') ||
+      form.stockQuantity !== editingRow.stockQuantity ||
+      form.isActive !== editingRow.isActive ||
+      form.category !== editingRow.category ||
+      form.subCategoryId !== editingRow.subCategoryId ||
+      form.imagePath.trim() !== editingRow.imagePath
+    );
+  }
+
+  function confirmDiscardChanges() {
+    return !hasUnsavedChanges() || window.confirm('表單上有還沒儲存的內容，切換後會消失。確定要切換嗎？');
+  }
+
   function cancelEdit() {
     discardUnsavedUpload();
     setSelectedFile(null);
@@ -254,6 +284,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
 
   // 複製產品：帶入同一筆的分類、名稱、規格與圖片，型號留空待輸入，預設不上架（A7）
   function duplicateProduct(row: AdminProductItem) {
+    if (!confirmDiscardChanges()) return;
     discardUnsavedUpload();
     setSelectedFile(null);
     setForm({
@@ -273,6 +304,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
   }
 
   function startEdit(row: AdminProductItem) {
+    if (row.id !== form.id && !confirmDiscardChanges()) return;
     discardUnsavedUpload();
     setSelectedFile(null);
     setStatus('idle', '');
@@ -292,8 +324,11 @@ export function AdminProductManager(_props: {locale: Locale}) {
     });
   }
 
-  async function deleteProduct(id: string) {
-    const confirmed = window.confirm('確認要刪除這筆產品嗎？');
+  async function deleteProduct(row: AdminProductItem) {
+    const id = row.id;
+    const confirmed = window.confirm(
+      `確定要刪除產品「${row.modelNumber}」嗎？刪除後無法復原，連結也會失效。\n只是暫時不賣的話，建議改用「下架」。`
+    );
     if (!confirmed) {
       return;
     }
@@ -315,6 +350,38 @@ export function AdminProductManager(_props: {locale: Locale}) {
       window.dispatchEvent(new Event('products-updated'));
     } catch (error) {
       setStatus('error', error instanceof Error ? error.message : '刪除失敗');
+    }
+  }
+
+  // 列表上直接上架／下架，不用開編輯表單（U6）
+  async function toggleActive(row: AdminProductItem) {
+    const next = !row.isActive;
+    setStatus('info', `${next ? '上架' : '下架'}中：${row.modelNumber}`);
+    try {
+      const response = await fetch('/api/admin/products', {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          id: row.id,
+          category: row.category,
+          modelNumber: row.modelNumber,
+          nameZhTw: row.nameZhTw,
+          nameZhCn: row.nameZhCn,
+          nameEn: row.nameEn,
+          specifications: row.specifications,
+          stockQuantity: row.stockQuantity,
+          isActive: next,
+          subCategoryId: row.subCategoryId,
+          imagePath: row.imagePath
+        })
+      });
+      const result = (await parseResponseJson<{error?: string}>(response)) || {};
+      if (!response.ok) throw new Error(result.error || `${next ? '上架' : '下架'}失敗（HTTP ${response.status}）`);
+      setStatus('success', `${row.modelNumber} 已${next ? '上架' : '下架'}`);
+      await loadProducts();
+      window.dispatchEvent(new Event('products-updated'));
+    } catch (error) {
+      setStatus('error', error instanceof Error ? error.message : '操作失敗');
     }
   }
 
@@ -661,9 +728,12 @@ export function AdminProductManager(_props: {locale: Locale}) {
                       <button type="button" onClick={() => duplicateProduct(row)} style={{background: '#334155'}}>
                         複製
                       </button>
+                      <button type="button" onClick={() => void toggleActive(row)} style={{background: '#334155'}}>
+                        {row.isActive ? '下架' : '上架'}
+                      </button>
                       <button
                         type="button"
-                        onClick={() => void deleteProduct(row.id)}
+                        onClick={() => void deleteProduct(row)}
                         style={{background: '#991b1b'}}
                       >
                         刪除

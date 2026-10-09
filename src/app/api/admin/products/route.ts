@@ -4,7 +4,7 @@ import {isAdminEmail} from '@/lib/admin-auth';
 import {revalidateCatalog} from '@/lib/revalidate';
 import {getProductImageUrls, removeUnreferencedImages} from '@/lib/product-image-cleanup';
 import {describeDbError, INVALID_ID_MESSAGE, INVALID_INPUT_MESSAGE, isUuid} from '@/lib/admin-api-errors';
-import {describeProductInputIssues, duplicateModelMessage} from '@/lib/product-form';
+import {describeProductInputIssues, duplicateModelMessage, MAX_STOCK_QUANTITY} from '@/lib/product-form';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
 
@@ -39,7 +39,7 @@ const productPayloadSchema = z.object({
   nameZhCn: z.string().trim().min(1).max(200),
   nameEn: z.string().trim().min(1).max(200),
   specifications: z.array(z.string().max(200)).max(50).default([]),
-  stockQuantity: z.number().int().nonnegative().default(0),
+  stockQuantity: z.number().int().nonnegative().max(MAX_STOCK_QUANTITY).default(0),
   isActive: z.boolean().default(true),
   subCategoryId: z.string().uuid(),
   imagePath: z.string().max(1000).optional().default('')
@@ -326,7 +326,7 @@ export async function PUT(request: Request) {
     return Response.json({error: '子分類不屬於所選的大分類，請重新選擇子分類', requestId}, {status: 400});
   }
 
-  const {error} = await service
+  const {data: updated, error} = await service
     .from('products')
     .update({
       category_id: categoryId,
@@ -341,10 +341,15 @@ export async function PUT(request: Request) {
       is_active: payload.isActive,
       sub_category_id: payload.subCategoryId
     })
-    .eq('id', productId);
+    .eq('id', productId)
+    .select('id');
 
   if (error?.code === '23505') return duplicateModelResponse(requestId, payload.modelNumber, error);
   if (error) return dbError(requestId, 'update product failed', error);
+  // 產品已被其他人刪除時，不要回報成功（U1）
+  if (!updated?.length) {
+    return Response.json({error: '找不到這筆產品，可能已被刪除，請重新載入列表', requestId}, {status: 404});
+  }
 
   await bindPrimaryImage(service, productId, payload.imagePath);
 
