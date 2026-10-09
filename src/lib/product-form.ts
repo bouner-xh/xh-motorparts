@@ -67,8 +67,7 @@ export function validateProductForm(input: ProductFormInput): string[] {
   const errors: string[] = [];
   if (!input.modelNumber) errors.push('型號不可為空');
   if (!input.subCategoryId) errors.push('請選擇子分類（沒有子分類時請先到「分類」分頁建立）');
-  if (!input.nameZhTw) errors.push('名稱（zh-TW）不可為空');
-  if (!input.nameZhCn) errors.push('名稱（zh-CN）不可為空');
+  // 英文名稱必填；繁中、簡中選填（沒填時前台顯示英文名稱）
   if (!input.nameEn) errors.push('名稱（en）不可為空');
   if (!Number.isInteger(input.stockQuantity) || input.stockQuantity < 0 || input.stockQuantity > MAX_STOCK_QUANTITY) errors.push(STOCK_MESSAGE);
   return errors;

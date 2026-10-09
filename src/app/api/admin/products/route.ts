@@ -35,8 +35,9 @@ const productPayloadSchema = z.object({
   id: z.string().uuid().optional(),
   category: z.string().trim().min(1).max(64),
   modelNumber: z.string().trim().min(1).max(100),
-  nameZhTw: z.string().trim().min(1).max(200),
-  nameZhCn: z.string().trim().min(1).max(200),
+  // 英文名稱必填（英文為主要語言）；繁中、簡中選填，沒填時前台顯示英文名稱（P5）
+  nameZhTw: z.string().trim().max(200).optional().default(''),
+  nameZhCn: z.string().trim().max(200).optional().default(''),
   nameEn: z.string().trim().min(1).max(200),
   specifications: z.array(z.string().max(200)).max(50).default([]),
   stockQuantity: z.number().int().nonnegative().max(MAX_STOCK_QUANTITY).default(0),
@@ -44,6 +45,14 @@ const productPayloadSchema = z.object({
   subCategoryId: z.string().uuid(),
   imagePath: z.string().max(1000).optional().default('')
 });
+
+// 只存有填寫的語言，沒填的語言前台退回英文名稱
+function buildNameI18n(payload: {nameZhTw: string; nameZhCn: string; nameEn: string}) {
+  const names: Record<string, string> = {en: payload.nameEn};
+  if (payload.nameZhTw) names['zh-TW'] = payload.nameZhTw;
+  if (payload.nameZhCn) names['zh-CN'] = payload.nameZhCn;
+  return names;
+}
 
 function toAdminProductItem(item: ProductRow) {
   const categoryRef = item.category;
@@ -283,11 +292,7 @@ export async function POST(request: Request) {
     .insert({
       category_id: categoryId,
       model_number: payload.modelNumber,
-      name_i18n: {
-        'zh-TW': payload.nameZhTw,
-        'zh-CN': payload.nameZhCn,
-        en: payload.nameEn
-      },
+      name_i18n: buildNameI18n(payload),
       specifications: payload.specifications,
       stock_quantity: payload.stockQuantity,
       is_active: payload.isActive,
@@ -347,11 +352,7 @@ export async function PUT(request: Request) {
     .update({
       category_id: categoryId,
       model_number: payload.modelNumber,
-      name_i18n: {
-        'zh-TW': payload.nameZhTw,
-        'zh-CN': payload.nameZhCn,
-        en: payload.nameEn
-      },
+      name_i18n: buildNameI18n(payload),
       specifications: payload.specifications,
       stock_quantity: payload.stockQuantity,
       is_active: payload.isActive,
