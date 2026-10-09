@@ -229,7 +229,7 @@ export function parseProductRows(objects: Record<string, string>[]): ParseResult
     }
 
     const specRaw = pick(r, 'specifications', '規格');
-    const first = (m: Record<string, string>) => m['zh-TW'] || m.en || Object.values(m)[0] || '';
+    const first = (m: Record<string, string>) => m.en || m['zh-TW'] || Object.values(m)[0] || '';
 
     rows.push({
       categorySlug,

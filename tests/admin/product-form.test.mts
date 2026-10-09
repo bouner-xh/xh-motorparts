@@ -36,3 +36,9 @@ test('送出前檢查：庫存須為 0 以上的整數', () => {
   assert.deepEqual(validateProductForm({ ...ok, stockQuantity: -1 }), ['庫存必須是 0 到 1,000,000 的整數']);
   assert.ok(validateProductForm({ ...ok, subCategoryId: '' })[0].includes('請選擇子分類'));
 });
+
+test('送出前檢查：英文名稱必填，繁中、簡中選填', () => {
+  const ok = { modelNumber: 'A', subCategoryId: 'x', nameZhTw: '', nameZhCn: '', nameEn: 'Cylinder', stockQuantity: 0 };
+  assert.deepEqual(validateProductForm(ok), []);
+  assert.deepEqual(validateProductForm({ ...ok, nameEn: '' }), ['名稱（en）不可為空']);
+});

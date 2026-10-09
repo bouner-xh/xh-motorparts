@@ -94,6 +94,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `admin-api-errors.e2e.cjs` | 錯誤訊息為中文說明、長度與 ID 檢查、不自動建立分類（A9） | 模擬 Supabase |
 | `admin-slug.e2e.cjs` | 後台分類／子分類代號自動轉小寫加連字號、中文代號被擋下、API 也會轉換 | 模擬 Supabase |
 | `admin-product-update.e2e.cjs` | 更新產品：已刪除的產品不回報成功、庫存上限、改型號確認、切換前確認未儲存內容、刪除確認、列表上架／下架 | 模擬 Supabase |
+| `admin-product-names.e2e.cjs` | 產品名稱以英文為主：只填英文可新增、沒填的語言不存空字串、前台與後台列表顯示英文名稱、沒有英文名稱被擋下 | 模擬 Supabase |
 | `root-redirect.e2e.cjs` | 根網址一律轉到 /en、語言切換列 EN 排第一、中文版網址照舊可用 | 無資料庫即可 |
 | `international-copy.e2e.cjs` | 英文聯絡頁（國際電話、WhatsApp、時區、訂購資訊）、關於頁無開發中說法、隱私政策保存期限三語一致、繁簡同步 | 無資料庫即可 |
 | `html-lang.e2e.cjs` | 各頁 `<html lang>` 與語系一致、未知網址 404、根網址仍轉 /en、語言切換後 lang 跟著變 | 無資料庫即可 |

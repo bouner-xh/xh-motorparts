@@ -506,9 +506,19 @@ export function AdminProductManager(_props: {locale: Locale}) {
         </label>
 
         <label>
-          名稱（zh-TW）
+          名稱（en）
+          <small className="muted">必填，英文為主要語言</small>
           <input
             required
+            value={form.nameEn}
+            onChange={(event) => setForm((prev) => ({...prev, nameEn: event.target.value}))}
+          />
+        </label>
+
+        <label>
+          名稱（zh-TW）
+          <small className="muted">選填；沒填時繁中頁顯示英文名稱</small>
+          <input
             value={form.nameZhTw}
             onChange={(event) => setForm((prev) => ({...prev, nameZhTw: event.target.value}))}
           />
@@ -516,19 +526,10 @@ export function AdminProductManager(_props: {locale: Locale}) {
 
         <label>
           名稱（zh-CN）
+          <small className="muted">選填；沒填時簡中頁顯示英文名稱</small>
           <input
-            required
             value={form.nameZhCn}
             onChange={(event) => setForm((prev) => ({...prev, nameZhCn: event.target.value}))}
-          />
-        </label>
-
-        <label>
-          名稱（en）
-          <input
-            required
-            value={form.nameEn}
-            onChange={(event) => setForm((prev) => ({...prev, nameEn: event.target.value}))}
           />
         </label>
 
@@ -737,7 +738,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
                     {categoryNames.get(row.category) || row.category}
                     <div className="muted" style={{fontSize: '0.85em'}}>{subCategoryNames.get(row.subCategoryId) || '—'}</div>
                   </td>
-                  <td>{row.nameZhTw}</td>
+                  <td>{row.nameZhTw || row.nameEn}</td>
                   <td>{row.stockQuantity}</td>
                   <td>{row.isActive ? '是' : '否'}</td>
                   <td>
