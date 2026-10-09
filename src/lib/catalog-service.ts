@@ -330,6 +330,31 @@ export const getSubCategories = cache(async (category: CategoryKey, locale: Loca
   }
 });
 
+// 每個子分類取第一個已上架且有照片的產品的照片，給子分類卡片當封面（沒有照片的子分類不在結果裡）
+export const getSubCategoryCoverImages = cache(async (subCategoryIds: string[]): Promise<Map<string, string>> => {
+  const covers = new Map<string, string>();
+  const supabase = getSupabaseServerClient();
+  if (!supabase || !subCategoryIds.length) return covers;
+
+  try {
+    const { data } = await supabase
+      .from('products')
+      .select('id, sub_category_id')
+      .eq('is_active', true)
+      .in('sub_category_id', subCategoryIds)
+      .order('model_number', { ascending: true });
+    const rows = (data || []) as Array<{ id: string; sub_category_id: string | null }>;
+    const imageMap = await getPrimaryImageMap(supabase, rows.map((row) => row.id));
+    for (const row of rows) {
+      const image = imageMap.get(row.id);
+      if (row.sub_category_id && image && image !== defaultImagePath && !covers.has(row.sub_category_id)) covers.set(row.sub_category_id, image);
+    }
+  } catch {
+    // 查不到就用預設圖
+  }
+  return covers;
+});
+
 export const getSubCategoryBySlug = cache(async (category: CategoryKey, slug: string, locale: Locale = 'en'): Promise<SubCategorySummary | null> => {
   const supabase = getSupabaseServerClient();
   if (!supabase) return null;
