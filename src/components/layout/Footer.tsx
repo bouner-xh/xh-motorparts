@@ -73,7 +73,7 @@ export function Footer({locale}: {locale: Locale}) {
             <li>
               <span className="contact-icon-label"><Icon name="clock" size={18} /></span> 
               <span className="muted">
-                {localized(locale, { 'zh-TW': '週一至週五 / 09:00 - 18:00', 'zh-CN': '周一至周五 / 09:00 - 18:00', en: 'Mon - Fri / 09:00 - 18:00' })}
+                {localized(locale, { 'zh-TW': '週一至週五 / 09:00 - 18:00（GMT+8）', 'zh-CN': '周一至周五 / 09:00 - 18:00（GMT+8）', en: 'Mon - Fri / 09:00 - 18:00 (GMT+8)' })}
               </span>
             </li>
           </ul>

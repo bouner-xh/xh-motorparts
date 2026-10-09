@@ -38,7 +38,7 @@
   "contact": {
     "title": "联系我们",
     "address": "地址：台中市南屯区黎明路一段533-2号",
-    "phone": "电话：0930 797 299",
+    "phone": "电话：+886 930 797 299",
     "email": "Email：sales@xh-motorparts.com"
   },
   "privacy": {
@@ -59,7 +59,7 @@
     "sending": "提交中...",
     "success": "询价已提交，我们会尽快与你联系。",
     "error": "提交失败，请稍后再试。",
-    "captchaPending": "验证服务尚未启用，提交前请先确认当前环境设置。",
+    "captchaPending": "验证服务暂时无法使用，请稍后再试，或发信到 sales@xh-motorparts.com。",
     "addToCart": "加入询价清单",
     "addedToCart": "✓ 已加入，点此移除",
     "removeFromCart": "移除",

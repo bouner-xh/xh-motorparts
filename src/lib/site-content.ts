@@ -172,28 +172,16 @@ export const homeContent: Record<Locale, {
 
 export const sharedStats: Array<{value: string; label: Record<Locale, string>}> = [
   {
-    value: '9',
-    label: {
-      'zh-TW': '核心產品分類',
-      'zh-CN': '核心产品分类',
-      en: 'Core categories'
-    }
+    value: '1990',
+    label: {'zh-TW': '創立於', 'zh-CN': '创立于', en: 'Established'}
   },
   {
-    value: '35+',
-    label: {
-      'zh-TW': '可預覽產品項目',
-      'zh-CN': '可预览产品项目',
-      en: 'Previewable products'
-    }
+    value: 'Worldwide',
+    label: {'zh-TW': '出口市場', 'zh-CN': '出口市场', en: 'Export markets'}
   },
   {
-    value: '3',
-    label: {
-      'zh-TW': '語系版本',
-      'zh-CN': '语系版本',
-      en: 'Language versions'
-    }
+    value: 'OEM / ODM',
+    label: {'zh-TW': '歡迎客製訂單', 'zh-CN': '欢迎定制订单', en: 'Custom orders welcome'}
   }
 ];
 
@@ -204,56 +192,108 @@ export const aboutContent: Record<Locale, {
   'zh-TW': {
     sections: [
       {
-        title: '專注摩托車零件供應',
-        body: '新版網站以「產品可查、資訊可信、詢價順暢」為核心，逐步從舊版靜態目錄遷移到現代化架構。'
+        title: '1990 年起專注摩托車內部零組件',
+        body: '協皇企業有限公司位於台灣台中，自 1990 年起生產摩托車內部零組件，供貨給全球採購商。'
       },
       {
-        title: '以 B2B 信任感為主軸',
-        body: '除了產品型號與規格，未來將持續補齊公司介紹、出口市場、品質保證與 CRM 詢價流程。'
+        title: '歡迎 OEM／ODM 訂製',
+        body: '提供圖面、樣品或料號，我們會評估可行性並報價。'
+      },
+      {
+        title: '彈性訂購、條件清楚',
+        body: '最低訂購量、交期與付款方式皆可彈性安排，報價時確認。詳見「聯絡我們」頁的訂購資訊。'
       }
     ],
-    markets: ['Taiwan', 'Southeast Asia', 'Europe']
+    markets: ['全球']
   },
   'zh-CN': {
     sections: [
       {
-        title: '专注摩托车零件供应',
-        body: '新版网站以“产品可查、信息可信、询价顺畅”为核心，逐步从旧版静态目录迁移到现代化架构。'
+        title: '1990 年起专注摩托车内部零部件',
+        body: '协皇企业有限公司位于台湾台中，自 1990 年起生产摩托车内部零部件，供货给全球采购商。'
       },
       {
-        title: '以 B2B 信任感为主轴',
-        body: '除了产品型号与规格，后续将持续补齐公司介绍、出口市场、质量保证与 CRM 询价流程。'
+        title: '欢迎 OEM／ODM 定制',
+        body: '提供图纸、样品或料号，我们会评估可行性并报价。'
+      },
+      {
+        title: '灵活订购、条件清楚',
+        body: '最低订购量、交期与付款方式均可灵活安排，报价时确认。详见“联系我们”页的订购信息。'
       }
     ],
-    markets: ['Taiwan', 'Southeast Asia', 'Europe']
+    markets: ['全球']
   },
   en: {
     sections: [
       {
-        title: 'Focused on motorcycle parts supply',
-        body: 'The new site is being rebuilt around product discoverability, trust and a smoother inquiry flow while preserving the legacy catalog.'
+        title: 'Motorcycle internal components since 1990',
+        body: 'Based in Taichung, Taiwan, Xie Huang Enterprise Co., Ltd. has manufactured motorcycle internal components since 1990 and supplies buyers worldwide.'
       },
       {
-        title: 'Built for B2B credibility',
-        body: 'Beyond model numbers and specs, the site is prepared for company profile content, export market trust signals and CRM-style inquiry handling.'
+        title: 'OEM / ODM welcome',
+        body: 'Send us your drawings, samples or part numbers and we will review feasibility and quote.'
+      },
+      {
+        title: 'Flexible orders, clear terms',
+        body: 'Minimum quantities, lead times and payment terms are flexible and confirmed when we quote. See Ordering Information on the Contact page.'
       }
     ],
-    markets: ['Taiwan', 'Southeast Asia', 'Europe']
+    markets: ['Worldwide']
   }
 };
 
 export const contactMeta: Record<Locale, {hours: string; note: string}> = {
   'zh-TW': {
-    hours: '週一至週五 09:00 - 18:00',
-    note: '若需詢價，建議先提供型號、規格與需求數量。'
+    hours: '週一至週五 09:00 - 18:00（台灣時間，GMT+8）',
+    note: '若需詢價，建議先提供型號、規格與需求數量。我們會在工作日 24 小時內回覆。'
   },
   'zh-CN': {
-    hours: '周一至周五 09:00 - 18:00',
-    note: '如需询价，建议先提供型号、规格与需求数量。'
+    hours: '周一至周五 09:00 - 18:00（台湾时间，GMT+8）',
+    note: '如需询价，建议先提供型号、规格与需求数量。我们会在工作日 24 小时内回复。'
   },
   en: {
-    hours: 'Mon-Fri 09:00 - 18:00',
-    note: 'For faster inquiries, please include model number, specification and quantity.'
+    hours: 'Mon-Fri, 09:00 - 18:00 (Taiwan time, GMT+8)',
+    note: 'For faster quotes, please include the model number, specification and quantity. We reply within 24 hours on business days.'
+  }
+};
+
+// 訂購資訊（聯絡頁）：內容依老闆 2026-10-09 提供的資料與確認的寫法，見 docs/english-copy-draft.md
+export const orderingInfo: Record<Locale, {title: string; items: Array<{title: string; body: string}>}> = {
+  'zh-TW': {
+    title: '訂購資訊',
+    items: [
+      { title: '最低訂購量', body: '彈性安排，請告訴我們需求，我們會配合訂單規劃合適的數量。' },
+      { title: '交期', body: '依訂單確認；可接急單，詢價時請註明需要的日期。' },
+      { title: '付款方式', body: '可使用 T/T、L/C、PayPal，報價時確認。' },
+      { title: '貿易條件', body: 'FOB、EXW 或 CIF，下單時確認。常用出貨港為台灣台中港。' },
+      { title: '包裝', body: '零件做好防鏽處理，以出口紙箱包裝；可依需求使用棧板或客製包裝。' },
+      { title: '出貨前檢驗', body: '每批訂單出貨前都會檢驗，可提供檢驗照片。' },
+      { title: '保固與退換貨', body: '收到瑕疵或錯誤品項，請於收貨後 30 天內附照片通知，確認後我們會換貨或退款。' }
+    ]
+  },
+  'zh-CN': {
+    title: '订购信息',
+    items: [
+      { title: '最低订购量', body: '灵活安排，请告诉我们需求，我们会配合订单规划合适的数量。' },
+      { title: '交期', body: '依订单确认；可接急单，询价时请注明需要的日期。' },
+      { title: '付款方式', body: '可使用 T/T、L/C、PayPal，报价时确认。' },
+      { title: '贸易条件', body: 'FOB、EXW 或 CIF，下单时确认。常用出货港为台湾台中港。' },
+      { title: '包装', body: '零件做好防锈处理，以出口纸箱包装；可依需求使用托盘或定制包装。' },
+      { title: '出货前检验', body: '每批订单出货前都会检验，可提供检验照片。' },
+      { title: '质保与退换货', body: '收到瑕疵或错误品项，请于收货后 30 天内附照片通知，确认后我们会换货或退款。' }
+    ]
+  },
+  en: {
+    title: 'Ordering Information',
+    items: [
+      { title: 'Minimum order quantity', body: 'Flexible. Tell us what you need and we will work out a quantity that suits your order.' },
+      { title: 'Lead time', body: 'Confirmed per order. Rush orders are possible; please state your required date in the inquiry.' },
+      { title: 'Payment', body: 'T/T, L/C and PayPal are available. Terms are confirmed when we quote.' },
+      { title: 'Trade terms', body: 'FOB, EXW or CIF, confirmed when the order is placed. Our usual port of shipment is Taichung Port, Taiwan.' },
+      { title: 'Packaging', body: 'Parts are rust-protected and shipped in export cartons. Pallets or custom packing on request.' },
+      { title: 'Inspection', body: 'Every order is inspected before shipment. Inspection photos are available on request.' },
+      { title: 'Warranty and returns', body: 'If you receive defective or incorrect items, tell us within 30 days of receipt with photos. After we confirm the issue, we will replace the items or refund you.' }
+    ]
   }
 };
 
