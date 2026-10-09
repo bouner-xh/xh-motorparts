@@ -25,6 +25,16 @@
 
 ---
 
+## 2026-10-09（第二十九批）：網站預設英文
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| L1 | 根網址一律轉 `/en`（不看瀏覽器語言、不使用 cookie）；預設語系改英文；`localized()` 與產品名稱缺漏時退回英文；語言切換列順序 EN、繁中、简中；備用的繁中預設值改英文 | `src/app/page.tsx`、`src/i18n/routing.ts`、`src/lib/localized-text.ts`、`src/lib/catalog-service.ts`、`LanguageLinks.tsx`、`sitemap.ts`、詢價頁與表單 | `tests/admin/localized-text.test.mts`、`root-redirect.e2e.cjs` |
+
+- 不改資料庫、API，不新增套件。`/zh-TW`、`/zh-CN` 網址不變。還原：Revert 對應 PR。
+
+---
+
 ## 2026-10-09（第二十八批）：移除圖片、沒有圖片時上架提醒
 
 | 項目 | 內容 | 主要檔案 | 測試 |

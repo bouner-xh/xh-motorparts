@@ -27,7 +27,7 @@ export function InquiryForm({
 }: InquiryFormProps) {
   const t = useTranslations('inquiry');
   const params = useParams();
-  const locale = (params.locale as string) || 'zh-TW';
+  const locale = (params.locale as string) || 'en';
 
   const { cart, addToCart, removeFromCart } = useCart();
   const [quantity, setQuantity] = useState<number>(100); // B2B 預設數量 100
