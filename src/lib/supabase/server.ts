@@ -1,5 +1,4 @@
 import {cookies} from 'next/headers';
-import type {NextRequest, NextResponse} from 'next/server';
 import {createServerClient} from '@supabase/ssr';
 import {createClient} from '@supabase/supabase-js';
 
@@ -45,30 +44,6 @@ export async function getSupabaseServerAuthClient() {
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({name, value, options}) => {
           cookieStore.set(name, value, options);
-        });
-      }
-    }
-  });
-}
-
-export function getSupabaseMiddlewareAuthClient(request: NextRequest, response: NextResponse) {
-  const env = getSupabaseEnv();
-  if (!env) {
-    return null;
-  }
-
-  return createServerClient(env.url, env.anonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({name, value}) => {
-          request.cookies.set(name, value);
-        });
-
-        cookiesToSet.forEach(({name, value, options}) => {
-          response.cookies.set(name, value, options);
         });
       }
     }

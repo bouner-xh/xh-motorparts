@@ -25,6 +25,18 @@
 
 ---
 
+## 2026-10-09（第三十六批）：刪除沒作用的 middleware、產品網址不分大小寫
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| L5 | 刪除專案根目錄不會被載入的 `middleware.ts` 與只有它使用的 `getSupabaseMiddlewareAuthClient`；網站行為不變 | `middleware.ts`（刪除）、`src/lib/supabase/server.ts` | `tests/security/middleware-location.test.mts` |
+| L7 | 分類、子分類、型號大小寫寫錯時，頁面找不到資料就比對不分大小寫的正確網址並 308 轉址（保留語系）；找不到仍 404 | `src/lib/canonical-path.ts`（新）、`catalog-service.ts` 的 `resolveCanonicalProductPath`、三個產品頁 | `canonical-path.test.mts`、`product-url-case.e2e.cjs` |
+
+- 不改資料庫、API，不新增套件。還原：Revert 對應 PR。
+- 備註：兩項改動在同一個 commit（`649d54c`）。
+
+---
+
 ## 2026-10-09（第三十五批）：分類卡片封面不再破圖
 
 | 項目 | 內容 | 主要檔案 | 測試 |

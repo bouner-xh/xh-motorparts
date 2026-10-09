@@ -3,6 +3,8 @@ import {getAllProducts, getProductsByCategory, findProduct, type Product} from '
 import {categoryDescriptions, categoryKeys, categoryNames, type CategoryKey, type Locale} from '@/lib/catalog';
 import {getSupabaseServerClient} from '@/lib/supabase/server';
 import {searchProducts} from '@/lib/product-search';
+import {matchCanonicalSegments} from '@/lib/canonical-path';
+import {encodeSegment} from '@/lib/url-segment';
 
 const defaultImagePath = 'images/no-image.jpg';
 
@@ -436,3 +438,22 @@ export const getCategoryBySlug = cache(async (slug: string, locale: Locale): Pro
     return null;
   }
 });
+
+// 產品網址的大小寫與資料不同時，回傳正確的網址路徑（語系之後的部分，已編碼）；找不到或本來就正確則回傳 null
+// 只在頁面找不到資料時才呼叫，用來把大小寫寫錯的網址轉到正確的網址
+export async function resolveCanonicalProductPath(segments: string[]): Promise<string | null> {
+  const [categories, subCategories, products] = await Promise.all([
+    getCategorySummaries('en'),
+    segments.length > 1 ? getAllSubCategories() : Promise.resolve([]),
+    segments.length > 2 ? getCatalogProducts() : Promise.resolve([])
+  ]);
+  const match = matchCanonicalSegments(
+    {
+      categories: categories.map((category) => category.key as string),
+      subCategories,
+      products: products.map((product) => ({category: product.category as string, subCategory: product.subCategory, model: product.model}))
+    },
+    segments
+  );
+  return match ? `/products/${match.map(encodeSegment).join('/')}` : null;
+}
