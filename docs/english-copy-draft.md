@@ -17,7 +17,7 @@
 | 貿易條件 | FOB／EXW／CIF，下單時確認；常用出貨港：台中港 |
 | 市場 | 全球 |
 | 電話 | +886 930 797 299（由現有 0930 797 299 轉為國際格式） |
-| WhatsApp | 有，**號碼尚未提供**（是否同上面的電話？） |
+| WhatsApp | +886 930 797 299（老闆 2026-10-09 確認，與電話相同） |
 | 營業時間 | 週一至週五 09:00–18:00（台灣時間，GMT+8） |
 | 回覆時效 | 24 小時內回覆（建議註明「工作日」） |
 | 員工與廠房規模 | 暫不提供，網站不寫 |
@@ -49,7 +49,7 @@
 ### Contact
 
 - **Phone:** +886 930 797 299
-- **WhatsApp:** （待提供號碼）
+- **WhatsApp:** +886 930 797 299
 - **Email:** sales@xh-motorparts.com
 - **Business hours:** Mon–Fri, 09:00–18:00 (Taiwan time, GMT+8)
 - **Response time:** We reply within 24 hours on business days.
