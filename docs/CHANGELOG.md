@@ -25,6 +25,16 @@
 
 ---
 
+## 2026-10-09（第四十批）：子分類卡片顯示產品照片
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| L10 | 分類頁的子分類卡片改成與分類卡片相同的樣式；新增 `getSubCategoryCoverImages`：每個子分類取第一個已上架且有照片的產品的照片，沒有照片顯示 No Image 圖 | `[locale]/products/[category]/page.tsx`、`src/lib/catalog-service.ts` | `category-covers.e2e.cjs` |
+
+- 不改資料庫、API，不新增套件。還原：Revert 對應 PR。
+
+---
+
 ## 2026-10-09（第三十九批）：SVG 的 No Image 預設圖
 
 | 項目 | 內容 | 主要檔案 | 測試 |

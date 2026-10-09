@@ -3,10 +3,12 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
 import { getBaseUrl, localeAlternates } from '@/lib/site';
-import { getCategoryBySlug, getSubCategories, getCategorySummaries, resolveCanonicalProductPath } from '@/lib/catalog-service';
+import { getCategoryBySlug, getSubCategories, getCategorySummaries, getSubCategoryCoverImages, resolveCanonicalProductPath } from '@/lib/catalog-service';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import Link from 'next/link';
+import { SafeImage } from '@/components/ui/SafeImage';
+import { toProductImageUrl } from '@/lib/assets';
 import { localized } from '@/lib/localized-text';
 import { decodeSegment, encodeSegment } from '@/lib/url-segment';
 
@@ -64,6 +66,9 @@ export default async function CategoryPage({
     getTranslations({ locale: localeValue, namespace: 'nav' })
   ]);
 
+  // 子分類卡片的封面：該子分類第一個已上架且有照片的產品的照片
+  const subCovers = categoryData ? await getSubCategoryCoverImages(subCategories.map((sub) => sub.id)) : new Map<string, string>();
+
   if (!categoryData) {
     // 網址大小寫寫錯時轉到正確的網址
     const canonical = await resolveCanonicalProductPath([category]);
@@ -93,8 +98,12 @@ export default async function CategoryPage({
 
         <section className="card-grid">
           {subCategories.length > 0 ? subCategories.map((sub) => (
-            <Link key={sub.id} className="card" href={`/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeSegment(sub.slug)}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <div style={{ padding: '2rem' }}>
+            <Link key={sub.id} className="card category-card" href={`/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeSegment(sub.slug)}`} style={{ textDecoration: 'none' }}>
+              <div className="category-card__media">
+                <SafeImage src={toProductImageUrl(subCovers.get(sub.id) || '')} alt={sub.name} fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized />
+                <div className="category-card__overlay" />
+              </div>
+              <div className="category-card__body">
                 <h3 style={{ margin: '0 0 0.5rem 0', color: '#f8fafc', fontSize: '1.4rem' }}>{sub.name}</h3>
                 <p className="muted" style={{ margin: 0 }}>{localized(localeValue, { 'zh-TW': '查看相關產品', 'zh-CN': '查看相关产品', en: 'View products' })} ➔</p>
               </div>

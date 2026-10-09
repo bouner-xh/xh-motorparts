@@ -57,3 +57,19 @@ run('分類封面：自己上傳的封面、第一個產品的照片、預設圖
     }
   })
 );
+
+run('子分類卡片：顯示該子分類第一個產品的照片，沒有照片的顯示 No Image 圖', () =>
+  withPage(async (page) => {
+    await seedCategories();
+    for (const [path, name, expected] of [
+      ['/zh-TW/products/starter-motor', '乙', `/legacy-assets/${PRODUCT_PHOTO.replace(/^images\//, '')}`],
+      ['/en/products/starter-motor', 'B', `/legacy-assets/${PRODUCT_PHOTO.replace(/^images\//, '')}`],
+      ['/zh-TW/products/drum-fork', '丙', '/no-image.svg']
+    ]) {
+      const src = await coverSrc(page, path, name);
+      assert(src.includes(expected), `${path} 子分類「${name}」封面（${src}）`);
+      const res = await page.request.get(new URL(src, BASE_URL).toString());
+      assert(res.status() === 200 && (res.headers()['content-type'] || '').startsWith('image/'), `${path} 子分類封面可載入`);
+    }
+  })
+);
