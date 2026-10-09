@@ -97,6 +97,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `root-redirect.e2e.cjs` | 根網址一律轉到 /en、語言切換列 EN 排第一、中文版網址照舊可用 | 無資料庫即可 |
 | `international-copy.e2e.cjs` | 英文聯絡頁（國際電話、WhatsApp、時區、訂購資訊）、關於頁無開發中說法、隱私政策保存期限三語一致、繁簡同步 | 無資料庫即可 |
 | `html-lang.e2e.cjs` | 各頁 `<html lang>` 與語系一致、未知網址 404、根網址仍轉 /en、語言切換後 lang 跟著變 | 無資料庫即可 |
+| `sitemap-languages.e2e.cjs` | sitemap 英文優先、每個網址有 en／zh-TW／zh-CN／x-default 對應頁、沒有 lastmod 與 changefreq | 模擬 Supabase |
 | `admin-dashboard-tabs.e2e.cjs` | 後台分頁與總覽、網址記住分頁、鍵盤操作、切換不遺失表單、待處理數量同步、手機版、登出（A8） | 模擬 Supabase |
 | `product-detail-cta.e2e.cjs` | 產品頁不用捲動就看得到「加入詢價清單」、照片 1:1（D15） | 模擬 Supabase |
 | `admin-inquiry-export.e2e.cjs` | 詢價匯出 CSV：篩選結果、每個品項一列、BOM、防公式注入、未登入 401（A6 ①） | 模擬 Supabase |
