@@ -25,6 +25,16 @@
 
 ---
 
+## 2026-10-09（第三十五批）：分類卡片封面不再破圖
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| L6 | 備用圖路徑改為實際存在的 `/legacy-assets/no-image.jpg`；封面順序改為「已挑好的封面 → 該分類第一個已上架且有照片的產品的照片 → 預設圖」；`clutch-housing` 使用離合器封面；`getCategorySummaries` 多回傳 `coverImage` | `src/lib/assets.ts`、`src/lib/catalog-service.ts`、`[locale]/page.tsx`、`[locale]/products/page.tsx` | `category-covers.e2e.cjs` |
+
+- 不改資料庫結構，不新增套件。還原：Revert 對應 PR。
+
+---
+
 ## 2026-10-09（第三十四批）：產品名稱以英文為主（P5）
 
 | 項目 | 內容 | 主要檔案 | 測試 |
