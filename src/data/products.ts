@@ -8,6 +8,9 @@ export interface Product {
   image: string;
   // 這個產品的所有圖片（依順序，第一張是主圖）；沒有時只有 image
   images?: string[];
+  // OEM／對照料號與適用車型名稱（P8，選填）
+  oemNumbers?: string[];
+  vehicleModels?: string[];
   stock: number;
   specifications: string[];
 }

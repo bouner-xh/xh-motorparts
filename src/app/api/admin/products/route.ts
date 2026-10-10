@@ -4,7 +4,8 @@ import {isAdminEmail} from '@/lib/admin-auth';
 import {revalidateCatalog} from '@/lib/revalidate';
 import {getProductImageUrls, removeUnreferencedImages} from '@/lib/product-image-cleanup';
 import {describeDbError, INVALID_ID_MESSAGE, INVALID_INPUT_MESSAGE, isUuid} from '@/lib/admin-api-errors';
-import {describeProductInputIssues, duplicateModelMessage, escapeLikePattern, MAX_PRODUCT_IMAGES, MAX_STOCK_QUANTITY, normalizeModelNumber} from '@/lib/product-form';
+import {describeProductInputIssues, duplicateModelMessage, escapeLikePattern, MAX_OEM_NUMBERS, MAX_PRODUCT_IMAGES, MAX_STOCK_QUANTITY, MAX_VEHICLE_MODELS_PER_PRODUCT, normalizeModelNumber, normalizeOemNumbers} from '@/lib/product-form';
+import {isMissingVehicleSchema, VEHICLE_SETUP_MESSAGE} from '@/lib/vehicle-models';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
 
@@ -23,6 +24,8 @@ interface ProductRow {
   sub_category_id?: string | null;
   imagePath?: string;
   images?: string[];
+  oemNumbers?: string[];
+  vehicleModelIds?: string[];
 }
 
 interface ProductImageRow {
@@ -46,7 +49,10 @@ const productPayloadSchema = z.object({
   subCategoryId: z.string().uuid(),
   // 圖片：images 是完整的圖片清單（第一張是主圖，最多 8 張）；舊的 imagePath 只放主圖，兩者都沒提供就不動圖片
   images: z.array(z.string().trim().min(1).max(1000)).max(MAX_PRODUCT_IMAGES).optional(),
-  imagePath: z.string().max(1000).optional()
+  imagePath: z.string().max(1000).optional(),
+  // 適用車型（車型清單的編號）與 OEM／對照料號（轉大寫、去重複）；沒提供就不動（P8）
+  vehicleModelIds: z.array(z.string().uuid()).max(MAX_VEHICLE_MODELS_PER_PRODUCT).optional(),
+  oemNumbers: z.array(z.string().trim().min(1).max(100)).max(MAX_OEM_NUMBERS).optional().transform((list) => (list ? normalizeOemNumbers(list) : list))
 });
 
 // 這次要寫入的圖片清單；undefined 代表不動圖片
@@ -79,7 +85,9 @@ function toAdminProductItem(item: ProductRow) {
     isActive: Boolean(item.is_active),
     subCategoryId: item.sub_category_id || '',
     imagePath: item.imagePath || '',
-    images: item.images || []
+    images: item.images || [],
+    oemNumbers: item.oemNumbers || [],
+    vehicleModelIds: item.vehicleModelIds || []
   };
 }
 
@@ -185,6 +193,68 @@ async function buildImageMap(service: ServiceClient, productIds: string[]) {
   return map;
 }
 
+// 產品的 OEM 對照料號與適用車型（資料庫還沒執行更新語法時查不到，回傳空的，不影響其他功能）
+async function loadVehicleData(service: ServiceClient, productIds: string[]) {
+  const oem = new Map<string, string[]>();
+  const models = new Map<string, string[]>();
+  if (!productIds.length) return {oem, models};
+  try {
+    const {data, error} = await service.from('products').select('id, oem_numbers').in('id', productIds);
+    if (!error) ((data as Array<{id: string; oem_numbers: string[] | null}> | null) || []).forEach((row) => oem.set(row.id, row.oem_numbers || []));
+  } catch {
+    // products.oem_numbers 還沒建立
+  }
+  try {
+    const {data, error} = await service.from('product_vehicle_models').select('product_id, vehicle_model_id').in('product_id', productIds);
+    if (!error) {
+      ((data as Array<{product_id: string; vehicle_model_id: string}> | null) || []).forEach((row) => {
+        models.set(row.product_id, [...(models.get(row.product_id) || []), row.vehicle_model_id]);
+      });
+    }
+  } catch {
+    // product_vehicle_models 還沒建立
+  }
+  return {oem, models};
+}
+
+// 要存車型或對照料號時，先確認資料庫已經執行更新語法；沒有就整筆不存並說明，避免存了一半
+async function vehicleSchemaMissing(service: ServiceClient, needsOem: boolean, needsModels: boolean) {
+  if (needsOem) {
+    const {error} = await service.from('products').select('oem_numbers').limit(1);
+    if (error && isMissingVehicleSchema(error)) return true;
+  }
+  if (needsModels) {
+    const {error} = await service.from('product_vehicle_models').select('product_id').limit(1);
+    if (error && isMissingVehicleSchema(error)) return true;
+  }
+  return false;
+}
+
+// 把產品的適用車型同步到資料庫：不在清單裡的刪除、新的加入
+async function syncProductVehicleModels(service: ServiceClient, productId: string, modelIds: string[]) {
+  try {
+    const {data, error} = await service.from('product_vehicle_models').select('vehicle_model_id').eq('product_id', productId);
+    if (error) {
+      if (!isMissingVehicleSchema(error)) console.error('syncProductVehicleModels select error:', error.message);
+      return;
+    }
+    const current = ((data as Array<{vehicle_model_id: string}> | null) || []).map((row) => row.vehicle_model_id);
+    const wanted = [...new Set(modelIds)];
+    const removed = current.filter((id) => !wanted.includes(id));
+    const added = wanted.filter((id) => !current.includes(id));
+    if (removed.length) {
+      const {error: deleteError} = await service.from('product_vehicle_models').delete().eq('product_id', productId).in('vehicle_model_id', removed);
+      if (deleteError) console.error('syncProductVehicleModels delete error:', deleteError.message);
+    }
+    if (added.length) {
+      const {error: insertError} = await service.from('product_vehicle_models').insert(added.map((id) => ({product_id: productId, vehicle_model_id: id})));
+      if (insertError) console.error('syncProductVehicleModels insert error:', insertError.message);
+    }
+  } catch (err) {
+    console.error('syncProductVehicleModels exception:', err);
+  }
+}
+
 function toAuthErrorStatus(error: string) {
   if (error === 'Unauthorized') return 401;
   if (error === 'Forbidden') return 403;
@@ -257,11 +327,18 @@ export async function GET() {
     productRows.map((item) => item.id)
   );
 
+  const vehicleData = await loadVehicleData(
+    service,
+    productRows.map((item) => item.id)
+  );
+
   const items = productRows.map((item) =>
     toAdminProductItem({
       ...item,
       imagePath: imageMap.get(item.id)?.[0] || '',
-      images: imageMap.get(item.id) || []
+      images: imageMap.get(item.id) || [],
+      oemNumbers: vehicleData.oem.get(item.id) || [],
+      vehicleModelIds: vehicleData.models.get(item.id) || []
     })
   );
 
@@ -304,25 +381,36 @@ export async function POST(request: Request) {
     return duplicateModelResponse(requestId, payload.modelNumber, {code: '23505', message: 'model number exists (case-insensitive)'});
   }
 
-  const {data: inserted, error} = await service
+  if (await vehicleSchemaMissing(service, Boolean(payload.oemNumbers?.length), Boolean(payload.vehicleModelIds?.length))) {
+    return Response.json({error: VEHICLE_SETUP_MESSAGE, requestId}, {status: 409});
+  }
+
+  const insertRow: Record<string, unknown> = {
+    category_id: categoryId,
+    model_number: payload.modelNumber,
+    name_i18n: buildNameI18n(payload),
+    specifications: payload.specifications,
+    stock_quantity: payload.stockQuantity,
+    is_active: payload.isActive,
+    sub_category_id: payload.subCategoryId
+  };
+  // 對照料號有提供才寫入；資料庫還沒有該欄位時（且沒有要存對照料號），改用不含該欄位的寫法
+  let insertResult = await service
     .from('products')
-    .insert({
-      category_id: categoryId,
-      model_number: payload.modelNumber,
-      name_i18n: buildNameI18n(payload),
-      specifications: payload.specifications,
-      stock_quantity: payload.stockQuantity,
-      is_active: payload.isActive,
-      sub_category_id: payload.subCategoryId
-    })
+    .insert(payload.oemNumbers === undefined ? insertRow : {...insertRow, oem_numbers: payload.oemNumbers})
     .select('id')
     .single();
+  if (insertResult.error && isMissingVehicleSchema(insertResult.error)) {
+    insertResult = await service.from('products').insert(insertRow).select('id').single();
+  }
+  const {data: inserted, error} = insertResult;
 
   if (error?.code === '23505') return duplicateModelResponse(requestId, payload.modelNumber, error);
   if (error || !inserted?.id) return dbError(requestId, 'insert product failed', error);
 
   const images = resolveImages(payload);
   if (images?.length) await syncProductImages(service, inserted.id, images);
+  if (payload.vehicleModelIds?.length) await syncProductVehicleModels(service, inserted.id, payload.vehicleModelIds);
 
   revalidateCatalog();
   return Response.json({ok: true, id: inserted.id, requestId});
@@ -369,19 +457,28 @@ export async function PUT(request: Request) {
     return duplicateModelResponse(requestId, payload.modelNumber, {code: '23505', message: 'model number exists (case-insensitive)'});
   }
 
-  const {data: updated, error} = await service
+  if (await vehicleSchemaMissing(service, Boolean(payload.oemNumbers?.length), Boolean(payload.vehicleModelIds?.length))) {
+    return Response.json({error: VEHICLE_SETUP_MESSAGE, requestId}, {status: 409});
+  }
+
+  const updateRow: Record<string, unknown> = {
+    category_id: categoryId,
+    model_number: payload.modelNumber,
+    name_i18n: buildNameI18n(payload),
+    specifications: payload.specifications,
+    stock_quantity: payload.stockQuantity,
+    is_active: payload.isActive,
+    sub_category_id: payload.subCategoryId
+  };
+  let updateResult = await service
     .from('products')
-    .update({
-      category_id: categoryId,
-      model_number: payload.modelNumber,
-      name_i18n: buildNameI18n(payload),
-      specifications: payload.specifications,
-      stock_quantity: payload.stockQuantity,
-      is_active: payload.isActive,
-      sub_category_id: payload.subCategoryId
-    })
+    .update(payload.oemNumbers === undefined ? updateRow : {...updateRow, oem_numbers: payload.oemNumbers})
     .eq('id', productId)
     .select('id');
+  if (updateResult.error && isMissingVehicleSchema(updateResult.error)) {
+    updateResult = await service.from('products').update(updateRow).eq('id', productId).select('id');
+  }
+  const {data: updated, error} = updateResult;
 
   if (error?.code === '23505') return duplicateModelResponse(requestId, payload.modelNumber, error);
   if (error) return dbError(requestId, 'update product failed', error);
@@ -393,6 +490,7 @@ export async function PUT(request: Request) {
   // 同步圖片清單（清單留空 = 移除全部圖片，U7）；沒提供圖片欄位就不動
   const images = resolveImages(payload);
   if (images) await syncProductImages(service, productId, images);
+  if (payload.vehicleModelIds !== undefined) await syncProductVehicleModels(service, productId, payload.vehicleModelIds);
 
   revalidateCatalog();
   return Response.json({ok: true, requestId});

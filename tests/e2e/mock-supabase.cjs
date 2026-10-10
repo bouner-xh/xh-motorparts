@@ -33,6 +33,8 @@ function seedTables() {
       { id: '30000000-0000-4000-8000-000000000002', category_id: '10000000-0000-4000-8000-000000000001', sub_category_id: '20000000-0000-4000-8000-000000000001', model_number: '5TJ-11311-00', name_i18n: i18n('汽缸本體 B', '汽缸本体 B', 'Cylinder Body B'), stock_quantity: 5, specifications: ['STD', '52mm'], is_active: true }
     ],
     product_images: [],
+    vehicle_models: [],
+    product_vehicle_models: [],
     customers: [],
     inquiries: []
   };
@@ -47,6 +49,8 @@ const FOREIGN_KEYS = [
   { table: 'sub_categories', column: 'category_id', ref: 'categories', onDelete: 'cascade' },
   { table: 'products', column: 'category_id', ref: 'categories', onDelete: 'restrict' },
   { table: 'products', column: 'sub_category_id', ref: 'sub_categories', onDelete: 'restrict' },
+  { table: 'product_vehicle_models', column: 'product_id', ref: 'products', onDelete: 'cascade' },
+  { table: 'product_vehicle_models', column: 'vehicle_model_id', ref: 'vehicle_models', onDelete: 'cascade' },
   { table: 'product_images', column: 'product_id', ref: 'products', onDelete: 'cascade' },
   { table: 'inquiry_events', column: 'inquiry_id', ref: 'inquiry_requests', onDelete: 'set null' }
 ];

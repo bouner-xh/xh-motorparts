@@ -61,6 +61,42 @@ async function getProductImages(supabase: NonNullable<ReturnType<typeof getSupab
   }
 }
 
+// 產品的 OEM 對照料號與適用車型名稱（P8）；productIds 為 null 代表全部已上架產品。
+// 資料庫還沒執行更新語法時查不到，回傳空的，網站其他功能照常運作
+async function getVehicleInfo(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>, productIds: string[] | null) {
+  const oem = new Map<string, string[]>();
+  const models = new Map<string, string[]>();
+  if (productIds && !productIds.length) return {oem, models};
+
+  try {
+    let query = supabase.from('products').select('id, oem_numbers');
+    if (productIds) query = query.in('id', productIds);
+    const {data, error} = await query;
+    if (!error) ((data as Array<{id: string; oem_numbers: string[] | null}> | null) || []).forEach((row) => row.oem_numbers?.length && oem.set(row.id, row.oem_numbers));
+  } catch {
+    // products.oem_numbers 還沒建立
+  }
+
+  try {
+    let linkQuery = supabase.from('product_vehicle_models').select('product_id, vehicle_model_id');
+    if (productIds) linkQuery = linkQuery.in('product_id', productIds);
+    const {data: links, error} = await linkQuery;
+    if (!error && links?.length) {
+      const {data: names} = await supabase.from('vehicle_models').select('id, name');
+      const nameById = new Map(((names as Array<{id: string; name: string}> | null) || []).map((row) => [row.id, row.name]));
+      for (const link of links as Array<{product_id: string; vehicle_model_id: string}>) {
+        const name = nameById.get(link.vehicle_model_id);
+        if (name) models.set(link.product_id, [...(models.get(link.product_id) || []), name]);
+      }
+      models.forEach((list, id) => models.set(id, [...list].sort((a, b) => a.localeCompare(b, 'en', {sensitivity: 'base'}))));
+    }
+  } catch {
+    // 車型清單還沒建立
+  }
+
+  return {oem, models};
+}
+
 export interface CategorySummary {
   key: CategoryKey;
   name: string;
@@ -200,6 +236,7 @@ export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber
     }
 
     const images = await getProductImages(supabase, data.id);
+    const vehicle = await getVehicleInfo(supabase, [data.id]);
 
     return {
       id: data.id,
@@ -208,6 +245,8 @@ export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber
       name: getLocalizedName(data.name_i18n, locale, data.model_number),
       image: images[0] || defaultImagePath,
       images,
+      oemNumbers: vehicle.oem.get(data.id) || [],
+      vehicleModels: vehicle.models.get(data.id) || [],
       stock: data.stock_quantity ?? 0,
       specifications: data.specifications ?? []
     };
@@ -292,6 +331,9 @@ export async function searchCatalogProducts(query: string, locale: Locale = 'en'
     return [];
   }
 
+  // 對照料號與適用車型也可以搜
+  const vehicle = await getVehicleInfo(supabase, null);
+
   const searchable = data.map((item) => {
     const nameI18n = (item.name_i18n || {}) as Record<string, string>;
     const subRef = item.sub_category as {slug?: string} | Array<{slug?: string}> | null;
@@ -304,6 +346,8 @@ export async function searchCatalogProducts(query: string, locale: Locale = 'en'
       names: Object.values(nameI18n).filter(Boolean),
       stock: (item.stock_quantity as number | null) ?? 0,
       specifications: (item.specifications as string[] | null) ?? [],
+      oemNumbers: vehicle.oem.get(item.id as string) || [],
+      vehicleModels: vehicle.models.get(item.id as string) || [],
       image: defaultImagePath
     };
   });
@@ -313,7 +357,7 @@ export async function searchCatalogProducts(query: string, locale: Locale = 'en'
     supabase,
     matched.map((item) => item.id)
   );
-  return matched.map(({names: _names, ...item}) => ({...item, image: imageMap.get(item.id) || defaultImagePath}));
+  return matched.map(({names: _names, oemNumbers: _oem, vehicleModels: _models, ...item}) => ({...item, image: imageMap.get(item.id) || defaultImagePath}));
 }
 
 export interface SubCategorySummary {

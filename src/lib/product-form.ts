@@ -22,6 +22,19 @@ export function splitSpecifications(text: string): string[] {
 // 一個產品最多幾張圖（U9）
 export const MAX_PRODUCT_IMAGES = 8;
 
+// 適用車型、OEM 對照料號的數量上限（P8）
+export const MAX_VEHICLE_MODELS_PER_PRODUCT = 50;
+export const MAX_OEM_NUMBERS = 30;
+
+// OEM／對照料號：可用逗號、頓號、分號或換行分隔；一律轉大寫（與型號相同規則）、去除空白與重複
+export function normalizeOemNumbers(list: string[]): string[] {
+  return [...new Set(list.map(normalizeModelNumber).filter(Boolean))];
+}
+
+export function splitOemNumbers(text: string): string[] {
+  return normalizeOemNumbers(text.split(/[,，、;；\n]/));
+}
+
 // 庫存上限：避免輸入過大的數字造成資料庫錯誤（U2）
 export const MAX_STOCK_QUANTITY = 1_000_000;
 export const STOCK_MESSAGE = `庫存必須是 0 到 ${MAX_STOCK_QUANTITY.toLocaleString('en-US')} 的整數`;
@@ -36,7 +49,9 @@ const FIELD_LABELS: Record<string, string> = {
   specifications: '規格',
   stockQuantity: '庫存',
   imagePath: '圖片網址',
-  images: '圖片'
+  images: '圖片',
+  oemNumbers: 'OEM／對照料號',
+  vehicleModelIds: '適用車型'
 };
 
 export interface InputIssue {
@@ -50,6 +65,8 @@ function describeIssue(issue: InputIssue) {
   const label = FIELD_LABELS[field] || field || '資料';
   if (field === 'stockQuantity') return STOCK_MESSAGE;
   if (field === 'images') return issue.code === 'too_big' ? `圖片最多 ${MAX_PRODUCT_IMAGES} 張` : '圖片網址格式不正確';
+  if (field === 'oemNumbers') return issue.code === 'too_big' && issue.path.length === 1 ? `OEM／對照料號最多 ${MAX_OEM_NUMBERS} 個` : '每個對照料號最多 100 字';
+  if (field === 'vehicleModelIds') return `適用車型最多 ${MAX_VEHICLE_MODELS_PER_PRODUCT} 個`;
   if (field === 'specifications') {
     return issue.path.length > 1 ? '每個規格最多 200 字' : `規格最多 ${issue.maximum ?? 50} 項`;
   }

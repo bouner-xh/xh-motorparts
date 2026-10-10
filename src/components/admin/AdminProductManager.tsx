@@ -4,7 +4,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {toProductImageUrl} from '@/lib/product-image-url';
 import {resizeProductImage} from '@/lib/image-resize';
 import {fallbackToNoImage} from '@/components/ui/SafeImage';
-import {MAX_PRODUCT_IMAGES, normalizeModelNumber, splitSpecifications, validateProductForm} from '@/lib/product-form';
+import {MAX_PRODUCT_IMAGES, normalizeModelNumber, normalizeOemNumbers, splitOemNumbers, splitSpecifications, validateProductForm} from '@/lib/product-form';
 import type { Locale } from '@/lib/catalog';
 
 interface AdminCategoryItem {
@@ -26,6 +26,8 @@ interface AdminProductItem {
   subCategoryId: string;
   imagePath: string;
   images: string[];
+  vehicleModelIds: string[];
+  oemNumbers: string[];
 }
 
 interface ProductFormState {
@@ -41,6 +43,14 @@ interface ProductFormState {
   subCategoryId: string;
   // 圖片清單，第一張是主圖（最多 8 張）
   images: string[];
+  // 適用車型（車型清單的編號）與 OEM／對照料號（用逗號分隔的文字）
+  vehicleModelIds: string[];
+  oemNumbers: string;
+}
+
+interface VehicleModelOption {
+  id: string;
+  name: string;
 }
 
 interface AdminSubCategoryItem {
@@ -69,7 +79,9 @@ const emptyFormState: ProductFormState = {
   // 預設不上架，確認內容後再勾選，避免誤上架（A2）
   isActive: false,
   subCategoryId: '',
-  images: []
+  images: [],
+  vehicleModelIds: [],
+  oemNumbers: ''
 };
 
 // locale 由後台頁面傳入，目前產品表單固定顯示繁中
@@ -93,6 +105,10 @@ export function AdminProductManager(_props: {locale: Locale}) {
   const [unsavedUploads, setUnsavedUploads] = useState<string[]>([]);
   // 「進階」手動輸入的圖片網址
   const [manualUrl, setManualUrl] = useState('');
+  // 車型清單（P8）；vehicleEnabled 為 false 代表資料庫還沒執行更新語法
+  const [vehicleModels, setVehicleModels] = useState<VehicleModelOption[]>([]);
+  const [vehicleEnabled, setVehicleEnabled] = useState(true);
+  const [vehicleFilter, setVehicleFilter] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
   const modelInputRef = useRef<HTMLInputElement>(null);
 
@@ -173,6 +189,28 @@ export function AdminProductManager(_props: {locale: Locale}) {
     };
   }, [loadProducts]);
 
+  // 車型清單：載入後，已勾選但已被刪除的車型自動取消勾選
+  const loadVehicleModels = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/vehicle-models', {cache: 'no-store'});
+      const result = (await parseResponseJson<{items?: VehicleModelOption[]; enabled?: boolean}>(response)) || {};
+      if (!response.ok) return;
+      const items = result.items || [];
+      setVehicleModels(items);
+      setVehicleEnabled(result.enabled !== false);
+      const ids = new Set(items.map((item) => item.id));
+      setForm((prev) => (prev.vehicleModelIds.every((id) => ids.has(id)) ? prev : {...prev, vehicleModelIds: prev.vehicleModelIds.filter((id) => ids.has(id))}));
+    } catch {
+      // 載入失敗時維持目前畫面
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadVehicleModels();
+    window.addEventListener('vehicle-models-updated', loadVehicleModels);
+    return () => window.removeEventListener('vehicle-models-updated', loadVehicleModels);
+  }, [loadVehicleModels]);
+
   const submitLabel = useMemo(() => (form.id ? '更新產品' : '新增產品'), [form.id]);
 
   async function submitProduct() {
@@ -204,7 +242,9 @@ export function AdminProductManager(_props: {locale: Locale}) {
       stockQuantity: Number(form.stockQuantity),
       isActive: form.isActive,
       subCategoryId: form.subCategoryId,
-      images: form.images
+      images: form.images,
+      vehicleModelIds: form.vehicleModelIds,
+      oemNumbers: splitOemNumbers(form.oemNumbers)
     };
 
     const method = form.id ? 'PUT' : 'POST';
@@ -266,7 +306,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
   // 表單有尚未儲存的內容時，切換到其他產品前先確認，避免辛苦輸入的資料消失（U5）
   function hasUnsavedChanges() {
     const text = [form.modelNumber, form.nameZhTw, form.nameZhCn, form.nameEn, form.specifications].map((v) => v.trim());
-    if (!form.id) return text.some(Boolean) || form.images.length > 0 || unsavedUploads.length > 0;
+    if (!form.id) return text.some(Boolean) || form.images.length > 0 || unsavedUploads.length > 0 || form.vehicleModelIds.length > 0 || Boolean(form.oemNumbers.trim());
     if (!editingRow) return false;
     return (
       text[0] !== editingRow.modelNumber ||
@@ -278,7 +318,9 @@ export function AdminProductManager(_props: {locale: Locale}) {
       form.isActive !== editingRow.isActive ||
       form.category !== editingRow.category ||
       form.subCategoryId !== editingRow.subCategoryId ||
-      form.images.join('|') !== editingRow.images.join('|')
+      form.images.join('|') !== editingRow.images.join('|') ||
+      [...form.vehicleModelIds].sort().join('|') !== [...editingRow.vehicleModelIds].sort().join('|') ||
+      splitOemNumbers(form.oemNumbers).join('|') !== editingRow.oemNumbers.join('|')
     );
   }
 
@@ -306,7 +348,9 @@ export function AdminProductManager(_props: {locale: Locale}) {
       stockQuantity: row.stockQuantity,
       isActive: false,
       subCategoryId: row.subCategoryId,
-      images: row.images
+      images: row.images,
+      vehicleModelIds: row.vehicleModelIds,
+      oemNumbers: row.oemNumbers.join(', ')
     });
     setStatus('info', `已複製 ${row.modelNumber}，請輸入新的型號後按「新增產品」`);
     focusForm();
@@ -328,7 +372,9 @@ export function AdminProductManager(_props: {locale: Locale}) {
       stockQuantity: row.stockQuantity,
       isActive: row.isActive,
       subCategoryId: row.subCategoryId,
-      images: row.images
+      images: row.images,
+      vehicleModelIds: row.vehicleModelIds,
+      oemNumbers: row.oemNumbers.join(', ')
     });
   }
 
@@ -588,6 +634,57 @@ export function AdminProductManager(_props: {locale: Locale}) {
             value={form.specifications}
             onChange={(event) => setForm((prev) => ({...prev, specifications: event.target.value}))}
             placeholder="STD, 47MM, 50MM"
+          />
+        </label>
+
+        <fieldset className="admin-fitment" data-testid="admin-fitment">
+          <legend>適用車型</legend>
+          {!vehicleEnabled ? (
+            <p className="muted">車型清單尚未啟用（資料庫還沒執行更新語法），請見「分類」分頁最下方的說明。</p>
+          ) : vehicleModels.length === 0 ? (
+            <p className="muted">還沒有車型。請先到「分類」分頁最下方的「車型清單」新增。</p>
+          ) : (
+            <>
+              {vehicleModels.length > 8 ? (
+                <input
+                  type="search"
+                  aria-label="篩選車型"
+                  placeholder="輸入文字篩選車型"
+                  value={vehicleFilter}
+                  onChange={(event) => setVehicleFilter(event.target.value)}
+                />
+              ) : null}
+              <div className="admin-fitment__list">
+                {vehicleModels
+                  .filter((model) => model.name.toLowerCase().includes(vehicleFilter.trim().toLowerCase()) || form.vehicleModelIds.includes(model.id))
+                  .map((model) => (
+                    <label key={model.id} className="admin-fitment__item">
+                      <input
+                        type="checkbox"
+                        checked={form.vehicleModelIds.includes(model.id)}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            vehicleModelIds: event.target.checked ? [...prev.vehicleModelIds, model.id] : prev.vehicleModelIds.filter((id) => id !== model.id)
+                          }))
+                        }
+                      />
+                      {model.name}
+                    </label>
+                  ))}
+              </div>
+            </>
+          )}
+        </fieldset>
+
+        <label>
+          OEM／對照料號
+          <small className="muted">用逗號分隔，自動轉成大寫</small>
+          <input
+            value={form.oemNumbers}
+            onChange={(event) => setForm((prev) => ({...prev, oemNumbers: event.target.value}))}
+            onBlur={() => setForm((prev) => ({...prev, oemNumbers: normalizeOemNumbers(prev.oemNumbers.split(/[,，、;；\n]/)).join(', ')}))}
+            placeholder="2A6-17421-00, 5T5-17421-00"
           />
         </label>
 

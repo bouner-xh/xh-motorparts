@@ -10,6 +10,9 @@ export interface SearchableProduct {
   // 三種語言的名稱
   names: string[];
   specifications: string[];
+  // OEM／對照料號與適用車型名稱（P8，選填）
+  oemNumbers?: string[];
+  vehicleModels?: string[];
 }
 
 export function normalizeQuery(value: string | string[] | undefined | null): string {
@@ -19,7 +22,7 @@ export function normalizeQuery(value: string | string[] | undefined | null): str
 
 const compact = (value: string) => value.toLowerCase().replace(/[\s\-_./]/g, '');
 
-// 單一關鍵字的分數：型號完全相同 > 型號開頭相同 > 型號包含 > 名稱包含 > 規格包含；不符合回傳 0
+// 單一關鍵字的分數：型號完全相同 > 型號開頭相同 > 型號包含 > 對照料號 > 名稱包含 > 適用車型 > 規格包含；不符合回傳 0
 function scoreToken(product: SearchableProduct, token: string): number {
   const lower = token.toLowerCase();
   const tokenCompact = compact(token);
@@ -29,7 +32,14 @@ function scoreToken(product: SearchableProduct, token: string): number {
     if (model.startsWith(tokenCompact)) return 80;
     if (model.includes(tokenCompact)) return 60;
   }
+  if (tokenCompact && product.oemNumbers?.length) {
+    const oems = product.oemNumbers.map(compact);
+    if (oems.some((oem) => oem === tokenCompact)) return 90;
+    if (oems.some((oem) => oem.startsWith(tokenCompact))) return 70;
+    if (oems.some((oem) => oem.includes(tokenCompact))) return 55;
+  }
   if (product.names.some((name) => name.toLowerCase().includes(lower))) return 30;
+  if (product.vehicleModels?.some((name) => name.toLowerCase().includes(lower))) return 25;
   if (product.specifications.some((spec) => spec.toLowerCase().includes(lower))) return 10;
   return 0;
 }
