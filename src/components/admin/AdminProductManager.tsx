@@ -4,7 +4,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {toProductImageUrl} from '@/lib/product-image-url';
 import {resizeProductImage} from '@/lib/image-resize';
 import {fallbackToNoImage} from '@/components/ui/SafeImage';
-import {normalizeModelNumber, splitSpecifications, validateProductForm} from '@/lib/product-form';
+import {MAX_PRODUCT_IMAGES, normalizeModelNumber, splitSpecifications, validateProductForm} from '@/lib/product-form';
 import type { Locale } from '@/lib/catalog';
 
 interface AdminCategoryItem {
@@ -25,6 +25,7 @@ interface AdminProductItem {
   isActive: boolean;
   subCategoryId: string;
   imagePath: string;
+  images: string[];
 }
 
 interface ProductFormState {
@@ -38,7 +39,8 @@ interface ProductFormState {
   stockQuantity: number;
   isActive: boolean;
   subCategoryId: string;
-  imagePath: string;
+  // 圖片清單，第一張是主圖（最多 8 張）
+  images: string[];
 }
 
 interface AdminSubCategoryItem {
@@ -67,7 +69,7 @@ const emptyFormState: ProductFormState = {
   // 預設不上架，確認內容後再勾選，避免誤上架（A2）
   isActive: false,
   subCategoryId: '',
-  imagePath: ''
+  images: []
 };
 
 // locale 由後台頁面傳入，目前產品表單固定顯示繁中
@@ -79,7 +81,6 @@ export function AdminProductManager(_props: {locale: Locale}) {
   const [statusMessage, setStatusMessage] = useState('');
   const [statusType, setStatusType] = useState<StatusType>('idle');
   const [loadError, setLoadError] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -89,7 +90,9 @@ export function AdminProductManager(_props: {locale: Locale}) {
   const [filterActive, setFilterActive] = useState<ActiveFilter>('all');
   const [page, setPage] = useState(1);
   // 已上傳但還沒存檔的圖片；換圖或取消時刪除，避免留在儲存空間（A7）
-  const [unsavedUpload, setUnsavedUpload] = useState('');
+  const [unsavedUploads, setUnsavedUploads] = useState<string[]>([]);
+  // 「進階」手動輸入的圖片網址
+  const [manualUrl, setManualUrl] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
   const modelInputRef = useRef<HTMLInputElement>(null);
 
@@ -183,7 +186,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
       if (!ok) return;
     }
     // 上架時沒有圖片，前台會顯示預設圖；提醒一次讓使用者決定（U8，已經上架的產品重複編輯不再提醒）
-    if (form.isActive && !form.imagePath.trim() && !editingRow?.isActive) {
+    if (form.isActive && form.images.length === 0 && !editingRow?.isActive) {
       if (!window.confirm('這個產品還沒有圖片，上架後前台會顯示預設圖片。\n仍要上架嗎？（按取消可回去上傳圖片）')) return;
     }
     setIsSubmitting(true);
@@ -201,7 +204,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
       stockQuantity: Number(form.stockQuantity),
       isActive: form.isActive,
       subCategoryId: form.subCategoryId,
-      imagePath: form.imagePath.trim()
+      images: form.images
     };
 
     const method = form.id ? 'PUT' : 'POST';
@@ -230,8 +233,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
       setStatus('success', form.id ? '產品更新成功' : '產品新增成功');
       // 保留剛剛選的分類與子分類，方便連續新增同分類的產品（A3）
       setForm({...emptyFormState, category: form.category, subCategoryId: form.subCategoryId});
-      setUnsavedUpload('');
-      setSelectedFile(null);
+      setUnsavedUploads([]);
       await loadProducts();
       window.dispatchEvent(new Event('products-updated'));
     } catch (error) {
@@ -246,11 +248,13 @@ export function AdminProductManager(_props: {locale: Locale}) {
     await submitProduct();
   }
 
-  // 刪除已上傳但沒有存檔的圖片（伺服器只會刪除沒有產品使用的檔案）
-  function discardUnsavedUpload() {
-    if (!unsavedUpload) return;
-    void fetch(`/api/admin/upload-image?url=${encodeURIComponent(unsavedUpload)}`, {method: 'DELETE'});
-    setUnsavedUpload('');
+  // 刪除已上傳但沒有存檔的圖片（伺服器只會刪除沒有產品使用的檔案）；urls 沒指定時刪除全部沒存檔的
+  function discardUnsavedUploads(urls: string[] = unsavedUploads) {
+    const targets = unsavedUploads.filter((url) => urls.includes(url));
+    targets.forEach((url) => {
+      void fetch(`/api/admin/upload-image?url=${encodeURIComponent(url)}`, {method: 'DELETE'});
+    });
+    setUnsavedUploads((prev) => prev.filter((url) => !targets.includes(url)));
   }
 
   // 把表單捲到畫面上並把游標放在型號欄（表單在列表上方，編輯時原本不會自動捲動）
@@ -262,7 +266,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
   // 表單有尚未儲存的內容時，切換到其他產品前先確認，避免辛苦輸入的資料消失（U5）
   function hasUnsavedChanges() {
     const text = [form.modelNumber, form.nameZhTw, form.nameZhCn, form.nameEn, form.specifications].map((v) => v.trim());
-    if (!form.id) return text.some(Boolean) || Boolean(form.imagePath.trim()) || Boolean(unsavedUpload);
+    if (!form.id) return text.some(Boolean) || form.images.length > 0 || unsavedUploads.length > 0;
     if (!editingRow) return false;
     return (
       text[0] !== editingRow.modelNumber ||
@@ -274,7 +278,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
       form.isActive !== editingRow.isActive ||
       form.category !== editingRow.category ||
       form.subCategoryId !== editingRow.subCategoryId ||
-      form.imagePath.trim() !== editingRow.imagePath
+      form.images.join('|') !== editingRow.images.join('|')
     );
   }
 
@@ -283,8 +287,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
   }
 
   function cancelEdit() {
-    discardUnsavedUpload();
-    setSelectedFile(null);
+    discardUnsavedUploads();
     setForm((prev) => ({...emptyFormState, category: prev.category, subCategoryId: prev.subCategoryId}));
     setStatus('idle', '');
   }
@@ -292,8 +295,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
   // 複製產品：帶入同一筆的分類、名稱、規格與圖片，型號留空待輸入，預設不上架（A7）
   function duplicateProduct(row: AdminProductItem) {
     if (!confirmDiscardChanges()) return;
-    discardUnsavedUpload();
-    setSelectedFile(null);
+    discardUnsavedUploads();
     setForm({
       category: row.category,
       modelNumber: '',
@@ -304,7 +306,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
       stockQuantity: row.stockQuantity,
       isActive: false,
       subCategoryId: row.subCategoryId,
-      imagePath: row.imagePath
+      images: row.images
     });
     setStatus('info', `已複製 ${row.modelNumber}，請輸入新的型號後按「新增產品」`);
     focusForm();
@@ -312,8 +314,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
 
   function startEdit(row: AdminProductItem) {
     if (row.id !== form.id && !confirmDiscardChanges()) return;
-    discardUnsavedUpload();
-    setSelectedFile(null);
+    discardUnsavedUploads();
     setStatus('idle', '');
     focusForm();
     setForm({
@@ -327,7 +328,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
       stockQuantity: row.stockQuantity,
       isActive: row.isActive,
       subCategoryId: row.subCategoryId,
-      imagePath: row.imagePath
+      images: row.images
     });
   }
 
@@ -363,7 +364,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
   // 列表上直接上架／下架，不用開編輯表單（U6）
   async function toggleActive(row: AdminProductItem) {
     const next = !row.isActive;
-    if (next && !row.imagePath && !window.confirm(`「${row.modelNumber}」還沒有圖片，上架後前台會顯示預設圖片。\n仍要上架嗎？`)) return;
+    if (next && row.images.length === 0 && !window.confirm(`「${row.modelNumber}」還沒有圖片，上架後前台會顯示預設圖片。\n仍要上架嗎？`)) return;
     setStatus('info', `${next ? '上架' : '下架'}中：${row.modelNumber}`);
     try {
       const response = await fetch('/api/admin/products', {
@@ -380,7 +381,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
           stockQuantity: row.stockQuantity,
           isActive: next,
           subCategoryId: row.subCategoryId,
-          imagePath: row.imagePath
+          images: row.images
         })
       });
       const result = (await parseResponseJson<{error?: string}>(response)) || {};
@@ -393,37 +394,80 @@ export function AdminProductManager(_props: {locale: Locale}) {
     }
   }
 
-  async function uploadImage(file: File) {
-    setIsUploading(true);
-    setStatus('info', `圖片上傳中：${file.name}`);
-
-    // 上傳前先縮小照片，買家瀏覽時不用下載數 MB 的原檔（P1）
-    const prepared = await resizeProductImage(file);
-    const body = new FormData();
-    body.append('file', prepared);
-
-    try {
-      const response = await fetch('/api/admin/upload-image', {
-        method: 'POST',
-        body
-      });
-
-      const result =
-        (await parseResponseJson<{imagePath?: string; error?: string}>(response)) || {};
-      if (!response.ok || !result.imagePath) {
-        throw new Error(result.error || `圖片上傳失敗（HTTP ${response.status}）`);
-      }
-
-      // 換了一張還沒存檔的圖時，刪除前一張
-      discardUnsavedUpload();
-      setUnsavedUpload(result.imagePath);
-      setForm((prev) => ({...prev, imagePath: result.imagePath || ''}));
-      setStatus('success', '圖片上傳成功，已填入圖片路徑');
-    } catch (error) {
-      setStatus('error', error instanceof Error ? error.message : '圖片上傳失敗');
-    } finally {
-      setIsUploading(false);
+  // 一次上傳一張或多張（最多 8 張）；每張上傳前先縮小，買家瀏覽時不用下載數 MB 的原檔（P1）
+  async function uploadImages(files: File[]) {
+    const room = MAX_PRODUCT_IMAGES - form.images.length;
+    if (room <= 0) {
+      setStatus('error', `每個產品最多 ${MAX_PRODUCT_IMAGES} 張圖片，請先移除不要的圖片`);
+      return;
     }
+    const accepted = files.slice(0, room);
+    setIsUploading(true);
+    const added: string[] = [];
+    let failure = '';
+
+    for (const [index, file] of accepted.entries()) {
+      setStatus('info', `圖片上傳中（${index + 1}/${accepted.length}）：${file.name}`);
+      try {
+        const prepared = await resizeProductImage(file);
+        const body = new FormData();
+        body.append('file', prepared);
+        const response = await fetch('/api/admin/upload-image', {method: 'POST', body});
+        const result = (await parseResponseJson<{imagePath?: string; error?: string}>(response)) || {};
+        if (!response.ok || !result.imagePath) {
+          throw new Error(result.error || `圖片上傳失敗（HTTP ${response.status}）`);
+        }
+        added.push(result.imagePath);
+        const uploaded = result.imagePath;
+        setUnsavedUploads((prev) => [...prev, uploaded]);
+        setForm((prev) => ({...prev, images: [...prev.images, uploaded]}));
+      } catch (error) {
+        failure = error instanceof Error ? error.message : '圖片上傳失敗';
+        break;
+      }
+    }
+
+    setIsUploading(false);
+    const skipped = files.length - accepted.length;
+    if (failure) {
+      setStatus('error', added.length ? `已上傳 ${added.length} 張，其餘失敗：${failure}` : failure);
+    } else {
+      setStatus('success', `圖片上傳成功（${added.length} 張）${skipped > 0 ? `，超過 ${MAX_PRODUCT_IMAGES} 張的 ${skipped} 張已略過` : ''}，按下「${submitLabel}」後才會儲存`);
+    }
+  }
+
+  // 圖片清單操作：設為主圖、左右移動、移除
+  function moveImage(index: number, to: number) {
+    setForm((prev) => {
+      if (to < 0 || to >= prev.images.length) return prev;
+      const next = [...prev.images];
+      const [item] = next.splice(index, 1);
+      next.splice(to, 0, item);
+      return {...prev, images: next};
+    });
+  }
+
+  function removeImage(index: number) {
+    const url = form.images[index];
+    if (!url) return;
+    discardUnsavedUploads([url]);
+    setForm((prev) => ({...prev, images: prev.images.filter((_, i) => i !== index)}));
+    setStatus('info', form.id ? '已移除圖片，按下「更新產品」後才會儲存' : '已移除圖片');
+  }
+
+  function addManualUrl() {
+    const url = manualUrl.trim();
+    if (!url) return;
+    if (form.images.includes(url)) {
+      setStatus('error', '這個圖片網址已經在清單裡');
+      return;
+    }
+    if (form.images.length >= MAX_PRODUCT_IMAGES) {
+      setStatus('error', `每個產品最多 ${MAX_PRODUCT_IMAGES} 張圖片`);
+      return;
+    }
+    setForm((prev) => ({...prev, images: [...prev.images, url]}));
+    setManualUrl('');
   }
 
   const categoryNames = useMemo(() => new Map(categories.map((c) => [c.slug, c.nameZhTw])), [categories]);
@@ -571,64 +615,72 @@ export function AdminProductManager(_props: {locale: Locale}) {
           上架
         </label>
 
-        <label>
-          上傳主圖
-          <input
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={(event) => {
-              const file = event.target.files?.[0] || null;
-              setSelectedFile(file);
-              if (file) {
-                void uploadImage(file);
-              }
-            }}          />
-        </label>
+        <div className="admin-gallery" data-testid="admin-gallery">
+          <strong>
+            產品圖片（{form.images.length} / {MAX_PRODUCT_IMAGES} 張）
+          </strong>
+          <p className="muted">第一張是主圖，產品列表與分類封面使用主圖。可一次選多張；用左右箭頭調整順序。</p>
+          {form.images.length ? (
+            <ul className="admin-gallery__list">
+              {form.images.map((url, index) => (
+                <li key={`${url}-${index}`} className="admin-gallery__item" data-image-url={url}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={toProductImageUrl(url)} alt={index === 0 ? '目前的主圖' : `圖片 ${index + 1}`} onError={fallbackToNoImage} width={96} height={96} />
+                  {index === 0 ? <span className="admin-gallery__badge">主圖</span> : null}
+                  <div className="admin-gallery__actions">
+                    {index > 0 ? (
+                      <button type="button" onClick={() => moveImage(index, 0)} aria-label={`把第 ${index + 1} 張設為主圖`}>
+                        設為主圖
+                      </button>
+                    ) : null}
+                    <button type="button" disabled={index === 0} onClick={() => moveImage(index, index - 1)} aria-label={`第 ${index + 1} 張往前移`}>
+                      ←
+                    </button>
+                    <button type="button" disabled={index === form.images.length - 1} onClick={() => moveImage(index, index + 1)} aria-label={`第 ${index + 1} 張往後移`}>
+                      →
+                    </button>
+                    <button type="button" onClick={() => removeImage(index)} aria-label={`移除第 ${index + 1} 張`} disabled={isUploading || isSubmitting}>
+                      移除
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">尚未上傳圖片</p>
+          )}
+          <label>
+            上傳圖片
+            <input
+              type="file"
+              multiple
+              accept="image/png,image/jpeg,image/webp"
+              disabled={isUploading || form.images.length >= MAX_PRODUCT_IMAGES}
+              onChange={(event) => {
+                const files = Array.from(event.target.files || []);
+                event.target.value = '';
+                if (files.length) void uploadImages(files);
+              }}
+            />
+          </label>
+        </div>
 
-        {/* 一般用「上傳主圖」即可；手動網址只給特殊情況，收在進階裡避免誤填（P7） */}
+        {/* 一般用「上傳圖片」即可；手動網址只給特殊情況，收在進階裡避免誤填（P7） */}
         <details className="admin-advanced">
           <summary>進階：手動指定圖片網址</summary>
           <label>
             圖片網址
             <input
-              value={form.imagePath}
-              onChange={(event) => setForm((prev) => ({...prev, imagePath: event.target.value}))}
-              placeholder="上傳主圖後會自動帶入"
+              value={manualUrl}
+              onChange={(event) => setManualUrl(event.target.value)}
+              placeholder="貼上網址後按「加入圖片」"
             />
           </label>
+          <button type="button" onClick={addManualUrl} disabled={!manualUrl.trim()}>
+            加入圖片
+          </button>
           <p className="muted">一般不需要填寫。只能使用本網站儲存空間的圖片；其他網站的圖片網址在前台會被安全設定擋住、無法顯示。</p>
         </details>
-
-        <div style={{display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center'}}>
-          {form.imagePath ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={toProductImageUrl(form.imagePath)} alt="目前的主圖" onError={fallbackToNoImage} width={64} height={64} style={{objectFit: 'cover', borderRadius: '6px'}} />
-          ) : null}
-          {form.imagePath ? (
-            <button
-              type="button"
-              style={{background: '#334155'}}
-              disabled={isUploading || isSubmitting}
-              onClick={() => {
-                discardUnsavedUpload();
-                setSelectedFile(null);
-                setForm((prev) => ({...prev, imagePath: ''}));
-                setStatus('info', form.id ? '已移除圖片，按下「更新產品」後才會儲存' : '已移除圖片');
-              }}
-            >
-              移除圖片
-            </button>
-          ) : null}
-          <span className="muted">
-            {isUploading
-              ? '圖片上傳中，請稍候...'
-              : selectedFile
-                ? `已上傳：${selectedFile.name}（按下${submitLabel}後才會儲存）`
-                : form.imagePath
-                  ? '目前的主圖'
-                  : '尚未選擇檔案'}
-          </span>
-        </div>
 
         <div style={{display: 'flex', gap: '0.6rem', flexWrap: 'wrap'}}>
           <button type="submit" disabled={isUploading || isSubmitting}>

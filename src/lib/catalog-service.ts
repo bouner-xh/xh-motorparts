@@ -47,6 +47,20 @@ async function getPrimaryImageMap(supabase: NonNullable<ReturnType<typeof getSup
   return imageMap;
 }
 
+// 一個產品的所有圖片（依順序，第一張是主圖）
+async function getProductImages(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>, productId: string) {
+  try {
+    const {data} = await supabase
+      .from('product_images')
+      .select('storage_path,sort_order')
+      .eq('product_id', productId)
+      .order('sort_order', {ascending: true});
+    return (data || []).map((item) => item.storage_path as string | null).filter((path): path is string => Boolean(path));
+  } catch {
+    return [];
+  }
+}
+
 export interface CategorySummary {
   key: CategoryKey;
   name: string;
@@ -185,14 +199,15 @@ export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber
       throw error;
     }
 
-    const imageMap = await getPrimaryImageMap(supabase, [data.id]);
+    const images = await getProductImages(supabase, data.id);
 
     return {
       id: data.id,
       category,
       model: data.model_number,
       name: getLocalizedName(data.name_i18n, locale, data.model_number),
-      image: imageMap.get(data.id) || defaultImagePath,
+      image: images[0] || defaultImagePath,
+      images,
       stock: data.stock_quantity ?? 0,
       specifications: data.specifications ?? []
     };

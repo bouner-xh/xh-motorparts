@@ -27,7 +27,7 @@ run('只填英文名稱就能新增；繁中、簡中頁顯示英文名稱', () 
     await form.getByLabel('型號').fill('EN-ONLY-1');
     await form.getByLabel('名稱（en）').fill('Counter Shaft Gear');
     await form.getByLabel('上架').check();
-    await form.getByLabel('上傳主圖').waitFor();
+    await form.getByLabel('上傳圖片').waitFor();
     page.once('dialog', (d) => d.accept()); // 沒有圖片的上架提醒
     await form.getByRole('button', { name: '新增產品' }).click();
     await page.getByText('產品新增成功').waitFor({ timeout: 30000 });

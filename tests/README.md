@@ -98,6 +98,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `category-covers.e2e.cjs` | 分類卡片封面：自己上傳的封面 → 第一個產品的照片 → 預設圖，三種情況圖片都能載入；子分類卡片顯示該子分類第一個產品的照片，沒有照片顯示 No Image 圖 | 模擬 Supabase |
 | `admin-category-cover.e2e.cjs` | 後台大分類上傳封面：自動縮圖、前台卡片使用、換圖與移除後清掉舊圖檔、取消編輯刪除沒存檔的圖、資料庫沒有封面欄位時網站與後台照常運作並提示先執行更新語法 | 模擬 Supabase |
 | `no-image-fallback.e2e.cjs` | 沒有圖片或圖片網址失效時顯示 SVG 的 No Image 圖（產品卡片、產品頁、分類卡片、後台縮圖），不破圖；預設圖是 SVG | 模擬 Supabase |
+| `admin-product-gallery.e2e.cjs` | 一個產品多張圖（上限 8 張）：後台一次上傳多張、設為主圖、調整順序、移除；產品頁縮圖列與切換；結構化資料有全部圖片；單張圖沒有縮圖列 | 模擬 Supabase |
 | `product-url-case.e2e.cjs` | 產品網址不分大小寫：分類、子分類、型號大小寫寫錯會轉到正確網址（308、保留語系）；不存在的網址仍 404、不會無限轉址 | 模擬 Supabase |
 | `admin-model-case.e2e.cjs` | 型號一律存成大寫（表單離開欄位自動轉、API 與批量匯入）、不分大小寫比對重複型號、舊小寫型號重存不跳改型號確認、匯入不會重複建立 | 模擬 Supabase |
 | `root-redirect.e2e.cjs` | 根網址一律轉到 /en、語言切換列 EN 排第一、中文版網址照舊可用 | 無資料庫即可 |

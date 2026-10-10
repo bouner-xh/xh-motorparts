@@ -118,7 +118,7 @@ run('複製產品：型號留空、預設不上架，存檔後成為新產品', 
   })
 );
 
-run('上傳後沒有存檔的圖片會被清除', () =>
+run('上傳後沒有存檔的圖片會被清除（多張圖：加入、移除、取消編輯）', () =>
   withPage(async (page) => {
     await resetMock();
     await openProducts(page);
@@ -129,7 +129,7 @@ run('上傳後沒有存檔的圖片會被清除', () =>
     fs.copyFileSync('images/products/cylinder/cylinder-003.jpg', imgB);
 
     await productRows(page).filter({ hasText: '1HV-11311-00' }).getByRole('button', { name: '編輯' }).click();
-    const fileInput = page.getByLabel('上傳主圖');
+    const fileInput = page.getByLabel('上傳圖片');
     await fileInput.setInputFiles(imgA);
     await page.getByText('圖片上傳成功').waitFor({ timeout: 30000 });
     assert((await mockState()).storage.length === 1, '第一張已上傳');
@@ -138,8 +138,14 @@ run('上傳後沒有存檔的圖片會被清除', () =>
     await fileInput.setInputFiles(imgB);
     await page.waitForFunction(async () => true);
     await page.waitForTimeout(1500);
+    // 多張圖：再上傳一張是「加入」，兩張都在
     let storage = (await mockState()).storage;
-    assert(storage.length === 1 && storage[0].endsWith('b.jpg'), `換圖後第一張已刪除（${storage.join(', ')}）`);
+    assert(storage.length === 2, `第二張是加入，不是取代（${storage.join(', ')}）`);
+    // 移除第二張：還沒存檔的圖檔立刻刪除
+    await page.getByRole('button', { name: '移除第 2 張' }).click();
+    await page.waitForTimeout(1500);
+    storage = (await mockState()).storage;
+    assert(storage.length === 1 && storage[0].endsWith('a.jpg'), `移除第二張後只剩第一張（${storage.join(', ')}）`);
 
     await page.getByTestId('editing-banner').getByRole('button', { name: '取消編輯' }).click();
     await page.waitForTimeout(1500);

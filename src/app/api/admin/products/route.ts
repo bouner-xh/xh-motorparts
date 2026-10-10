@@ -4,7 +4,7 @@ import {isAdminEmail} from '@/lib/admin-auth';
 import {revalidateCatalog} from '@/lib/revalidate';
 import {getProductImageUrls, removeUnreferencedImages} from '@/lib/product-image-cleanup';
 import {describeDbError, INVALID_ID_MESSAGE, INVALID_INPUT_MESSAGE, isUuid} from '@/lib/admin-api-errors';
-import {describeProductInputIssues, duplicateModelMessage, escapeLikePattern, MAX_STOCK_QUANTITY, normalizeModelNumber} from '@/lib/product-form';
+import {describeProductInputIssues, duplicateModelMessage, escapeLikePattern, MAX_PRODUCT_IMAGES, MAX_STOCK_QUANTITY, normalizeModelNumber} from '@/lib/product-form';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
 
@@ -22,6 +22,7 @@ interface ProductRow {
   category: CategoryJoinRef | CategoryJoinRef[] | null;
   sub_category_id?: string | null;
   imagePath?: string;
+  images?: string[];
 }
 
 interface ProductImageRow {
@@ -43,8 +44,16 @@ const productPayloadSchema = z.object({
   stockQuantity: z.number().int().nonnegative().max(MAX_STOCK_QUANTITY).default(0),
   isActive: z.boolean().default(true),
   subCategoryId: z.string().uuid(),
-  imagePath: z.string().max(1000).optional().default('')
+  // 圖片：images 是完整的圖片清單（第一張是主圖，最多 8 張）；舊的 imagePath 只放主圖，兩者都沒提供就不動圖片
+  images: z.array(z.string().trim().min(1).max(1000)).max(MAX_PRODUCT_IMAGES).optional(),
+  imagePath: z.string().max(1000).optional()
 });
+
+// 這次要寫入的圖片清單；undefined 代表不動圖片
+function resolveImages(payload: {images?: string[]; imagePath?: string}): string[] | undefined {
+  const list = payload.images ?? (payload.imagePath === undefined ? undefined : payload.imagePath.trim() ? [payload.imagePath.trim()] : []);
+  return list ? [...new Set(list)] : undefined;
+}
 
 // 只存有填寫的語言，沒填的語言前台退回英文名稱
 function buildNameI18n(payload: {nameZhTw: string; nameZhCn: string; nameEn: string}) {
@@ -69,7 +78,8 @@ function toAdminProductItem(item: ProductRow) {
     stockQuantity: item.stock_quantity ?? 0,
     isActive: Boolean(item.is_active),
     subCategoryId: item.sub_category_id || '',
-    imagePath: item.imagePath || ''
+    imagePath: item.imagePath || '',
+    images: item.images || []
   };
 }
 
@@ -94,69 +104,64 @@ async function getAuthenticatedUser() {
   return {ok: true, user} as const;
 }
 
-async function bindPrimaryImage(service: ServiceClient, productId: string, imagePath?: string) {
-  const imageValue = (imagePath || '').trim();
-  if (!imageValue) {
-    return;
-  }
-
+// 把產品的圖片清單同步到資料庫（第一張是主圖）：新圖加入、順序更新、不在清單裡的刪除，並清掉沒人使用的圖檔（U9）
+async function syncProductImages(service: ServiceClient, productId: string, urls: string[]) {
   try {
     const {data: existing, error: selectError} = await service
       .from('product_images')
-      .select('id, storage_path')
+      .select('id, storage_path, sort_order')
       .eq('product_id', productId)
-      .order('sort_order', {ascending: true})
-      .limit(1)
-      .maybeSingle();
-
-    if (selectError && !/0 rows|Results contain 0 rows/.test(selectError.message)) {
-      console.error('bindPrimaryImage select error:', selectError.message);
+      .order('sort_order', {ascending: true});
+    if (selectError) {
+      console.error('syncProductImages select error:', selectError.message);
+      return;
     }
 
-    if (existing?.id) {
-      if (existing.storage_path === imageValue) return;
-      const {error: updateError} = await service.from('product_images').update({storage_path: imageValue}).eq('id', existing.id);
-      if (updateError) {
-        console.error('bindPrimaryImage update error:', updateError.message);
+    const rows = (existing as Array<{id: string; storage_path: string | null; sort_order: number | null}> | null) || [];
+    const keepByPath = new Map<string, {id: string; sort_order: number | null}>();
+    const removeIds: string[] = [];
+    const removedUrls: string[] = [];
+    for (const row of rows) {
+      const path = row.storage_path || '';
+      if (path && urls.includes(path) && !keepByPath.has(path)) keepByPath.set(path, row);
+      else {
+        removeIds.push(row.id);
+        if (path) removedUrls.push(path);
+      }
+    }
+
+    // 1) 先刪掉不要的（空出順序，避免資料庫對順序有唯一限制時衝突）
+    if (removeIds.length) {
+      const {error} = await service.from('product_images').delete().in('id', removeIds);
+      if (error) {
+        console.error('syncProductImages delete error:', error.message);
         return;
       }
-      // 換圖後刪除沒有其他產品使用的舊圖檔（A5）
-      await removeUnreferencedImages(service, [existing.storage_path || '']);
-      return;
     }
-
-    const {error: insertError} = await service.from('product_images').insert({
-      product_id: productId,
-      storage_path: imageValue,
-      sort_order: 0
-    });
-    
-    if (insertError) {
-      console.error('bindPrimaryImage insert error:', insertError.message);
+    // 2) 順序有變的先移到暫時的位置，再改成最終順序
+    const reorder = urls.map((url, index) => ({url, index, row: keepByPath.get(url)})).filter((item) => item.row && item.row.sort_order !== item.index);
+    for (const item of reorder) {
+      await service.from('product_images').update({sort_order: 1000 + item.index}).eq('id', item.row!.id);
     }
+    for (const item of reorder) {
+      await service.from('product_images').update({sort_order: item.index}).eq('id', item.row!.id);
+    }
+    // 3) 新增的圖
+    const inserts = urls.map((url, index) => ({product_id: productId, storage_path: url, sort_order: index})).filter((item) => !keepByPath.has(item.storage_path));
+    if (inserts.length) {
+      const {error} = await service.from('product_images').insert(inserts);
+      if (error) console.error('syncProductImages insert error:', error.message);
+    }
+    // 4) 清掉沒有任何產品或分類使用的舊圖檔
+    if (removedUrls.length) await removeUnreferencedImages(service, removedUrls);
   } catch (err) {
-    console.error('bindPrimaryImage exception:', err);
+    console.error('syncProductImages exception:', err);
   }
 }
 
-// 移除產品的圖片紀錄，並刪除沒有其他產品使用的圖檔（U7）
-async function clearProductImages(service: ServiceClient, productId: string) {
-  try {
-    const urls = await getProductImageUrls(service, productId);
-    if (!urls.length) return;
-    const {error} = await service.from('product_images').delete().eq('product_id', productId);
-    if (error) {
-      console.error('clearProductImages delete error:', error.message);
-      return;
-    }
-    await removeUnreferencedImages(service, urls);
-  } catch (err) {
-    console.error('clearProductImages exception:', err);
-  }
-}
-
+// 每個產品的圖片清單（依順序，第一張是主圖）
 async function buildImageMap(service: ServiceClient, productIds: string[]) {
-  const map = new Map<string, string>();
+  const map = new Map<string, string[]>();
 
   if (!productIds.length) {
     return map;
@@ -170,9 +175,8 @@ async function buildImageMap(service: ServiceClient, productIds: string[]) {
       .order('sort_order', {ascending: true});
 
     ((data as ProductImageRow[] | null) || []).forEach((item) => {
-      if (!map.has(item.product_id)) {
-        map.set(item.product_id, item.storage_path || '');
-      }
+      if (!item.storage_path) return;
+      map.set(item.product_id, [...(map.get(item.product_id) || []), item.storage_path]);
     });
   } catch {
     // product_images table may not be provisioned yet.
@@ -256,7 +260,8 @@ export async function GET() {
   const items = productRows.map((item) =>
     toAdminProductItem({
       ...item,
-      imagePath: imageMap.get(item.id) || ''
+      imagePath: imageMap.get(item.id)?.[0] || '',
+      images: imageMap.get(item.id) || []
     })
   );
 
@@ -316,7 +321,8 @@ export async function POST(request: Request) {
   if (error?.code === '23505') return duplicateModelResponse(requestId, payload.modelNumber, error);
   if (error || !inserted?.id) return dbError(requestId, 'insert product failed', error);
 
-  await bindPrimaryImage(service, inserted.id, payload.imagePath);
+  const images = resolveImages(payload);
+  if (images?.length) await syncProductImages(service, inserted.id, images);
 
   revalidateCatalog();
   return Response.json({ok: true, id: inserted.id, requestId});
@@ -384,12 +390,9 @@ export async function PUT(request: Request) {
     return Response.json({error: '找不到這筆產品，可能已被刪除，請重新載入列表', requestId}, {status: 404});
   }
 
-  // 圖片網址留空 = 移除主圖（U7）；其他情況綁定新圖
-  if (payload.imagePath.trim()) {
-    await bindPrimaryImage(service, productId, payload.imagePath);
-  } else {
-    await clearProductImages(service, productId);
-  }
+  // 同步圖片清單（清單留空 = 移除全部圖片，U7）；沒提供圖片欄位就不動
+  const images = resolveImages(payload);
+  if (images) await syncProductImages(service, productId, images);
 
   revalidateCatalog();
   return Response.json({ok: true, requestId});
