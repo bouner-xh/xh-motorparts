@@ -48,7 +48,7 @@ export function AdminVehicleModelManager(_props: { locale: Locale }) {
     void load();
   }, [load]);
 
-  async function send(method: 'POST' | 'PUT', body: { id?: string; name: string }, doneMessage: string) {
+  async function send(method: 'POST' | 'PUT', body: { id?: string; name: string }, doneMessage: string, onSaved?: () => void) {
     setStatus('info', '儲存中...');
     try {
       const response = await fetch('/api/admin/vehicle-models', {
@@ -59,6 +59,7 @@ export function AdminVehicleModelManager(_props: { locale: Locale }) {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || '儲存失敗');
       setStatus('success', doneMessage);
+      onSaved?.();
       await load();
       // 通知產品表單重新取得車型清單
       window.dispatchEvent(new Event('vehicle-models-updated'));
@@ -75,11 +76,11 @@ export function AdminVehicleModelManager(_props: { locale: Locale }) {
       setStatus('error', '請輸入車型名稱');
       return;
     }
-    if (await send('POST', { name: newName }, '車型已新增')) setNewName('');
+    await send('POST', { name: newName }, '車型已新增', () => setNewName(''));
   }
 
   async function saveRename(item: VehicleModelItem) {
-    if (await send('PUT', { id: item.id, name: editName }, '車型名稱已更新')) setEditingId('');
+    await send('PUT', { id: item.id, name: editName }, '車型名稱已更新', () => setEditingId(''));
   }
 
   async function removeModel(item: VehicleModelItem) {
