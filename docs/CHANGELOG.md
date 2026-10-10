@@ -25,6 +25,16 @@
 
 ---
 
+## 2026-10-10（第四十一批）：一個產品多張圖片（U9）
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| U9 | 後台產品表單改成圖片管理（一次上傳多張、設為主圖、←→ 調整順序、移除、進階加入網址，上限 8 張）；產品 API 新增 `images` 清單（第一張是主圖；`syncProductImages` 依序刪除、改順序、新增並清掉沒人使用的圖檔；沒提供 `images` 或 `imagePath` 就不動圖片）；產品頁 `ProductGallery`（縮圖列、點選切換；單張圖畫面不變）；結構化資料帶入全部圖片（完整網址）；不改資料庫（`product_images` 本來就支援多張） | `AdminProductManager.tsx`、`api/admin/products/route.ts`、`ProductGallery.tsx`（新）、`ProductSchema.tsx`、`catalog-service.ts`、`src/lib/product-form.ts` | `admin-product-gallery.e2e.cjs`、`admin-product-list`、`admin-product-update`、`admin-image-resize` |
+
+- 不新增套件。還原：Revert 對應 PR（資料不受影響，多出的圖片只是前台不顯示）。
+
+---
+
 ## 2026-10-09（第四十批）：子分類卡片顯示產品照片
 
 | 項目 | 內容 | 主要檔案 | 測試 |
