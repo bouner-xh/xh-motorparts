@@ -6,6 +6,8 @@ import {getProductImageUrls, removeUnreferencedImages} from '@/lib/product-image
 import {describeDbError, INVALID_ID_MESSAGE, INVALID_INPUT_MESSAGE, isUuid} from '@/lib/admin-api-errors';
 import {describeProductInputIssues, duplicateModelMessage, escapeLikePattern, MAX_OEM_NUMBERS, MAX_PRODUCT_IMAGES, MAX_STOCK_QUANTITY, MAX_VEHICLE_MODELS_PER_PRODUCT, normalizeModelNumber, normalizeOemNumbers} from '@/lib/product-form';
 import {isMissingVehicleSchema, VEHICLE_SETUP_MESSAGE} from '@/lib/vehicle-models';
+import {diffFields, safeSnapshot, writeAuditLog} from '@/lib/audit-log';
+import {snapshotProduct} from '@/lib/audit-snapshots';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
 
@@ -412,6 +414,16 @@ export async function POST(request: Request) {
   if (images?.length) await syncProductImages(service, inserted.id, images);
   if (payload.vehicleModelIds?.length) await syncProductVehicleModels(service, inserted.id, payload.vehicleModelIds);
 
+  const createdSnapshot = await safeSnapshot(() => snapshotProduct(service, inserted.id));
+  await writeAuditLog(service, {
+    actorEmail: authResult.user.email || '',
+    action: 'create',
+    entityType: 'product',
+    entityId: inserted.id,
+    entityLabel: payload.modelNumber,
+    changes: diffFields(null, createdSnapshot || null)
+  });
+
   revalidateCatalog();
   return Response.json({ok: true, id: inserted.id, requestId});
 }
@@ -470,6 +482,7 @@ export async function PUT(request: Request) {
     is_active: payload.isActive,
     sub_category_id: payload.subCategoryId
   };
+  const beforeSnapshot = await safeSnapshot(() => snapshotProduct(service, productId));
   let updateResult = await service
     .from('products')
     .update(payload.oemNumbers === undefined ? updateRow : {...updateRow, oem_numbers: payload.oemNumbers})
@@ -491,6 +504,21 @@ export async function PUT(request: Request) {
   const images = resolveImages(payload);
   if (images) await syncProductImages(service, productId, images);
   if (payload.vehicleModelIds !== undefined) await syncProductVehicleModels(service, productId, payload.vehicleModelIds);
+
+  const afterSnapshot = await safeSnapshot(() => snapshotProduct(service, productId));
+  if (beforeSnapshot && afterSnapshot) {
+    const changes = diffFields(beforeSnapshot, afterSnapshot);
+    if (Object.keys(changes).length) {
+      await writeAuditLog(service, {
+        actorEmail: authResult.user.email || '',
+        action: 'update',
+        entityType: 'product',
+        entityId: productId,
+        entityLabel: afterSnapshot['型號'] || payload.modelNumber,
+        changes
+      });
+    }
+  }
 
   revalidateCatalog();
   return Response.json({ok: true, requestId});
@@ -517,10 +545,19 @@ export async function DELETE(request: Request) {
 
   // 先記下圖片網址；刪除產品時資料庫會一併刪除圖片紀錄（on delete cascade），再清掉圖檔（A5）
   const imageUrls = await getProductImageUrls(service, id);
+  const deletedSnapshot = await safeSnapshot(() => snapshotProduct(service, id));
   const {error} = await service.from('products').delete().eq('id', id);
 
   if (error) return dbError(requestId, 'delete product failed', error);
   await removeUnreferencedImages(service, imageUrls);
+  await writeAuditLog(service, {
+    actorEmail: authResult.user.email || '',
+    action: 'delete',
+    entityType: 'product',
+    entityId: id,
+    entityLabel: deletedSnapshot?.['型號'] || '（未知）',
+    changes: diffFields(deletedSnapshot || null, null)
+  });
 
   revalidateCatalog();
   return Response.json({ok: true, requestId});

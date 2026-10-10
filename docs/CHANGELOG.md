@@ -25,6 +25,16 @@
 
 ---
 
+## 2026-10-10（第四十三批）：後台操作紀錄（U10）
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| U10 | 後台新增「操作紀錄」分頁：記下哪個管理員帳號（完整信箱，由伺服器從登入狀態取得）在何時對產品、大分類、子分類、車型做了新增／修改／刪除／調整排序／批量匯入，修改與刪除含改前改後；可依期間、帳號、動作、對象篩選。**紀錄寫入失敗或資料表尚未建立時不擋原本的操作**（只在伺服器 log 留警告）；沒有任何欄位變動的儲存不留紀錄；批量匯入只留一筆摘要。詢價單的處理紀錄（`inquiry_events`）維持原狀、不併入。**需老闆在 Supabase 執行 `supabase/migrations/20261010_admin_audit_log.sql`**，執行前分頁顯示「尚未啟用」 | `src/lib/audit-log.ts`（新）、`src/lib/audit-snapshots.ts`（新）、`api/admin/audit-log/route.ts`（新）、`AdminAuditLog.tsx`（新）、產品／批量匯入／分類／子分類／車型 API、`AdminDashboardTabs.tsx` | `admin-audit-log.e2e.cjs`、`tests/admin/audit-log.test.mts`、`admin-dashboard-tabs`（分頁順序） |
+
+- 不新增套件。還原：Revert 對應 PR（資料表可留著，不影響網站）。
+
+---
+
 ## 2026-10-10（第四十二批）：車型清單與 OEM 對照料號（P8）
 
 | 項目 | 內容 | 主要檔案 | 測試 |

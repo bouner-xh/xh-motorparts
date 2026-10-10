@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin-auth';
+import { diffFields, safeSnapshot, writeAuditLog } from '@/lib/audit-log';
+import { snapshotVehicleModel } from '@/lib/audit-snapshots';
 import { revalidateCatalog } from '@/lib/revalidate';
 import { dbErrorResponse, invalidInputResponse, isUuid, INVALID_ID_MESSAGE } from '@/lib/admin-api-errors';
 import { escapeLikePattern } from '@/lib/product-form';
@@ -76,6 +78,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await service.from('vehicle_models').insert({ name }).select('id').single();
   if (error) return dbErrorResponse('vehicle-models POST', error);
+  await writeAuditLog(service, { actorEmail: auth.user.email || '', action: 'create', entityType: 'vehicle_model', entityId: data.id, entityLabel: name, changes: { 名稱: [null, name] } });
   revalidateCatalog();
   return Response.json({ ok: true, id: data.id });
 }
@@ -91,9 +94,14 @@ export async function PUT(request: Request) {
   const { id, name } = parsed.data;
 
   if (await nameTaken(service, name, id)) return Response.json({ error: `車型「${name}」已經在清單裡` }, { status: 409 });
+  const beforeSnapshot = await safeSnapshot(() => snapshotVehicleModel(service, id));
   const { data, error } = await service.from('vehicle_models').update({ name }).eq('id', id).select('id');
   if (error) return dbErrorResponse('vehicle-models PUT', error);
   if (!data?.length) return Response.json({ error: '找不到這個車型，可能已被刪除，請重新載入' }, { status: 404 });
+  const changes = diffFields(beforeSnapshot || null, { 名稱: name });
+  if (beforeSnapshot && Object.keys(changes).length) {
+    await writeAuditLog(service, { actorEmail: auth.user.email || '', action: 'update', entityType: 'vehicle_model', entityId: id, entityLabel: name, changes });
+  }
   revalidateCatalog();
   return Response.json({ ok: true });
 }
@@ -108,8 +116,10 @@ export async function DELETE(request: Request) {
   if (!isUuid(id)) return invalidInputResponse(INVALID_ID_MESSAGE);
 
   // 產品與車型的對應會一併刪除（產品本身不受影響）
+  const deletedSnapshot = await safeSnapshot(() => snapshotVehicleModel(service, id));
   const { error } = await service.from('vehicle_models').delete().eq('id', id);
   if (error) return dbErrorResponse('vehicle-models DELETE', error);
+  await writeAuditLog(service, { actorEmail: auth.user.email || '', action: 'delete', entityType: 'vehicle_model', entityId: id, entityLabel: deletedSnapshot?.名稱 || '（未知）', changes: diffFields(deletedSnapshot || null, null) });
   revalidateCatalog();
   return Response.json({ ok: true });
 }

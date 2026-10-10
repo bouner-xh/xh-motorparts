@@ -13,8 +13,9 @@ import {AdminProductImporter} from '@/components/admin/AdminProductImporter';
 import {AdminProductManager} from '@/components/admin/AdminProductManager';
 import {AdminOverview, type OverviewData} from '@/components/admin/AdminOverview';
 import {AdminCustomerManager} from '@/components/admin/AdminCustomerManager';
+import {AdminAuditLog} from '@/components/admin/AdminAuditLog';
 
-export type AdminTab = 'overview' | 'inquiries' | 'customers' | 'products' | 'categories' | 'import';
+export type AdminTab = 'overview' | 'inquiries' | 'customers' | 'products' | 'categories' | 'import' | 'audit';
 
 const TABS: {key: AdminTab; label: string}[] = [
   {key: 'overview', label: '總覽'},
@@ -22,7 +23,8 @@ const TABS: {key: AdminTab; label: string}[] = [
   {key: 'customers', label: '客戶'},
   {key: 'products', label: '產品'},
   {key: 'categories', label: '分類'},
-  {key: 'import', label: '批量匯入'}
+  {key: 'import', label: '批量匯入'},
+  {key: 'audit', label: '操作紀錄'}
 ];
 
 function tabFromHash(): AdminTab {
@@ -63,7 +65,8 @@ export function AdminDashboardTabs({locale}: {locale: Locale}) {
     customers: null,
     products: null,
     categories: null,
-    import: null
+    import: null,
+    audit: null
   });
 
   useEffect(() => {
@@ -96,6 +99,8 @@ export function AdminDashboardTabs({locale}: {locale: Locale}) {
     // 用 replaceState 更新網址，不會在瀏覽器上一頁堆疊很多筆紀錄
     window.history.replaceState(null, '', next === 'overview' ? window.location.pathname : `#${next}`);
     if (focus) tabRefs.current[next]?.focus();
+    // 打開操作紀錄時重新載入最新紀錄
+    if (next === 'audit') window.dispatchEvent(new Event('audit-tab-opened'));
     window.scrollTo({top: 0});
   }, []);
 
@@ -193,6 +198,12 @@ export function AdminDashboardTabs({locale}: {locale: Locale}) {
         'import',
         <section className="card">
           <AdminProductImporter />
+        </section>
+      )}
+      {panel(
+        'audit',
+        <section className="card">
+          <AdminAuditLog />
         </section>
       )}
     </>

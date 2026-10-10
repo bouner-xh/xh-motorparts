@@ -44,7 +44,7 @@ run('登入後預設總覽：分頁、待處理數量、產品與分類筆數、
     await login(page);
 
     const tabs = await page.getByRole('tablist', { name: '後台功能' }).getByRole('tab').allInnerTexts();
-    assert(tabs.map((t) => t.replace(/\d+/g, '').trim()).join('/') === '總覽/詢價/客戶/產品/分類/批量匯入', `分頁順序（${tabs.join(' / ')}）`);
+    assert(tabs.map((t) => t.replace(/\d+/g, '').trim()).join('/') === '總覽/詢價/客戶/產品/分類/批量匯入/操作紀錄', `分頁順序（${tabs.join(' / ')}）`);
     assert((await page.getByRole('tab', { name: /^總覽/ }).getAttribute('aria-selected')) === 'true', '預設為總覽');
     assert(/3/.test(await page.getByRole('tab', { name: /^詢價/ }).innerText()), '詢價分頁顯示 3 筆待處理');
     assert((await page.getByTestId('overview-pending').innerText()) === '3', '總覽待處理 3');
