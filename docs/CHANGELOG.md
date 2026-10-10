@@ -25,6 +25,16 @@
 
 ---
 
+## 2026-10-10（第四十二批）：車型清單與 OEM 對照料號（P8）
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| P8 | 後台「分類」頁新增「車型清單」（新增、改名、刪除，不分大小寫擋重複）；產品表單可勾選「適用車型」（上限 50）並填「OEM／對照料號」（上限 30，自動轉大寫去重複）；前台產品頁顯示 Fits 與 OEM 區塊（可點擊搜尋）；結構化資料帶入 `isAccessoryOrSparePartFor` 與 OEM `additionalProperty`；搜尋可用對照料號與車型名稱找到產品。**需老闆在 Supabase 執行 `supabase/migrations/20261010_vehicle_models_oem.sql`**；執行前網站與後台照常運作，只有儲存車型或對照料號時會提示先執行 | `AdminVehicleModelManager.tsx`（新）、`api/admin/vehicle-models/route.ts`（新）、`api/admin/products/route.ts`、`src/lib/vehicle-models.ts`（新）、`product-search.ts`、`catalog-service.ts`、產品頁、`ProductSchema.tsx` | `admin-vehicle-models.e2e.cjs`、`tests/admin/vehicle-models.test.mts` |
+
+- 不新增套件。還原：Revert 對應 PR（資料表可留著不影響）。
+
+---
+
 ## 2026-10-10（第四十一批）：一個產品多張圖片（U9）
 
 | 項目 | 內容 | 主要檔案 | 測試 |
