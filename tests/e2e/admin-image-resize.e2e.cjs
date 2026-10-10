@@ -37,7 +37,7 @@ run('產品表單：大張照片上傳前自動縮小，小圖維持原檔', () 
     const row = page.locator('tbody tr', { hasText: '1HV-11311-00' });
     await row.waitFor({ timeout: 30000 });
     await row.getByRole('button', { name: '編輯' }).click();
-    const input = page.getByLabel('上傳主圖');
+    const input = page.getByLabel('上傳圖片');
     await input.setInputFiles(big);
     await page.getByText('圖片上傳成功').waitFor({ timeout: 60000 });
 

@@ -6,6 +6,8 @@ export interface Product {
   model: string;
   name: string;
   image: string;
+  // 這個產品的所有圖片（依順序，第一張是主圖）；沒有時只有 image
+  images?: string[];
   stock: number;
   specifications: string[];
 }

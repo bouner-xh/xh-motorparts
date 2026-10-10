@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import {SafeImage} from '@/components/ui/SafeImage';
+import {ProductGallery} from '@/components/products/ProductGallery';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound, permanentRedirect } from 'next/navigation';
@@ -117,12 +117,10 @@ export default async function ProductDetailPage({
 
       <section className="detail-grid">
         <article className="card detail-media">
-          <SafeImage
-            src={toProductImageUrl(product.image)}
+          <ProductGallery
+            images={(product.images?.length ? product.images : [product.image]).map(toProductImageUrl)}
             alt={`${product.model} ${product.name}`}
-            width={900}
-            height={900}
-            unoptimized
+            thumbLabel={localized(localeValue, { 'zh-TW': '第 {n} 張圖片，共 {total} 張', 'zh-CN': '第 {n} 张图片，共 {total} 张', en: 'Image {n} of {total}' })}
           />
         </article>
 

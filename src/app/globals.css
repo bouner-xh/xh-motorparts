@@ -516,6 +516,42 @@ textarea {
   border-radius: 18px;
 }
 
+/* U9：產品頁圖庫縮圖列 */
+.product-gallery__thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.detail-media .product-gallery__thumb {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.detail-media .product-gallery__thumb[aria-current='true'] {
+  border-color: #dc2626;
+}
+
+.detail-media .product-gallery__thumb:focus-visible {
+  outline: 2px solid #e2e8f0;
+  outline-offset: 2px;
+}
+
+.detail-media .product-gallery__thumb img {
+  border-radius: 8px;
+  aspect-ratio: 1 / 1;
+  height: 100%;
+}
+
 .spec-list {
   display: flex;
   flex-wrap: wrap;
@@ -574,6 +610,58 @@ textarea {
 }
 
 /* 產品表單的進階設定（手動圖片網址，P7） */
+.admin-gallery {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-gallery__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-gallery__item {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+  width: 104px;
+}
+
+.admin-gallery__item img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+.admin-gallery__badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+.admin-gallery__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.admin-gallery__actions button {
+  padding: 0.15rem 0.4rem;
+  font-size: 0.75rem;
+  background: #334155;
+}
+
 .admin-advanced {
   border: 1px dashed rgba(148, 163, 184, 0.35);
   border-radius: 10px;

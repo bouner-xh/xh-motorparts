@@ -174,14 +174,14 @@ run('新增並上架但沒有圖片：提醒，取消不儲存；有圖片或未
   })
 );
 
-run('移除圖片：按下「移除圖片」並更新後，圖片紀錄被清除', () =>
+run('移除圖片：按下該張圖的「移除」並更新後，圖片紀錄被清除', () =>
   withPage(async (page) => {
     await resetMock();
     await seedImage([{ id: '40000000-0000-4000-8000-000000000001', product_id: P1.id, storage_path: IMG, sort_order: 0 }]);
     const form = await openProducts(page);
     await rowOf(page, P1.model).getByRole('button', { name: '編輯' }).click();
-    await form.getByRole('button', { name: '移除圖片' }).click();
-    assert((await form.getByRole('button', { name: '移除圖片' }).count()) === 0, '按鈕在移除後消失');
+    await form.getByRole('button', { name: '移除第 1 張' }).click();
+    assert((await form.getByRole('button', { name: '移除第 1 張' }).count()) === 0, '按鈕在移除後消失');
     let { tables } = await mockState();
     assert(tables.product_images.length === 1, '還沒按更新前，圖片仍在資料庫');
     await form.getByRole('button', { name: '更新產品' }).click();

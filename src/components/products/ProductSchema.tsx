@@ -5,6 +5,10 @@ import {categoryNames, type CategoryKey, type Locale} from '@/lib/catalog';
 import { localized } from '@/lib/localized-text';
 import { encodeSegment } from '@/lib/url-segment';
 
+function absoluteUrl(baseUrl: string, url: string) {
+  return /^https?:\/\//.test(url) ? url : `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 export function ProductSchema({
   product,
   category,
@@ -26,7 +30,8 @@ export function ProductSchema({
     mpn: product.model,
     category: categoryNames[locale][category],
     description: `${product.name} ${product.specifications.join(', ')}`,
-    image: [toProductImageUrl(product.image)],
+    // 所有圖片，主圖在最前面；網址一律用完整網址（搜尋引擎要求）
+    image: (product.images?.length ? product.images : [product.image]).map((path) => absoluteUrl(baseUrl, toProductImageUrl(path))),
     brand: {
       '@type': 'Brand',
       name: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' })

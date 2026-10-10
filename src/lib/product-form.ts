@@ -19,6 +19,9 @@ export function splitSpecifications(text: string): string[] {
     .filter(Boolean);
 }
 
+// 一個產品最多幾張圖（U9）
+export const MAX_PRODUCT_IMAGES = 8;
+
 // 庫存上限：避免輸入過大的數字造成資料庫錯誤（U2）
 export const MAX_STOCK_QUANTITY = 1_000_000;
 export const STOCK_MESSAGE = `庫存必須是 0 到 ${MAX_STOCK_QUANTITY.toLocaleString('en-US')} 的整數`;
@@ -32,7 +35,8 @@ const FIELD_LABELS: Record<string, string> = {
   nameEn: '名稱（en）',
   specifications: '規格',
   stockQuantity: '庫存',
-  imagePath: '圖片網址'
+  imagePath: '圖片網址',
+  images: '圖片'
 };
 
 export interface InputIssue {
@@ -45,6 +49,7 @@ function describeIssue(issue: InputIssue) {
   const field = String(issue.path[0] ?? '');
   const label = FIELD_LABELS[field] || field || '資料';
   if (field === 'stockQuantity') return STOCK_MESSAGE;
+  if (field === 'images') return issue.code === 'too_big' ? `圖片最多 ${MAX_PRODUCT_IMAGES} 張` : '圖片網址格式不正確';
   if (field === 'specifications') {
     return issue.path.length > 1 ? '每個規格最多 200 字' : `規格最多 ${issue.maximum ?? 50} 項`;
   }
