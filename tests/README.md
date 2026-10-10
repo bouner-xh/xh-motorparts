@@ -100,6 +100,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `no-image-fallback.e2e.cjs` | 沒有圖片或圖片網址失效時顯示 SVG 的 No Image 圖（產品卡片、產品頁、分類卡片、後台縮圖），不破圖；預設圖是 SVG | 模擬 Supabase |
 | `admin-product-gallery.e2e.cjs` | 一個產品多張圖（上限 8 張）：後台一次上傳多張、設為主圖、調整順序、移除；產品頁縮圖列與切換；結構化資料有全部圖片；單張圖沒有縮圖列 | 模擬 Supabase |
 | `admin-vehicle-models.e2e.cjs` | 車型清單（新增、不分大小寫擋重複、改名、刪除）；產品勾選適用車型與 OEM 對照料號；前台產品頁顯示、結構化資料、搜尋可用車型與對照料號；資料庫還沒執行更新語法時照常運作並提示 | 模擬 Supabase |
+| `admin-audit-log.e2e.cjs` | 操作紀錄：產品／分類／子分類／車型／排序／批量匯入都記下帳號與改前改後、沒變更不留紀錄；「操作紀錄」分頁顯示完整信箱、篩選；資料表未建立時原操作照常成功 | 模擬 Supabase |
 | `product-url-case.e2e.cjs` | 產品網址不分大小寫：分類、子分類、型號大小寫寫錯會轉到正確網址（308、保留語系）；不存在的網址仍 404、不會無限轉址 | 模擬 Supabase |
 | `admin-model-case.e2e.cjs` | 型號一律存成大寫（表單離開欄位自動轉、API 與批量匯入）、不分大小寫比對重複型號、舊小寫型號重存不跳改型號確認、匯入不會重複建立 | 模擬 Supabase |
 | `root-redirect.e2e.cjs` | 根網址一律轉到 /en、語言切換列 EN 排第一、中文版網址照舊可用 | 無資料庫即可 |

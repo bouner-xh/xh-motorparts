@@ -3,6 +3,8 @@ import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib
 import { isAdminEmail } from '@/lib/admin-auth';
 import { normalizeSlug } from '@/lib/slug';
 import { revalidateCatalog } from '@/lib/revalidate';
+import { diffFields, safeSnapshot, writeAuditLog } from '@/lib/audit-log';
+import { describeSortOrder, snapshotSubCategory } from '@/lib/audit-snapshots';
 import { dbErrorResponse, invalidInputResponse, isUuid, INVALID_ID_MESSAGE } from '@/lib/admin-api-errors';
 
 // 欄位長度上限（A9）
@@ -113,6 +115,8 @@ export async function POST(request: Request) {
     .single();
 
   if (error) return dbErrorResponse('sub-categories POST', error);
+  const created = await safeSnapshot(() => snapshotSubCategory(service, inserted.id));
+  await writeAuditLog(service, { actorEmail: authResult.user.email || '', action: 'create', entityType: 'sub_category', entityId: inserted.id, entityLabel: `${payload.category}/${payload.slug}`, changes: diffFields(null, created || null) });
   revalidateCatalog();
   return Response.json({ ok: true, id: inserted.id });
 }
@@ -140,6 +144,8 @@ export async function PUT(request: Request) {
     const results = await Promise.all(updates);
     const firstError = results.find(r => r.error);
     if (firstError) return dbErrorResponse('sub-categories sort', firstError.error);
+    const sortChanges = await safeSnapshot(() => describeSortOrder(service, 'sub_categories', parsed.data));
+    await writeAuditLog(service, { actorEmail: authResult.user.email || '', action: 'sort', entityType: 'sub_category', entityLabel: `調整 ${parsed.data.length} 個子分類排序`, changes: sortChanges || {} });
 
     revalidateCatalog();
     return Response.json({ ok: true });
@@ -152,6 +158,7 @@ export async function PUT(request: Request) {
   const { data: catData } = await service.from('categories').select('id').eq('slug', payload.category).single();
   if (!catData?.id) return Response.json({ error: '找不到這個大分類，請重新整理頁面後再選一次' }, { status: 400 });
 
+  const beforeSnapshot = await safeSnapshot(() => snapshotSubCategory(service, payload.id as string));
   const { error } = await service
     .from('sub_categories')
     .update({
@@ -163,6 +170,13 @@ export async function PUT(request: Request) {
     .eq('id', payload.id);
 
   if (error) return dbErrorResponse('sub-categories PUT', error);
+  const afterSnapshot = await safeSnapshot(() => snapshotSubCategory(service, payload.id as string));
+  if (beforeSnapshot && afterSnapshot) {
+    const changes = diffFields(beforeSnapshot, afterSnapshot);
+    if (Object.keys(changes).length) {
+      await writeAuditLog(service, { actorEmail: authResult.user.email || '', action: 'update', entityType: 'sub_category', entityId: payload.id, entityLabel: `${afterSnapshot['大分類'] || payload.category}/${afterSnapshot['代號'] || payload.slug}`, changes });
+    }
+  }
   revalidateCatalog();
   return Response.json({ ok: true });
 }
@@ -187,8 +201,10 @@ export async function DELETE(request: Request) {
     );
   }
 
+  const deletedSnapshot = await safeSnapshot(() => snapshotSubCategory(service, id));
   const { error } = await service.from('sub_categories').delete().eq('id', id);
   if (error) return dbErrorResponse('sub-categories DELETE', error);
+  await writeAuditLog(service, { actorEmail: authResult.user.email || '', action: 'delete', entityType: 'sub_category', entityId: id, entityLabel: deletedSnapshot ? `${deletedSnapshot['大分類']}/${deletedSnapshot['代號']}` : '（未知）', changes: diffFields(deletedSnapshot || null, null) });
 
   revalidateCatalog();
   return Response.json({ ok: true });

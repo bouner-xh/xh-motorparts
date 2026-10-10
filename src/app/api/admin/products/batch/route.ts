@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { writeAuditLog } from '@/lib/audit-log';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin-auth';
 import { revalidateCatalog } from '@/lib/revalidate';
@@ -66,6 +67,9 @@ export async function POST(request: Request) {
   const results = [];
   let successCount = 0;
   let errorCount = 0;
+  const createdModels: string[] = [];
+  const updatedModels: string[] = [];
+  const failedModels: string[] = [];
 
   for (const item of products) {
     try {
@@ -177,6 +181,7 @@ export async function POST(request: Request) {
         if (updateErr) {
           throw rowDbError('更新產品失敗', item.modelNumber, updateErr);
         }
+        updatedModels.push(item.modelNumber);
       } else {
         // 新增
         if (Object.keys(item.nameI18n).length === 0) {
@@ -200,6 +205,7 @@ export async function POST(request: Request) {
           throw rowDbError('建立產品失敗', item.modelNumber, createErr);
         }
         productId = prodNew.id;
+        createdModels.push(item.modelNumber);
       }
 
       // 4. 綁定圖片 (如果提供了 imagePath)
@@ -228,7 +234,23 @@ export async function POST(request: Request) {
       const msg = err instanceof Error ? err.message : '未知錯誤';
       results.push({ modelNumber: item.modelNumber, success: false, error: msg });
       errorCount++;
+      failedModels.push(item.modelNumber);
     }
+  }
+
+  // 批量匯入只留一筆摘要紀錄（逐筆內容在匯入檔案裡）
+  const importChanges: Record<string, [string | null, string | null]> = {};
+  if (createdModels.length) importChanges['新增產品'] = [null, `${createdModels.length} 筆：${createdModels.join(', ')}`];
+  if (updatedModels.length) importChanges['更新產品'] = [null, `${updatedModels.length} 筆：${updatedModels.join(', ')}`];
+  if (failedModels.length) importChanges['失敗'] = [null, `${failedModels.length} 筆：${failedModels.join(', ')}`];
+  if (createdModels.length || updatedModels.length || failedModels.length) {
+    await writeAuditLog(service, {
+      actorEmail: authResult.user.email || '',
+      action: 'import',
+      entityType: 'product',
+      entityLabel: `批量匯入 ${products.length} 筆`,
+      changes: importChanges
+    });
   }
 
   revalidateCatalog();

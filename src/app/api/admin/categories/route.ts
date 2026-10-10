@@ -3,6 +3,8 @@ import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib
 import { isAdminEmail } from '@/lib/admin-auth';
 import { normalizeSlug } from '@/lib/slug';
 import { revalidateCatalog } from '@/lib/revalidate';
+import { diffFields, safeSnapshot, writeAuditLog } from '@/lib/audit-log';
+import { describeSortOrder, snapshotCategory } from '@/lib/audit-snapshots';
 import { dbErrorResponse, invalidInputResponse, isUuid, INVALID_ID_MESSAGE } from '@/lib/admin-api-errors';
 import { COVER_COLUMN_MISSING_MESSAGE, isMissingCoverColumn } from '@/lib/category-cover';
 import { removeUnreferencedImages } from '@/lib/product-image-cleanup';
@@ -126,6 +128,8 @@ export async function POST(request: Request) {
   const { data: inserted, error } = insertResult;
 
   if (error) return dbErrorResponse('categories POST', error);
+  const created = await safeSnapshot(() => snapshotCategory(service, inserted.id));
+  await writeAuditLog(service, { actorEmail: authResult.user.email || '', action: 'create', entityType: 'category', entityId: inserted.id, entityLabel: payload.slug, changes: diffFields(null, created || null) });
   revalidateCatalog();
   return Response.json({ ok: true, id: inserted.id });
 }
@@ -153,6 +157,8 @@ export async function PUT(request: Request) {
     const results = await Promise.all(updates);
     const firstError = results.find(r => r.error);
     if (firstError) return dbErrorResponse('categories sort', firstError.error);
+    const sortChanges = await safeSnapshot(() => describeSortOrder(service, 'categories', parsed.data));
+    await writeAuditLog(service, { actorEmail: authResult.user.email || '', action: 'sort', entityType: 'category', entityLabel: `調整 ${parsed.data.length} 個大分類排序`, changes: sortChanges || {} });
 
     revalidateCatalog();
     return Response.json({ ok: true });
@@ -168,6 +174,7 @@ export async function PUT(request: Request) {
     description_i18n: { 'zh-TW': payload.descriptionZhTw, 'zh-CN': payload.descriptionZhCn, en: payload.descriptionEn },
     sort_order: payload.sortOrder
   };
+  const beforeSnapshot = await safeSnapshot(() => snapshotCategory(service, payload.id as string));
   // 先記下目前的封面，換掉或移除後清掉沒人使用的舊圖檔
   const { data: current, error: currentError } = await service.from('categories').select('cover_image').eq('id', payload.id).maybeSingle();
   const hasCoverColumn = !currentError;
@@ -184,6 +191,13 @@ export async function PUT(request: Request) {
 
   if (error) return dbErrorResponse('categories PUT', error);
   if (oldCover && oldCover !== payload.coverImage) await removeUnreferencedImages(service, [oldCover]);
+  const afterSnapshot = await safeSnapshot(() => snapshotCategory(service, payload.id as string));
+  if (beforeSnapshot && afterSnapshot) {
+    const changes = diffFields(beforeSnapshot, afterSnapshot);
+    if (Object.keys(changes).length) {
+      await writeAuditLog(service, { actorEmail: authResult.user.email || '', action: 'update', entityType: 'category', entityId: payload.id, entityLabel: afterSnapshot['代號'] || payload.slug, changes });
+    }
+  }
   revalidateCatalog();
   return Response.json({ ok: true });
 }
@@ -208,12 +222,14 @@ export async function DELETE(request: Request) {
     );
   }
 
+  const deletedSnapshot = await safeSnapshot(() => snapshotCategory(service, id));
   const { data: current } = await service.from('categories').select('cover_image').eq('id', id).maybeSingle();
   const oldCover = ((current as { cover_image?: string | null } | null)?.cover_image) || '';
 
   const { error } = await service.from('categories').delete().eq('id', id);
   if (error) return dbErrorResponse('categories DELETE', error);
   if (oldCover) await removeUnreferencedImages(service, [oldCover]);
+  await writeAuditLog(service, { actorEmail: authResult.user.email || '', action: 'delete', entityType: 'category', entityId: id, entityLabel: deletedSnapshot?.['代號'] || '（未知）', changes: diffFields(deletedSnapshot || null, null) });
 
   revalidateCatalog();
   return Response.json({ ok: true });

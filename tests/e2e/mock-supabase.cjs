@@ -108,7 +108,7 @@ function expandRow(table, row, select) {
   return out;
 }
 
-// 支援 PostgREST 的 eq.、neq.、ilike.、in.() 篩選（含 category.slug 這類巢狀欄位）
+// 支援 PostgREST 的 eq.、neq.、gte.、ilike.、in.() 篩選（含 category.slug 這類巢狀欄位）
 function filterRows(rows, params) {
   let result = rows;
   for (const [key, raw] of params) {
@@ -133,6 +133,9 @@ function filterRows(rows, params) {
       }
       const re = new RegExp(`^${source}$`, 'i');
       result = result.filter((row) => re.test(String(get(row))));
+    } else if (raw.startsWith('gte.')) {
+      const value = raw.slice(4);
+      result = result.filter((row) => String(get(row)) >= value);
     } else if (raw.startsWith('in.(')) {
       const values = raw.slice(4, -1).split(',').map((v) => v.replace(/^"|"$/g, ''));
       result = result.filter((row) => values.includes(String(get(row))));

@@ -14,6 +14,7 @@
 | 0 | **Supabase 建立 `inquiry_events` 資料表** | 啟用詢價處理紀錄（A6 ③④），步驟見 `docs/inquiry-events-setup.md`，約 2 分鐘 |
 | 2 | （選擇性）GitHub Support 清除舊 commit | 密碼已更換，風險已解除；要徹底清除需以 `bouner-xh` 帳號申請 |
 | 1 | **Supabase 執行 `supabase/migrations/20261010_vehicle_models_oem.sql`** | 啟用車型清單與 OEM 對照料號（P8）；一次貼一段執行；未執行前網站照常，只是無法儲存車型 |
+| 1b | **Supabase 執行 `supabase/migrations/20261010_admin_audit_log.sql`** | 啟用後台「操作紀錄」分頁（U10）；一次貼一段執行；未執行前分頁顯示尚未啟用，其他功能不受影響 |
 | 3 | 正式資料庫有測試產品 | `TEST-337980` 是之前的測試資料，老闆會在正式資料上架時一併調整分類（2026-09-27 確認）。成因見後台 A2 |
 
 ---
