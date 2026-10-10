@@ -516,6 +516,22 @@ textarea {
   border-radius: 18px;
 }
 
+/* P8：產品頁的適用車型與 OEM 對照料號 */
+.product-fitment__title {
+  margin: 0.6rem 0 0;
+  font-size: 0.95rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.product-fitment .spec-list {
+  margin: 0.4rem 0 0.6rem;
+}
+
+.product-fitment a.spec-chip {
+  text-decoration: none;
+}
+
 /* U9：產品頁圖庫縮圖列 */
 .product-gallery__thumbs {
   display: grid;
@@ -610,6 +626,33 @@ textarea {
 }
 
 /* 產品表單的進階設定（手動圖片網址，P7） */
+.admin-fitment {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  margin: 0;
+}
+
+.admin-fitment__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+}
+
+.admin-form .admin-fitment__item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  width: auto;
+}
+
+.admin-form .admin-fitment__item input {
+  width: auto;
+}
+
 .admin-gallery {
   display: grid;
   gap: 0.5rem;

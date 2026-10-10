@@ -7,6 +7,7 @@ import {useCallback, useEffect, useRef, useState, type KeyboardEvent, type React
 import type {Locale} from '@/lib/catalog';
 import {AdminInquiryManager} from '@/components/admin/AdminInquiryManager';
 import {AdminCategoryManager} from '@/components/admin/AdminCategoryManager';
+import {AdminVehicleModelManager} from '@/components/admin/AdminVehicleModelManager';
 import {AdminSubCategoryManager} from '@/components/admin/AdminSubCategoryManager';
 import {AdminProductImporter} from '@/components/admin/AdminProductImporter';
 import {AdminProductManager} from '@/components/admin/AdminProductManager';
@@ -182,6 +183,9 @@ export function AdminDashboardTabs({locale}: {locale: Locale}) {
           </section>
           <section className="card" style={{marginTop: '1rem'}}>
             <AdminSubCategoryManager locale={locale} />
+          </section>
+          <section className="card" style={{marginTop: '1rem'}}>
+            <AdminVehicleModelManager locale={locale} />
           </section>
         </>
       )}

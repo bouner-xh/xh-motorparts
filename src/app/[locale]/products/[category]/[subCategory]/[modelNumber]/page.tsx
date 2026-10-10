@@ -137,6 +137,30 @@ export default async function ProductDetailPage({
               </span>
             ))}
           </div>
+          {product.vehicleModels?.length ? (
+            <div className="product-fitment" data-testid="product-fitment">
+              <h2 className="product-fitment__title">{localized(localeValue, { 'zh-TW': '適用車型', 'zh-CN': '适用车型', en: 'Fits' })}</h2>
+              <div className="spec-list">
+                {product.vehicleModels.map((name: string) => (
+                  <Link key={name} className="spec-chip" href={`/${localeValue}/products/search?q=${encodeURIComponent(name)}`}>
+                    {name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {product.oemNumbers?.length ? (
+            <div className="product-fitment" data-testid="product-oem">
+              <h2 className="product-fitment__title">{localized(localeValue, { 'zh-TW': 'OEM／對照料號', 'zh-CN': 'OEM／对照料号', en: 'OEM / Cross reference' })}</h2>
+              <div className="spec-list">
+                {product.oemNumbers.map((number: string) => (
+                  <Link key={number} className="spec-chip" href={`/${localeValue}/products/search?q=${encodeURIComponent(number)}`}>
+                    {number}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <p className="muted">
             {/* 不公開精確庫存數字，只顯示供貨狀態（P3） */}
             {tProducts('availability')}：{product.stock > 0 ? tProducts('inStock') : tProducts('madeToOrder')}

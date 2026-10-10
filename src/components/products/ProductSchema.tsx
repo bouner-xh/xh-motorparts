@@ -32,6 +32,9 @@ export function ProductSchema({
     description: `${product.name} ${product.specifications.join(', ')}`,
     // 所有圖片，主圖在最前面；網址一律用完整網址（搜尋引擎要求）
     image: (product.images?.length ? product.images : [product.image]).map((path) => absoluteUrl(baseUrl, toProductImageUrl(path))),
+    // 適用車型與 OEM 對照料號（P8）：給搜尋引擎的產品資訊
+    ...(product.vehicleModels?.length ? {isAccessoryOrSparePartFor: product.vehicleModels.map((name) => ({'@type': 'Product', name}))} : {}),
+    ...(product.oemNumbers?.length ? {additionalProperty: product.oemNumbers.map((value) => ({'@type': 'PropertyValue', name: 'OEM number', value}))} : {}),
     brand: {
       '@type': 'Brand',
       name: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' })

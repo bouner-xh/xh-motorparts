@@ -4,6 +4,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   normalizeModelNumber,
+  normalizeOemNumbers,
+  splitOemNumbers,
   escapeLikePattern,
   describeProductInputIssues,
   duplicateModelMessage,
@@ -54,4 +56,10 @@ test('型號一律轉大寫並去掉頭尾空白', () => {
 test('不分大小寫比對用的字串會跳脫 % _ 與反斜線', () => {
   assert.equal(escapeLikePattern('A_B%C\\D'), 'A\\_B\\%C\\\\D');
   assert.equal(escapeLikePattern('1HV-11311-00'), '1HV-11311-00');
+});
+
+test('OEM／對照料號：逗號、頓號、分號、換行分隔，轉大寫、去重複、去空白', () => {
+  assert.deepEqual(splitOemNumbers('2a6-17421-00, 5t5-17421-00，2A6-17421-00、 ;\n x-1'), ['2A6-17421-00', '5T5-17421-00', 'X-1']);
+  assert.deepEqual(splitOemNumbers(' , ，'), []);
+  assert.deepEqual(normalizeOemNumbers(['ab-1', 'AB-1', '  ']), ['AB-1']);
 });
