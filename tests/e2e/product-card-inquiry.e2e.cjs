@@ -28,6 +28,9 @@ for (const [label, viewport] of [['桌機', { width: 1280, height: 900 }], ['手
       assert((await page.locator('button.product-card__inquiry').count()) === 2, '每張產品卡片都有加入詢價按鈕');
       // 範例產品沒有上傳照片，應顯示「暫無圖片」預設圖而不是破圖
       await page.waitForLoadState('networkidle');
+      // 長條形零件的照片不能被裁掉：卡片圖片要完整顯示（contain）
+      const fit = await page.locator('article.product-card img').first().evaluate((el) => getComputedStyle(el).objectFit);
+      assert(fit === 'contain', `卡片圖片完整顯示，不裁切（${fit}）`);
       const images = await page.locator('article.product-card img').evaluateAll((imgs) => imgs.map((img) => img.complete && img.naturalWidth > 0));
       assert(images.length === 2 && images.every(Boolean), '沒有照片的產品顯示預設圖（不是破圖）');
 

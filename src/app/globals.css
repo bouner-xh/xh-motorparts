@@ -450,8 +450,13 @@ textarea {
 
 .product-card__image-wrap {
   height: 220px;
-  background: #020617;
+  /* 照片多為白底：長條形零件完整顯示（contain），留白處補白色 */
+  background: #fff;
   position: relative;
+}
+
+.product-card__image {
+  object-fit: contain;
 }
 
 .product-card__body {
