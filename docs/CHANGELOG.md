@@ -29,9 +29,9 @@
 
 | 項目 | 內容 | 主要檔案 | 測試 |
 |---|---|---|---|
-| 修正 | 產品頁大圖與縮圖原本用 `object-fit: cover` 填滿正方形，長條形零件（軸、鏈條）上下被截掉；改為 `contain` 完整顯示，留白補白色 | `src/app/globals.css`（`.detail-media img`、縮圖） | `admin-product-gallery.e2e.cjs`（新增樣式斷言） |
+| 修正 | 產品頁與產品列表卡片的圖片原本用 `object-fit: cover` 填滿正方形，長條形零件（軸、鏈條）上下被截掉；改為 `contain` 完整顯示，留白補白色 | `src/app/globals.css`（`.detail-media img`、縮圖） | `admin-product-gallery.e2e.cjs`（新增樣式斷言） |
 
-- 產品卡片（列表）仍是裁切填滿，未改。還原：Revert 對應 PR。
+- 產品列表卡片同樣改為完整顯示（`.product-card__image`，底色改白）；大分類與子分類卡片的封面維持填滿裁切。還原：Revert 對應 PR。
 
 ---
 
