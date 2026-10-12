@@ -102,6 +102,9 @@ run('前台：多張圖有縮圖列、點縮圖切換大圖、結構化資料有
     await page.getByRole('button', { name: 'Image 3 of 3' }).click();
     assert((await main.getAttribute('src')).includes('cylinder-003.jpg'), '點第三個縮圖，大圖換成第三張');
     assert((await thumbs.nth(2).getAttribute('aria-current')) === 'true', '目前的縮圖有標示');
+    // 長條形零件的照片不能被裁掉：大圖與縮圖都要完整顯示（contain）
+    assert((await main.evaluate((el) => getComputedStyle(el).objectFit)) === 'contain', '大圖完整顯示，不裁切');
+    assert((await thumbs.first().locator('img').evaluate((el) => getComputedStyle(el).objectFit)) === 'contain', '縮圖完整顯示，不裁切');
 
     const ld = await page.locator('script[type="application/ld+json"]').first().textContent();
     const images = JSON.parse(ld).image;
