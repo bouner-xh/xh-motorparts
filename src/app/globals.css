@@ -512,7 +512,9 @@ textarea {
   /* D15：<Image> 帶有 height="900"，要設 auto 才會照 1:1 比例顯示，否則直式照片會被拉得很高 */
   height: auto;
   aspect-ratio: 1 / 1;
-  object-fit: cover;
+  /* 長條形零件（軸、鏈條）整張顯示不裁切；照片多為白底，留白處補白色 */
+  object-fit: contain;
+  background: #fff;
   border-radius: 18px;
 }
 
@@ -564,6 +566,7 @@ textarea {
 
 .detail-media .product-gallery__thumb img {
   border-radius: 8px;
+  object-fit: contain;
   aspect-ratio: 1 / 1;
   height: 100%;
 }
