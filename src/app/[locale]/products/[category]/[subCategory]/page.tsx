@@ -110,7 +110,7 @@ export default async function SubCategoryPage({
             <ProductCard
               key={product.id}
               product={product}
-              href={`/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeURIComponent(subCategoryData.slug)}/${encodeURIComponent(product.model)}`}
+              href={`/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeURIComponent(subCategoryData.slug)}/${encodeURIComponent(product.slug ?? product.model)}`}
               specLabel={tProducts('specifications')}
               detailLabel={tProducts('viewDetail')}
               locale={localeValue}

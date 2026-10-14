@@ -8,6 +8,7 @@ import {describeProductInputIssues, duplicateModelMessage, escapeLikePattern, MA
 import {isMissingVehicleSchema, VEHICLE_SETUP_MESSAGE} from '@/lib/vehicle-models';
 import {diffFields, safeSnapshot, writeAuditLog} from '@/lib/audit-log';
 import {snapshotProduct} from '@/lib/audit-snapshots';
+import {findOemConflict, oemConflictMessage, pickUrlKey, urlKeyColumnExists} from '@/lib/product-url-key';
 
 type ServiceClient = NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>;
 
@@ -379,9 +380,13 @@ export async function POST(request: Request) {
     return Response.json({error: '子分類不屬於所選的大分類，請重新選擇子分類', requestId}, {status: 400});
   }
 
-  if (await modelNumberTaken(service, payload.modelNumber)) {
+  // 資料庫已有網址代號欄位：型號可以重複；否則維持舊規則（型號不可重複）
+  const urlKeySupported = await urlKeyColumnExists(service);
+  if (!urlKeySupported && (await modelNumberTaken(service, payload.modelNumber))) {
     return duplicateModelResponse(requestId, payload.modelNumber, {code: '23505', message: 'model number exists (case-insensitive)'});
   }
+  const oemConflict = await findOemConflict(service, payload.oemNumbers);
+  if (oemConflict) return Response.json({error: oemConflictMessage(oemConflict), requestId}, {status: 409});
 
   if (await vehicleSchemaMissing(service, Boolean(payload.oemNumbers?.length), Boolean(payload.vehicleModelIds?.length))) {
     return Response.json({error: VEHICLE_SETUP_MESSAGE, requestId}, {status: 409});
@@ -396,6 +401,7 @@ export async function POST(request: Request) {
     is_active: payload.isActive,
     sub_category_id: payload.subCategoryId
   };
+  if (urlKeySupported) insertRow.url_key = await pickUrlKey(service, categoryId, payload.modelNumber, payload.oemNumbers || []);
   // 對照料號有提供才寫入；資料庫還沒有該欄位時（且沒有要存對照料號），改用不含該欄位的寫法
   let insertResult = await service
     .from('products')
@@ -465,9 +471,12 @@ export async function PUT(request: Request) {
     return Response.json({error: '子分類不屬於所選的大分類，請重新選擇子分類', requestId}, {status: 400});
   }
 
-  if (await modelNumberTaken(service, payload.modelNumber, productId)) {
+  const urlKeySupported = await urlKeyColumnExists(service);
+  if (!urlKeySupported && (await modelNumberTaken(service, payload.modelNumber, productId))) {
     return duplicateModelResponse(requestId, payload.modelNumber, {code: '23505', message: 'model number exists (case-insensitive)'});
   }
+  const oemConflict = await findOemConflict(service, payload.oemNumbers, productId);
+  if (oemConflict) return Response.json({error: oemConflictMessage(oemConflict), requestId}, {status: 409});
 
   if (await vehicleSchemaMissing(service, Boolean(payload.oemNumbers?.length), Boolean(payload.vehicleModelIds?.length))) {
     return Response.json({error: VEHICLE_SETUP_MESSAGE, requestId}, {status: 409});
@@ -482,6 +491,12 @@ export async function PUT(request: Request) {
     is_active: payload.isActive,
     sub_category_id: payload.subCategoryId
   };
+  // 網址代號只在型號或大分類改變（或還沒有）時重新產生，改 OEM 料號不會讓舊連結失效
+  if (urlKeySupported) {
+    const {data: current} = await service.from('products').select('model_number,category_id,url_key').eq('id', productId).maybeSingle();
+    const keep = current?.url_key && current.model_number === payload.modelNumber && current.category_id === categoryId;
+    if (!keep) updateRow.url_key = await pickUrlKey(service, categoryId, payload.modelNumber, payload.oemNumbers || [], productId);
+  }
   const beforeSnapshot = await safeSnapshot(() => snapshotProduct(service, productId));
   let updateResult = await service
     .from('products')

@@ -4,6 +4,8 @@ export interface Product {
   id: string;
   category: CategoryKey;
   model: string;
+  // 網址用的代號（型號可重複時用來區分；沒有時用型號）
+  slug?: string;
   name: string;
   image: string;
   // 這個產品的所有圖片（依順序，第一張是主圖）；沒有時只有 image

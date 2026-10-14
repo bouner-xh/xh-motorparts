@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { writeAuditLog } from '@/lib/audit-log';
+import { pickUrlKey, urlKeyColumnExists } from '@/lib/product-url-key';
 import { getSupabaseServerAuthClient, getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin-auth';
 import { revalidateCatalog } from '@/lib/revalidate';
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
   }
 
   const { products } = parsed.data;
+  const urlKeySupported = await urlKeyColumnExists(service);
 
   // 用於快取避免重複查詢資料庫
   const categoryCache = new Map<string, string>(); // slug -> id
@@ -155,10 +157,14 @@ export async function POST(request: Request) {
       // 型號不分大小寫比對，舊資料是小寫時也會更新同一筆（並改存成大寫），不會重複建立
       const { data: prodMatches } = await service
         .from('products')
-        .select('id, name_i18n')
+        .select(urlKeySupported ? 'id, name_i18n, category_id, model_number, url_key' : 'id, name_i18n')
         .ilike('model_number', escapeLikePattern(item.modelNumber))
-        .limit(1);
-      const prodExisted = prodMatches?.[0];
+        .limit(2);
+      // 型號可以重複：同一個型號有多個產品時，批量匯入無法判斷要更新哪一個
+      if ((prodMatches?.length || 0) > 1) {
+        throw new Error(`型號 ${item.modelNumber} 有多個產品，批量匯入無法判斷要更新哪一個，請到「產品」分頁逐一修改`);
+      }
+      const prodExisted = prodMatches?.[0] as { id: string; name_i18n?: Record<string, string>; category_id?: string; url_key?: string | null } | undefined;
 
       let productId = '';
       if (prodExisted?.id) {
@@ -173,6 +179,10 @@ export async function POST(request: Request) {
         };
         if (item.specifications != null) update.specifications = item.specifications;
         if (item.stockQuantity != null) update.stock_quantity = item.stockQuantity;
+        // 大分類改變（或還沒有網址代號）時，重新產生網址代號避免和新分類裡的產品撞網址
+        if (urlKeySupported && (!prodExisted.url_key || prodExisted.category_id !== categoryId)) {
+          update.url_key = await pickUrlKey(service, categoryId, item.modelNumber, [], productId);
+        }
         const { error: updateErr } = await service
           .from('products')
           .update(update)
@@ -187,9 +197,11 @@ export async function POST(request: Request) {
         if (Object.keys(item.nameI18n).length === 0) {
           throw new Error('新產品至少要填寫一個語言的名稱');
         }
+        const newKey = urlKeySupported ? await pickUrlKey(service, categoryId, item.modelNumber, []) : undefined;
         const { data: prodNew, error: createErr } = await service
           .from('products')
           .insert({
+            ...(newKey ? { url_key: newKey } : {}),
             category_id: categoryId,
             sub_category_id: subCategoryId,
             model_number: item.modelNumber,

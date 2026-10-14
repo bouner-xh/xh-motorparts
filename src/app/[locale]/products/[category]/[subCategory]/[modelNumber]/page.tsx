@@ -41,7 +41,7 @@ export async function generateMetadata({
   }
 
   const baseUrl = getBaseUrl();
-  const encodedModel = encodeURIComponent(product.model);
+  const encodedModel = encodeURIComponent(product.slug ?? product.model);
 
   // 搜尋引擎看到的標題與描述：品名在前、加上分類與公司名，描述依語言寫成完整句子（SEO 調整）
   const seoInput = {

@@ -55,7 +55,10 @@ const FOREIGN_KEYS = [
   { table: 'inquiry_events', column: 'inquiry_id', ref: 'inquiry_requests', onDelete: 'set null' }
 ];
 // 模擬「資料表缺少某個欄位」（POST /__mock/drop-column {table, column}）：選取或寫入該欄位時回 42703，其他照常
-let MISSING_COLUMNS = {};
+// 預設是「還沒執行 20261014_product_url_key.sql」的資料庫：沒有 products.url_key、型號不可重複；
+// POST /__mock/migrate-url-key 模擬執行該 SQL（補上網址代號並改成「同大分類內網址代號不重複」）
+let MISSING_COLUMNS = { products: ['url_key'] };
+let URL_KEY_MIGRATED = false;
 // 模擬「資料表尚未建立」（POST /__mock/drop），測試功能在資料表不存在時的行為
 let MISSING = new Set();
 // 模擬 Resend 寄信（測試時設定 RESEND_API_URL=http://127.0.0.1:54321）：記錄寄出的信，可模擬寄信失敗
@@ -156,6 +159,10 @@ function dbError(status, code, message) {
 }
 
 function checkUnique(table, row, ignoreId) {
+  if (table === 'products' && URL_KEY_MIGRATED) {
+    const clash = TABLES.products.some((r) => r.id !== ignoreId && r.category_id === row.category_id && String(r.url_key).toLowerCase() === String(row.url_key).toLowerCase());
+    return clash ? dbError(409, '23505', 'duplicate key value violates unique constraint "products_category_url_key_lower_key"') : null;
+  }
   for (const column of UNIQUE[table] || []) {
     if (TABLES[table].some((r) => r.id !== ignoreId && r[column] === row[column])) {
       return dbError(409, '23505', `duplicate key value violates unique constraint "${table}_${column}_key"`);
@@ -353,7 +360,8 @@ const server = http.createServer((req, res) => {
 
     // 測試用：重設資料、查看目前資料與已上傳檔案
     if (url.pathname === '/__mock/reset') {
-      MISSING_COLUMNS = {};
+      MISSING_COLUMNS = { products: ['url_key'] };
+      URL_KEY_MIGRATED = false;
       TABLES = seedTables();
       STORAGE = new Set();
       STORAGE_META = {};
@@ -395,6 +403,12 @@ const server = http.createServer((req, res) => {
       const message = JSON.parse(raw || '{}');
       EMAILS.push({ ...message, authorization: req.headers.authorization });
       return send(res, 200, { id: `mock-email-${EMAILS.length}` });
+    }
+    if (url.pathname === '/__mock/migrate-url-key' && req.method === 'POST') {
+      MISSING_COLUMNS.products = (MISSING_COLUMNS.products || []).filter((c) => c !== 'url_key');
+      for (const row of TABLES.products) if (row.url_key == null) row.url_key = row.model_number;
+      URL_KEY_MIGRATED = true;
+      return send(res, 200, { ok: true });
     }
     if (url.pathname === '/__mock/drop-column' && req.method === 'POST') {
       const { table, column } = JSON.parse(raw || '{}');

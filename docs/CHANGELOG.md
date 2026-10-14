@@ -25,6 +25,16 @@
 
 ---
 
+## 2026-10-14（第四十五批）：型號可重複（網址代號）
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| 型號可重複 | 同一個型號（例如 DIO50）可以有多個產品。新增資料庫欄位 `products.url_key`（網址代號）；第一個使用某型號的產品，網址代號就是型號本身（舊網址不變），之後重複的用「型號-第一個 OEM 料號」（句號、斜線、空白等符號換成「-」），沒有 OEM 就用「型號-2」「型號-3」。網址代號只在建立或型號／大分類改變時產生，改 OEM 料號不會讓舊連結失效。OEM／對照料號全站唯一（不分大小寫，由程式檢查，衝突時指出占用的產品）。產品頁、列表、搜尋、sitemap、轉址都改用網址代號。批量匯入遇到「型號有多個產品」會回報原因、不覆蓋。**需老闆在 Supabase 執行 `supabase/migrations/20261014_product_url_key.sql`**；執行前一切照舊（型號仍不可重複） | `src/lib/product-url-key.ts`（新）、`api/admin/products/route.ts`、`products/batch/route.ts`、`catalog-service.ts`、`canonical-path.ts`、產品頁／子分類頁／搜尋頁／`ProductSchema.tsx`／`sitemap.ts`、`supabase/migrations/20261014_product_url_key.sql` | `product-duplicate-models.e2e.cjs`、`tests/admin/product-url-key.test.mts`、`canonical-path.test.mts` |
+
+- 不新增套件。還原：見 SQL 檔開頭的還原指令（只有在沒有重複型號時才能還原），再 Revert 對應 PR。
+
+---
+
 ## 2026-10-12（第四十四批）：產品頁圖片不再被裁切
 
 | 項目 | 內容 | 主要檔案 | 測試 |
