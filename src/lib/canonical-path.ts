@@ -4,7 +4,8 @@
 export interface CanonicalCatalog {
   categories: string[];
   subCategories: Array<{categorySlug: string; slug: string}>;
-  products: Array<{category: string; subCategory: string; model: string}>;
+  // slug：網址代號（型號可重複時用來區分）；沒有時用型號
+  products: Array<{category: string; subCategory: string; model: string; slug?: string}>;
 }
 
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -22,9 +23,9 @@ export function matchCanonicalSegments(catalog: CanonicalCatalog, segments: stri
     result.push(sub.slug);
 
     if (model !== undefined) {
-      const product = catalog.products.find((item) => item.category === canonCategory && item.subCategory === sub.slug && same(item.model, model));
+      const product = catalog.products.find((item) => item.category === canonCategory && item.subCategory === sub.slug && same(item.slug ?? item.model, model));
       if (!product) return null;
-      result.push(product.model);
+      result.push(product.slug ?? product.model);
     }
   }
 

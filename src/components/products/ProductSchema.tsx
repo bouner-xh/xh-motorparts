@@ -43,7 +43,7 @@ export function ProductSchema({
       '@type': 'Offer',
       priceCurrency: 'TWD',
       availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/MadeToOrder',
-      url: `${baseUrl}/${locale}/products/${encodeSegment(category)}/${encodeURIComponent(subCategory)}/${encodeURIComponent(product.model)}`
+      url: `${baseUrl}/${locale}/products/${encodeSegment(category)}/${encodeURIComponent(subCategory)}/${encodeURIComponent(product.slug ?? product.model)}`
     }
   };
 

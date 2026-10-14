@@ -39,3 +39,16 @@ test('子分類必須屬於該大分類，不會跨分類配對', () => {
   assert.equal(matchCanonicalSegments(catalog, ['Transmission', 'YAMAHA']), null);
   assert.equal(matchCanonicalSegments(catalog, ['transmission', 'counter-shaft', 'DT125-2A6-16150-00']), null);
 });
+
+test('型號重複：網址用網址代號比對，不用型號', () => {
+  const dup: CanonicalCatalog = {
+    categories: ['transmission'],
+    subCategories: [{ categorySlug: 'transmission', slug: 'gear' }],
+    products: [
+      { category: 'transmission', subCategory: 'gear', model: 'DIO50', slug: 'DIO50' },
+      { category: 'transmission', subCategory: 'gear', model: 'DIO50', slug: 'DIO50-23411-GW0-010' }
+    ]
+  };
+  assert.deepEqual(matchCanonicalSegments(dup, ['transmission', 'gear', 'dio50-23411-gw0-010']), ['transmission', 'gear', 'DIO50-23411-GW0-010']);
+  assert.equal(matchCanonicalSegments(dup, ['transmission', 'gear', 'DIO50-23411-GW0-010']), null);
+});

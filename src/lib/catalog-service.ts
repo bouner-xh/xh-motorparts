@@ -6,8 +6,17 @@ import {searchProducts} from '@/lib/product-search';
 import {matchCanonicalSegments} from '@/lib/canonical-path';
 import {NO_IMAGE_URL} from '@/lib/product-image-url';
 import {encodeSegment} from '@/lib/url-segment';
+import {urlKeyColumnExists} from '@/lib/product-url-key';
 
 const defaultImagePath = NO_IMAGE_URL;
+
+// 資料庫已有網址代號欄位時，查詢要多選 url_key；還沒執行 SQL 時不選，網址仍用型號
+// 欄位清單是執行時才決定的字串，型別推導不出欄位，所以標成 '*'（資料列都是 any）
+const columns = (value: string) => value as '*';
+
+async function urlKeySelect(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>) {
+  return (await urlKeyColumnExists(supabase)) ? ',url_key' : '';
+}
 
 function getPrimaryCategorySlug(categoryRef: {slug?: string} | Array<{slug?: string}> | null) {
   return Array.isArray(categoryRef) ? categoryRef[0]?.slug : categoryRef?.slug;
@@ -179,9 +188,10 @@ export const getCategoryProducts = cache(async (category: CategoryKey, subCatego
   }
 
   try {
+    const keyColumn = await urlKeySelect(supabase);
     let query = supabase
       .from('products')
-      .select('id,model_number,name_i18n,stock_quantity,specifications,category:categories!inner(slug)')
+      .select(columns(`id,model_number${keyColumn},name_i18n,stock_quantity,specifications,category:categories!inner(slug)`))
       .eq('category.slug', category)
       .eq('is_active', true)
       .order('model_number', {ascending: true});
@@ -205,6 +215,7 @@ export const getCategoryProducts = cache(async (category: CategoryKey, subCatego
       id: item.id,
       category,
       model: item.model_number,
+      slug: (item as {url_key?: string | null}).url_key || item.model_number,
       name: getLocalizedName(item.name_i18n, locale, item.model_number),
       image: imageMap.get(item.id) || defaultImagePath,
       stock: item.stock_quantity ?? 0,
@@ -223,11 +234,12 @@ export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber
   }
 
   try {
+    const keyColumn = await urlKeySelect(supabase);
     const {data, error} = await supabase
       .from('products')
-      .select('id,model_number,name_i18n,stock_quantity,specifications,category:categories!inner(slug)')
+      .select(columns(`id,model_number${keyColumn},name_i18n,stock_quantity,specifications,category:categories!inner(slug)`))
       .eq('category.slug', category)
-      .eq('model_number', modelNumber)
+      .eq(keyColumn ? 'url_key' : 'model_number', modelNumber)
       .eq('is_active', true)
       .maybeSingle();
 
@@ -242,6 +254,7 @@ export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber
       id: data.id,
       category,
       model: data.model_number,
+      slug: (data as {url_key?: string | null}).url_key || data.model_number,
       name: getLocalizedName(data.name_i18n, locale, data.model_number),
       image: images[0] || defaultImagePath,
       images,
@@ -264,9 +277,10 @@ export const getCatalogProducts = cache(async (locale: Locale = 'en'): Promise<A
   }
 
   try {
+    const keyColumn = await urlKeySelect(supabase);
     const {data, error} = await supabase
       .from('products')
-      .select('id,model_number,name_i18n,stock_quantity,specifications,category:categories!inner(slug),sub_category:sub_categories(slug)')
+      .select(columns(`id,model_number${keyColumn},name_i18n,stock_quantity,specifications,category:categories!inner(slug),sub_category:sub_categories(slug)`))
       .eq('is_active', true)
       .order('model_number', {ascending: true});
 
@@ -289,6 +303,7 @@ export const getCatalogProducts = cache(async (locale: Locale = 'en'): Promise<A
         category: (categorySlug || '') as CategoryKey,
         subCategory: getPrimaryCategorySlug(item.sub_category as {slug?: string} | Array<{slug?: string}> | null) || '',
         model: item.model_number,
+        slug: (item as {url_key?: string | null}).url_key || item.model_number,
         name: getLocalizedName(item.name_i18n, locale, item.model_number),
         image: imageMap.get(item.id) || defaultImagePath,
         stock: item.stock_quantity ?? 0,
@@ -306,6 +321,7 @@ export interface ProductSearchResult {
   // 子分類代號；沒有子分類資料時為空字串（只能連到大分類頁）
   subCategory: string;
   model: string;
+  slug?: string;
   name: string;
   image: string;
   stock: number;
@@ -321,9 +337,10 @@ export async function searchCatalogProducts(query: string, locale: Locale = 'en'
     return searchProducts(fallback, query).map(({names: _names, ...p}) => p);
   }
 
+  const keyColumn = await urlKeySelect(supabase);
   const {data, error} = await supabase
     .from('products')
-    .select('id,model_number,name_i18n,stock_quantity,specifications,category:categories!inner(slug),sub_category:sub_categories(slug)')
+    .select(columns(`id,model_number${keyColumn},name_i18n,stock_quantity,specifications,category:categories!inner(slug),sub_category:sub_categories(slug)`))
     .eq('is_active', true);
 
   if (error || !data) {
@@ -342,6 +359,7 @@ export async function searchCatalogProducts(query: string, locale: Locale = 'en'
       category: (getPrimaryCategorySlug(item.category as {slug?: string} | null) || '') as CategoryKey,
       subCategory: getPrimaryCategorySlug(subRef) || '',
       model: item.model_number as string,
+      slug: ((item as {url_key?: string | null}).url_key || item.model_number) as string,
       name: getLocalizedName(nameI18n, locale, item.model_number),
       names: Object.values(nameI18n).filter(Boolean),
       stock: (item.stock_quantity as number | null) ?? 0,
@@ -542,7 +560,7 @@ export async function resolveCanonicalProductPath(segments: string[]): Promise<s
     {
       categories: categories.map((category) => category.key as string),
       subCategories,
-      products: products.map((product) => ({category: product.category as string, subCategory: product.subCategory, model: product.model}))
+      products: products.map((product) => ({category: product.category as string, subCategory: product.subCategory, model: product.model, slug: product.slug}))
     },
     segments
   );

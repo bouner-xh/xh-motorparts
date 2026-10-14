@@ -55,7 +55,7 @@ export default async function ProductSearchPage({
               product={product}
               href={
                 product.subCategory
-                  ? `/${localeValue}/products/${encodeSegment(product.category)}/${encodeURIComponent(product.subCategory)}/${encodeURIComponent(product.model)}`
+                  ? `/${localeValue}/products/${encodeSegment(product.category)}/${encodeURIComponent(product.subCategory)}/${encodeURIComponent(product.slug ?? product.model)}`
                   : `/${localeValue}/products/${encodeSegment(product.category)}`
               }
               specLabel={t('specifications')}
