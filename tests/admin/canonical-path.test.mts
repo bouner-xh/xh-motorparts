@@ -52,3 +52,29 @@ test('型號重複：網址用網址代號比對，不用型號', () => {
   assert.deepEqual(matchCanonicalSegments(dup, ['transmission', 'gear', 'dio50-23411-gw0-010']), ['transmission', 'gear', 'DIO50-23411-GW0-010']);
   assert.equal(matchCanonicalSegments(dup, ['transmission', 'gear', 'DIO50-23411-GW0-010']), null);
 });
+
+test('子分類改過代號或被刪除、產品搬家：同一大分類裡只有一個符合時，轉到現在的網址', () => {
+  const moved: CanonicalCatalog = {
+    categories: ['clutch-housing'],
+    subCategories: [{ categorySlug: 'clutch-housing', slug: 'clutch-housing' }, { categorySlug: 'clutch-housing', slug: 'other' }],
+    products: [{ category: 'clutch-housing', subCategory: 'clutch-housing', model: 'DT125-2A6-16150-00' }]
+  };
+  // 子分類已不存在（舊代號 yamaha），型號還是小寫
+  assert.deepEqual(matchCanonicalSegments(moved, ['clutch-housing', 'yamaha', 'dt125-2a6-16150-00']), ['clutch-housing', 'clutch-housing', 'DT125-2A6-16150-00']);
+  // 子分類存在，但產品在另一個子分類底下
+  assert.deepEqual(matchCanonicalSegments(moved, ['clutch-housing', 'other', 'DT125-2A6-16150-00']), ['clutch-housing', 'clutch-housing', 'DT125-2A6-16150-00']);
+  // 型號找不到、或產品沒有子分類：不轉址
+  assert.equal(matchCanonicalSegments(moved, ['clutch-housing', 'yamaha', 'NOPE']), null);
+  assert.equal(matchCanonicalSegments(moved, ['clutch-housing', 'yamaha']), null);
+  const noSub: CanonicalCatalog = { ...moved, products: [{ category: 'clutch-housing', subCategory: '', model: 'X-1' }] };
+  assert.equal(matchCanonicalSegments(noSub, ['clutch-housing', 'yamaha', 'X-1']), null);
+});
+
+test('同一大分類裡有兩個符合（理論上不會發生）：不亂猜，不轉址', () => {
+  const ambiguous: CanonicalCatalog = {
+    categories: ['c'],
+    subCategories: [{ categorySlug: 'c', slug: 'a' }, { categorySlug: 'c', slug: 'b' }],
+    products: [{ category: 'c', subCategory: 'a', model: 'X-1' }, { category: 'c', subCategory: 'b', model: 'X-1' }]
+  };
+  assert.equal(matchCanonicalSegments(ambiguous, ['c', 'zzz', 'x-1']), null);
+});

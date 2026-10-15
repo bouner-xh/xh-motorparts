@@ -95,7 +95,9 @@ export default async function ProductDetailPage({
     getTranslations({ locale: localeValue, namespace: 'nav' })
   ]);
 
-  if (!categoryData || !product || !subCategoryData) {
+  // 產品其實在別的子分類底下（子分類改過代號、產品被搬走）時，也轉到正確網址，避免舊網址 404 或同一產品出現在兩個網址
+  const inWrongSubCategory = Boolean(product?.subCategory && subCategoryData && product.subCategory !== subCategoryData.slug);
+  if (!categoryData || !product || !subCategoryData || inWrongSubCategory) {
     // 網址大小寫寫錯時轉到正確的網址（分類、子分類、型號都不分大小寫）
     const canonical = await resolveCanonicalProductPath([category, decodedSubCategory, decodedModel]);
     if (canonical) permanentRedirect(`/${localeValue}${canonical}`);

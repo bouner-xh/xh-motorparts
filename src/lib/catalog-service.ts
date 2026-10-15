@@ -237,7 +237,7 @@ export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber
     const keyColumn = await urlKeySelect(supabase);
     const {data, error} = await supabase
       .from('products')
-      .select(columns(`id,model_number${keyColumn},name_i18n,stock_quantity,specifications,category:categories!inner(slug)`))
+      .select(columns(`id,model_number${keyColumn},name_i18n,stock_quantity,specifications,category:categories!inner(slug),sub_category:sub_categories(slug)`))
       .eq('category.slug', category)
       .eq(keyColumn ? 'url_key' : 'model_number', modelNumber)
       .eq('is_active', true)
@@ -255,6 +255,8 @@ export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber
       category,
       model: data.model_number,
       slug: (data as {url_key?: string | null}).url_key || data.model_number,
+      // 產品目前所在的子分類代號（網址裡的子分類不對時，頁面會轉到正確網址）
+      subCategory: getPrimaryCategorySlug((data as {sub_category?: {slug?: string} | Array<{slug?: string}> | null}).sub_category ?? null) || '',
       name: getLocalizedName(data.name_i18n, locale, data.model_number),
       image: images[0] || defaultImagePath,
       images,

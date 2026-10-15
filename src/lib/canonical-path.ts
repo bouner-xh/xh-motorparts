@@ -19,13 +19,20 @@ export function matchCanonicalSegments(catalog: CanonicalCatalog, segments: stri
 
   if (subCategory !== undefined) {
     const sub = catalog.subCategories.find((item) => item.categorySlug === canonCategory && same(item.slug, subCategory));
-    if (!sub) return null;
-    result.push(sub.slug);
 
-    if (model !== undefined) {
-      const product = catalog.products.find((item) => item.category === canonCategory && item.subCategory === sub.slug && same(item.slug ?? item.model, model));
-      if (!product) return null;
-      result.push(product.slug ?? product.model);
+    if (model === undefined) {
+      if (!sub) return null;
+      result.push(sub.slug);
+    } else {
+      const inSub = sub && catalog.products.find((item) => item.category === canonCategory && item.subCategory === sub.slug && same(item.slug ?? item.model, model));
+      if (inSub) {
+        result.push(sub.slug, inSub.slug ?? inSub.model);
+      } else {
+        // 子分類改過代號、被刪除，或產品搬到別的子分類：同一個大分類裡只有一個產品符合時，轉到它現在的網址
+        const matches = catalog.products.filter((item) => item.category === canonCategory && item.subCategory && same(item.slug ?? item.model, model));
+        if (matches.length !== 1) return null;
+        result.push(matches[0].subCategory, matches[0].slug ?? matches[0].model);
+      }
     }
   }
 

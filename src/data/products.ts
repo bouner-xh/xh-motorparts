@@ -6,6 +6,8 @@ export interface Product {
   model: string;
   // 網址用的代號（型號可重複時用來區分；沒有時用型號）
   slug?: string;
+  // 所在的子分類代號（只有詳細頁的查詢會帶）
+  subCategory?: string;
   name: string;
   image: string;
   // 這個產品的所有圖片（依順序，第一張是主圖）；沒有時只有 image
