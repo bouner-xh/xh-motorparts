@@ -60,12 +60,18 @@ export function oemConflictMessage(conflict: {oem: string; model: string}) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type UrlKeyDb = {from: (table: string) => any};
 
-const PROBE_TTL_MS = process.env.NODE_ENV === 'production' ? 60_000 : 0;
+// 正式環境：查到有欄位後長期記住（欄位不會消失）；查不到時只記 60 秒，老闆執行 SQL 後很快就會生效。
+// 開發與測試環境不快取，測試中途執行「SQL」馬上看得到
+const PROBE_OK_TTL_MS = process.env.NODE_ENV === 'production' ? 60 * 60_000 : 0;
+const PROBE_MISSING_TTL_MS = process.env.NODE_ENV === 'production' ? 60_000 : 0;
 let probeCache: {at: number; ok: boolean} | null = null;
 
-/** 資料庫是否已有 products.url_key 欄位（已執行 20261014_product_url_key.sql）；正式環境快取 60 秒 */
+/** 資料庫是否已有 products.url_key 欄位（已執行 20261014_product_url_key.sql） */
 export async function urlKeyColumnExists(db: UrlKeyDb): Promise<boolean> {
-  if (probeCache && PROBE_TTL_MS > 0 && Date.now() - probeCache.at < PROBE_TTL_MS) return probeCache.ok;
+  if (probeCache) {
+    const ttl = probeCache.ok ? PROBE_OK_TTL_MS : PROBE_MISSING_TTL_MS;
+    if (ttl > 0 && Date.now() - probeCache.at < ttl) return probeCache.ok;
+  }
   let ok = false;
   try {
     const {error} = await db.from('products').select('url_key').limit(1);

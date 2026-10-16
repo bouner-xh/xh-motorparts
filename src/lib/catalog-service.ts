@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import {getAllProducts, getProductsByCategory, findProduct, type Product} from '@/data/products';
 import {categoryDescriptions, categoryKeys, categoryNames, type CategoryKey, type Locale} from '@/lib/catalog';
 import {getSupabaseServerClient} from '@/lib/supabase/server';
@@ -30,19 +31,17 @@ function getLocalizedName(nameI18n: Record<string, string> | undefined, locale: 
   return nameI18n[locale] || nameI18n.en || nameI18n['zh-TW'] || modelNumber;
 }
 
-async function getPrimaryImageMap(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>, productIds: string[]) {
+async function getPrimaryImageMap(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>, productIds: string[] | null) {
   const imageMap = new Map<string, string>();
 
-  if (!productIds.length) {
+  if (productIds && !productIds.length) {
     return imageMap;
   }
 
   try {
-    const {data} = await supabase
-      .from('product_images')
-      .select('product_id,storage_path,sort_order')
-      .in('product_id', productIds)
-      .order('sort_order', {ascending: true});
+    let query = supabase.from('product_images').select('product_id,storage_path,sort_order');
+    if (productIds) query = query.in('product_id', productIds);
+    const {data} = await query.order('sort_order', {ascending: true});
 
     (data || []).forEach((item) => {
       if (!imageMap.has(item.product_id)) {
@@ -77,32 +76,37 @@ async function getVehicleInfo(supabase: NonNullable<ReturnType<typeof getSupabas
   const models = new Map<string, string[]>();
   if (productIds && !productIds.length) return {oem, models};
 
-  try {
-    let query = supabase.from('products').select('id, oem_numbers');
-    if (productIds) query = query.in('id', productIds);
-    const {data, error} = await query;
-    if (!error) ((data as Array<{id: string; oem_numbers: string[] | null}> | null) || []).forEach((row) => row.oem_numbers?.length && oem.set(row.id, row.oem_numbers));
-  } catch {
-    // products.oem_numbers 還沒建立
-  }
-
-  try {
-    let linkQuery = supabase.from('product_vehicle_models').select('product_id, vehicle_model_id');
-    if (productIds) linkQuery = linkQuery.in('product_id', productIds);
-    const {data: links, error} = await linkQuery;
-    if (!error && links?.length) {
-      const {data: names} = await supabase.from('vehicle_models').select('id, name');
-      const nameById = new Map(((names as Array<{id: string; name: string}> | null) || []).map((row) => [row.id, row.name]));
-      for (const link of links as Array<{product_id: string; vehicle_model_id: string}>) {
-        const name = nameById.get(link.vehicle_model_id);
-        if (name) models.set(link.product_id, [...(models.get(link.product_id) || []), name]);
-      }
-      models.forEach((list, id) => models.set(id, [...list].sort((a, b) => a.localeCompare(b, 'en', {sensitivity: 'base'}))));
+  // 對照料號與車型是兩組互不相依的查詢，同時發出（資料庫在遠端，每次往返都要等）
+  const loadOem = async () => {
+    try {
+      let query = supabase.from('products').select('id, oem_numbers');
+      if (productIds) query = query.in('id', productIds);
+      const {data, error} = await query;
+      if (!error) ((data as Array<{id: string; oem_numbers: string[] | null}> | null) || []).forEach((row) => row.oem_numbers?.length && oem.set(row.id, row.oem_numbers));
+    } catch {
+      // products.oem_numbers 還沒建立
     }
-  } catch {
-    // 車型清單還沒建立
-  }
+  };
 
+  const loadModels = async () => {
+    try {
+      let linkQuery = supabase.from('product_vehicle_models').select('product_id, vehicle_model_id');
+      if (productIds) linkQuery = linkQuery.in('product_id', productIds);
+      const [{data: links, error}, {data: names}] = await Promise.all([linkQuery, supabase.from('vehicle_models').select('id, name')]);
+      if (!error && links?.length) {
+        const nameById = new Map(((names as Array<{id: string; name: string}> | null) || []).map((row) => [row.id, row.name]));
+        for (const link of links as Array<{product_id: string; vehicle_model_id: string}>) {
+          const name = nameById.get(link.vehicle_model_id);
+          if (name) models.set(link.product_id, [...(models.get(link.product_id) || []), name]);
+        }
+        models.forEach((list, id) => models.set(id, [...list].sort((a, b) => a.localeCompare(b, 'en', {sensitivity: 'base'}))));
+      }
+    } catch {
+      // 車型清單還沒建立
+    }
+  };
+
+  await Promise.all([loadOem(), loadModels()]);
   return {oem, models};
 }
 
@@ -330,30 +334,38 @@ export interface ProductSearchResult {
   specifications: string[];
 }
 
-// 前台產品搜尋（P2）：只搜尋已上架產品；型號、三種語言名稱、規格都可以搜
-export async function searchCatalogProducts(query: string, locale: Locale = 'en'): Promise<ProductSearchResult[]> {
+// 搜尋用的產品索引：已上架產品＋OEM 對照料號＋適用車型＋主圖，一次讀完
+type SearchIndexItem = {
+  id: string;
+  category: CategoryKey;
+  subCategory: string;
+  model: string;
+  slug: string;
+  name: string;
+  names: string[];
+  stock: number;
+  specifications: string[];
+  oemNumbers: string[];
+  vehicleModels: string[];
+  image: string;
+};
+
+// 讀取失敗時丟出錯誤（錯誤結果不會被快取）；各查詢互不相依，同時發出
+async function buildSearchIndex(locale: Locale): Promise<SearchIndexItem[]> {
   const supabase = getSupabaseServerClient();
+  if (!supabase) throw new Error('Supabase is not configured');
 
-  if (!supabase) {
-    const fallback = getAllProducts().map((p) => ({...p, subCategory: '', names: [p.name]}));
-    return searchProducts(fallback, query).map(({names: _names, ...p}) => p);
-  }
+  const loadProducts = async () => {
+    const keyColumn = await urlKeySelect(supabase);
+    return supabase
+      .from('products')
+      .select(columns(`id,model_number${keyColumn},name_i18n,stock_quantity,specifications,category:categories!inner(slug),sub_category:sub_categories(slug)`))
+      .eq('is_active', true);
+  };
+  const [{data, error}, vehicle, imageMap] = await Promise.all([loadProducts(), getVehicleInfo(supabase, null), getPrimaryImageMap(supabase, null)]);
+  if (error || !data) throw new Error(error?.message || 'product search failed');
 
-  const keyColumn = await urlKeySelect(supabase);
-  const {data, error} = await supabase
-    .from('products')
-    .select(columns(`id,model_number${keyColumn},name_i18n,stock_quantity,specifications,category:categories!inner(slug),sub_category:sub_categories(slug)`))
-    .eq('is_active', true);
-
-  if (error || !data) {
-    console.error('[catalog] product search failed:', error?.message);
-    return [];
-  }
-
-  // 對照料號與適用車型也可以搜
-  const vehicle = await getVehicleInfo(supabase, null);
-
-  const searchable = data.map((item) => {
+  return data.map((item) => {
     const nameI18n = (item.name_i18n || {}) as Record<string, string>;
     const subRef = item.sub_category as {slug?: string} | Array<{slug?: string}> | null;
     return {
@@ -368,16 +380,31 @@ export async function searchCatalogProducts(query: string, locale: Locale = 'en'
       specifications: (item.specifications as string[] | null) ?? [],
       oemNumbers: vehicle.oem.get(item.id as string) || [],
       vehicleModels: vehicle.models.get(item.id as string) || [],
-      image: defaultImagePath
+      image: imageMap.get(item.id as string) || defaultImagePath
     };
   });
+}
 
-  const matched = searchProducts(searchable, query);
-  const imageMap = await getPrimaryImageMap(
-    supabase,
-    matched.map((item) => item.id)
-  );
-  return matched.map(({names: _names, oemNumbers: _oem, vehicleModels: _models, ...item}) => ({...item, image: imageMap.get(item.id) || defaultImagePath}));
+// 正式環境把索引快取 5 分鐘；後台儲存時 revalidateCatalog() 會清掉（tag: catalog），所以改完產品馬上搜得到。
+// 開發與測試環境不快取，測試直接改資料庫後馬上就能搜到
+const cachedSearchIndex = unstable_cache(buildSearchIndex, ['search-index-v1'], {revalidate: 300, tags: ['catalog']});
+
+// 前台產品搜尋（P2）：只搜尋已上架產品；型號、三種語言名稱、規格、OEM 對照料號、適用車型都可以搜
+export async function searchCatalogProducts(query: string, locale: Locale = 'en'): Promise<ProductSearchResult[]> {
+  if (!getSupabaseServerClient()) {
+    const fallback = getAllProducts().map((p) => ({...p, subCategory: '', names: [p.name]}));
+    return searchProducts(fallback, query).map(({names: _names, ...p}) => p);
+  }
+
+  let index: SearchIndexItem[];
+  try {
+    index = process.env.NODE_ENV === 'production' ? await cachedSearchIndex(locale) : await buildSearchIndex(locale);
+  } catch (error) {
+    console.error('[catalog] product search failed:', error instanceof Error ? error.message : error);
+    return [];
+  }
+
+  return searchProducts(index, query).map(({names: _names, oemNumbers: _oem, vehicleModels: _models, ...item}) => item);
 }
 
 export interface SubCategorySummary {
