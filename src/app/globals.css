@@ -313,6 +313,8 @@ textarea {
   height: 180px;
   position: relative;
   overflow: hidden;
+  /* 照片多為白底：封面完整顯示（contain），留白處補白色 */
+  background: #fff;
 }
 
 .category-card__media img,
@@ -321,6 +323,10 @@ textarea {
   height: 100%;
   object-fit: cover;
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.category-card__media img {
+  object-fit: contain;
 }
 
 .category-card:hover .category-card__media img {

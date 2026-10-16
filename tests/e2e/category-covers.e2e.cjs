@@ -73,3 +73,17 @@ run('子分類卡片：顯示該子分類第一個產品的照片，沒有照片
     }
   })
 );
+
+run('大分類與子分類卡片的封面完整顯示（不裁切），底色補白', () =>
+  withPage(async (page) => {
+    await seedCategories();
+    for (const path of ['/zh-TW/products', '/zh-TW/products/starter-motor']) {
+      await page.goto(`${BASE_URL}${path}`);
+      const img = page.locator('.category-card__media img').first();
+      await img.waitFor();
+      const style = await img.evaluate((el) => ({ fit: getComputedStyle(el).objectFit, bg: getComputedStyle(el.parentElement).backgroundColor }));
+      assert(style.fit === 'contain', `${path} 卡片封面完整顯示（${style.fit}）`);
+      assert(style.bg === 'rgb(255, 255, 255)', `${path} 卡片底色為白色（${style.bg}）`);
+    }
+  })
+);
