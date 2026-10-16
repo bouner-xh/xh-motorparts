@@ -104,6 +104,17 @@ else
   FAIL=1
 fi
 
+echo "== 9. 正式環境建置 + 模擬 Supabase（搜尋索引快取與失效）"
+start_mock
+if env "${MOCK_ENV[@]}" npx next build > /tmp/xh-e2e-build-cache.log 2>&1; then
+  start_server env "${MOCK_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next start -p $PORT && e2e search-cache
+  stop_server
+else
+  echo "❌ 正式環境建置（模擬 Supabase）失敗，請看 /tmp/xh-e2e-build-cache.log"
+  FAIL=1
+fi
+stop_mock
+
 echo
 [ $FAIL -eq 0 ] && echo "✅ 全部測試通過" || echo "❌ 有測試失敗"
 exit $FAIL
