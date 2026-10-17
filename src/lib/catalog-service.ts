@@ -8,6 +8,7 @@ import {matchCanonicalSegments} from '@/lib/canonical-path';
 import {NO_IMAGE_URL} from '@/lib/product-image-url';
 import {encodeSegment} from '@/lib/url-segment';
 import {urlKeyColumnExists} from '@/lib/product-url-key';
+import {isRealQueryFailure, rethrowUnlessFallback} from '@/lib/catalog-fallback';
 
 const defaultImagePath = NO_IMAGE_URL;
 
@@ -41,14 +42,17 @@ async function getPrimaryImageMap(supabase: NonNullable<ReturnType<typeof getSup
   try {
     let query = supabase.from('product_images').select('product_id,storage_path,sort_order');
     if (productIds) query = query.in('product_id', productIds);
-    const {data} = await query.order('sort_order', {ascending: true});
+    const {data, error} = await query.order('sort_order', {ascending: true});
+    if (error) throw error;
 
     (data || []).forEach((item) => {
       if (!imageMap.has(item.product_id)) {
         imageMap.set(item.product_id, item.storage_path || defaultImagePath);
       }
     });
-  } catch {
+  } catch (error) {
+    // 正式環境圖片查詢失敗就不要快取「全部沒圖」的頁面
+    rethrowUnlessFallback(error, 'getPrimaryImageMap');
     return imageMap;
   }
 
@@ -58,13 +62,15 @@ async function getPrimaryImageMap(supabase: NonNullable<ReturnType<typeof getSup
 // 一個產品的所有圖片（依順序，第一張是主圖）
 async function getProductImages(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>, productId: string) {
   try {
-    const {data} = await supabase
+    const {data, error} = await supabase
       .from('product_images')
       .select('storage_path,sort_order')
       .eq('product_id', productId)
       .order('sort_order', {ascending: true});
+    if (error) throw error;
     return (data || []).map((item) => item.storage_path as string | null).filter((path): path is string => Boolean(path));
-  } catch {
+  } catch (error) {
+    rethrowUnlessFallback(error, 'getProductImages');
     return [];
   }
 }
@@ -122,11 +128,12 @@ export interface CategorySummary {
 async function getCategoryCoverImages(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>) {
   const covers = new Map<string, string>();
   try {
-    const {data} = await supabase
+    const {data, error} = await supabase
       .from('products')
       .select('id,category:categories!inner(slug)')
       .eq('is_active', true)
       .order('model_number', {ascending: true});
+    if (error) throw error;
     const rows = (data || []) as Array<{id: string; category: {slug?: string} | Array<{slug?: string}> | null}>;
     const imageMap = await getPrimaryImageMap(supabase, rows.map((row) => row.id));
     for (const row of rows) {
@@ -134,21 +141,26 @@ async function getCategoryCoverImages(supabase: NonNullable<ReturnType<typeof ge
       const image = imageMap.get(row.id);
       if (slug && image && image !== defaultImagePath && !covers.has(slug)) covers.set(slug, image);
     }
-  } catch {
-    // 查不到就用預設圖
+  } catch (error) {
+    // 查不到就用預設圖（正式環境則丟出錯誤，不快取沒有封面的頁面）
+    rethrowUnlessFallback(error, 'getCategoryCoverImages');
   }
   return covers;
+}
+
+function staticCategorySummaries(locale: Locale): CategorySummary[] {
+  return categoryKeys.map((key) => ({
+    key,
+    name: categoryNames[locale][key] || key,
+    description: categoryDescriptions[locale][key] || ''
+  }));
 }
 
 export const getCategorySummaries = cache(async (locale: Locale): Promise<CategorySummary[]> => {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
-    return categoryKeys.map((key) => ({
-      key,
-      name: categoryNames[locale][key] || key,
-      description: categoryDescriptions[locale][key] || ''
-    }));
+    return staticCategorySummaries(locale);
   }
 
   try {
@@ -162,9 +174,9 @@ export const getCategorySummaries = cache(async (locale: Locale): Promise<Catego
     }
     const {data, error} = result;
 
-    if (error || !data?.length) {
-      throw error;
-    }
+    if (error) throw error;
+    // 資料庫沒有任何分類（還沒建立資料）時沿用舊行為：顯示預設分類
+    if (!data?.length) return staticCategorySummaries(locale);
 
     const covers = await getCategoryCoverImages(supabase);
     return data.map((item) => ({
@@ -175,12 +187,9 @@ export const getCategorySummaries = cache(async (locale: Locale): Promise<Catego
       // 封面順序：分類自己上傳的封面 → 該分類第一個已上架且有照片的產品的照片
       coverImage: item.cover_image || covers.get(item.slug)
     }));
-  } catch {
-    return categoryKeys.map((key) => ({
-      key,
-      name: categoryNames[locale][key] || key,
-      description: categoryDescriptions[locale][key] || ''
-    }));
+  } catch (error) {
+    rethrowUnlessFallback(error, 'getCategorySummaries');
+    return staticCategorySummaries(locale);
   }
 });
 
@@ -206,9 +215,9 @@ export const getCategoryProducts = cache(async (category: CategoryKey, subCatego
 
     const {data, error} = await query;
 
-    if (error || !data?.length) {
-      throw error;
-    }
+    if (error) throw error;
+    // 這個分類還沒有任何產品：沿用舊行為
+    if (!data?.length) return getProductsByCategory(category);
 
     const imageMap = await getPrimaryImageMap(
       supabase,
@@ -225,7 +234,8 @@ export const getCategoryProducts = cache(async (category: CategoryKey, subCatego
       stock: item.stock_quantity ?? 0,
       specifications: item.specifications ?? []
     }));
-  } catch {
+  } catch (error) {
+    rethrowUnlessFallback(error, 'getCategoryProducts');
     return getProductsByCategory(category);
   }
 });
@@ -247,12 +257,12 @@ export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber
       .eq('is_active', true)
       .maybeSingle();
 
-    if (error || !data) {
-      throw error;
-    }
+    if (isRealQueryFailure(error)) throw error;
+    // 查無此產品（或型號重複查到多筆）：沿用舊行為
+    if (!data) return findProduct(category, modelNumber);
 
-    const images = await getProductImages(supabase, data.id);
-    const vehicle = await getVehicleInfo(supabase, [data.id]);
+    // 圖片與車型互不相依，同時查
+    const [images, vehicle] = await Promise.all([getProductImages(supabase, data.id), getVehicleInfo(supabase, [data.id])]);
 
     return {
       id: data.id,
@@ -269,7 +279,8 @@ export const getCatalogProduct = cache(async (category: CategoryKey, modelNumber
       stock: data.stock_quantity ?? 0,
       specifications: data.specifications ?? []
     };
-  } catch {
+  } catch (error) {
+    rethrowUnlessFallback(error, 'getCatalogProduct');
     return findProduct(category, modelNumber);
   }
 });
@@ -290,9 +301,8 @@ export const getCatalogProducts = cache(async (locale: Locale = 'en'): Promise<A
       .eq('is_active', true)
       .order('model_number', {ascending: true});
 
-    if (error || !data?.length) {
-      throw error;
-    }
+    if (error) throw error;
+    if (!data?.length) return getAllProducts().map((p) => ({...p, subCategory: ''}));
 
     const imageMap = await getPrimaryImageMap(
       supabase,
@@ -316,7 +326,8 @@ export const getCatalogProducts = cache(async (locale: Locale = 'en'): Promise<A
         specifications: item.specifications ?? []
       };
       });
-  } catch {
+  } catch (error) {
+    rethrowUnlessFallback(error, 'getCatalogProducts');
     return getAllProducts().map((p) => ({...p, subCategory: ''}));
   }
 });
@@ -424,14 +435,16 @@ export const getSubCategories = cache(async (category: CategoryKey, locale: Loca
       .eq('category.slug', category)
       .order('sort_order', { ascending: true });
 
-    if (error || !data) return [];
+    if (error) throw error;
+    if (!data) return [];
 
     return data.map(item => ({
       id: item.id,
       slug: item.slug,
       name: getLocalizedName(item.name_i18n as Record<string, string>, locale, item.slug)
     }));
-  } catch {
+  } catch (error) {
+    rethrowUnlessFallback(error, 'getSubCategories');
     return [];
   }
 });
@@ -443,20 +456,22 @@ export const getSubCategoryCoverImages = cache(async (subCategoryIds: string[]):
   if (!supabase || !subCategoryIds.length) return covers;
 
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('products')
       .select('id, sub_category_id')
       .eq('is_active', true)
       .in('sub_category_id', subCategoryIds)
       .order('model_number', { ascending: true });
+    if (error) throw error;
     const rows = (data || []) as Array<{ id: string; sub_category_id: string | null }>;
     const imageMap = await getPrimaryImageMap(supabase, rows.map((row) => row.id));
     for (const row of rows) {
       const image = imageMap.get(row.id);
       if (row.sub_category_id && image && image !== defaultImagePath && !covers.has(row.sub_category_id)) covers.set(row.sub_category_id, image);
     }
-  } catch {
-    // 查不到就用預設圖
+  } catch (error) {
+    // 查不到就用預設圖（正式環境則丟出錯誤，不快取沒有封面的頁面）
+    rethrowUnlessFallback(error, 'getSubCategoryCoverImages');
   }
   return covers;
 });
@@ -473,14 +488,16 @@ export const getSubCategoryBySlug = cache(async (category: CategoryKey, slug: st
       .eq('slug', slug)
       .maybeSingle();
 
-    if (error || !data) return null;
+    if (isRealQueryFailure(error)) throw error;
+    if (!data) return null;
 
     return {
       id: data.id,
       slug: data.slug,
       name: getLocalizedName(data.name_i18n as Record<string, string>, locale, data.slug)
     };
-  } catch {
+  } catch (error) {
+    rethrowUnlessFallback(error, 'getSubCategoryBySlug');
     return null;
   }
 });
@@ -500,7 +517,8 @@ export const getAllSubCategories = cache(async (): Promise<SubCategoryWithCatego
       .select('slug, category:categories!inner(slug)')
       .order('sort_order', { ascending: true });
 
-    if (error || !data) return [];
+    if (error) throw error;
+    if (!data) return [];
 
     return data.map((item: { slug: string; category: { slug?: string } | { slug?: string }[] | null }) => {
       const catSlug = Array.isArray(item.category) ? item.category[0]?.slug : item.category?.slug;
@@ -509,7 +527,8 @@ export const getAllSubCategories = cache(async (): Promise<SubCategoryWithCatego
         categorySlug: catSlug || '',
       };
     });
-  } catch {
+  } catch (error) {
+    rethrowUnlessFallback(error, 'getAllSubCategories');
     return [];
   }
 });
@@ -543,7 +562,8 @@ export const getCategoryBySlug = cache(async (slug: string, locale: Locale): Pro
       .eq('slug', slug)
       .maybeSingle();
 
-    if (error || !data) {
+    if (isRealQueryFailure(error)) throw error;
+    if (!data) {
       // Fallback to static config
       if (isStaticKey) {
         const k = slug as CategoryKey;
@@ -564,7 +584,8 @@ export const getCategoryBySlug = cache(async (slug: string, locale: Locale): Pro
       name,
       description: desc,
     };
-  } catch {
+  } catch (error) {
+    rethrowUnlessFallback(error, 'getCategoryBySlug');
     if (isStaticKey) {
       const k = slug as CategoryKey;
       return {
