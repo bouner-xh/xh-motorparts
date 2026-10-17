@@ -4,7 +4,8 @@
     "products": "產品目錄",
     "about": "關於我們",
     "contact": "聯絡我們",
-    "privacy": "隱私政策"
+    "privacy": "隱私政策",
+    "skipToContent": "跳到主要內容"
   },
   "home": {
     "title": "產品分類",
@@ -28,7 +29,12 @@
     "searchPrompt": "請輸入料號或品名",
     "category": "分類",
     "imagePath": "圖片路徑",
-    "backToCategory": "返回分類"
+    "backToCategory": "返回分類",
+    "searchTruncated": "共 {total} 項符合，僅顯示前 {shown} 項，請輸入更精確的關鍵字。",
+    "productCount": "共 {count} 項產品",
+    "emptyBrowse": "依分類瀏覽",
+    "emptyContact": "找不到零件？請把料號或照片寄到",
+    "catalogLabel": "產品分類"
   },
   "about": {
     "title": "關於我們",
@@ -93,7 +99,12 @@
     "successSummary": "已送出 {count} 項，確認信已寄到 {email}。",
     "successSummaryNoEmail": "已送出 {count} 項。",
     "inquiryNumber": "詢價編號 {number}",
-    "replyTime": "營業日 24 小時內回覆（週一至週五 09:00–18:00，台灣時間 GMT+8）。"
+    "replyTime": "營業日 24 小時內回覆（週一至週五 09:00–18:00，台灣時間 GMT+8）。",
+    "decreaseQuantity": "減少數量",
+    "increaseQuantity": "增加數量",
+    "quantityMax": "數量上限為 {max}。",
+    "quantityFor": "{model} 的數量",
+    "viewProductPage": "查看 {model} 的產品頁"
   },
   "admin": {
     "loginTitle": "管理員登入",

@@ -50,7 +50,7 @@ export default async function AdminDashboardPage({
   const t = await getTranslations({locale: localeValue, namespace: 'admin'});
 
   return (
-    <main className="admin-dashboard">
+    <main id="main-content" tabIndex={-1} className="admin-dashboard">
       <div className="admin-dashboard__header">
         <h1 className="page-title">{t('dashboardTitle')}</h1>
         <div className="admin-dashboard__account">

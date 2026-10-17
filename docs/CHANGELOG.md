@@ -25,6 +25,20 @@
 
 ---
 
+## 2026-10-17（第五十四批）：小型體驗改善（健診 UX-06、07、08、09、11）
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| UX-06 | 搜尋結果超過 60 項時，摘要顯示實際總數，並提示「僅顯示前 60 項，請輸入更精確的關鍵字」；子分類頁顯示產品數 | `src/lib/product-search.ts`（`searchProductsWithTotal`）、`catalog-service.ts`（`searchCatalogWithTotal`）、搜尋頁、子分類頁 | `ux-small.e2e.cjs` |
+| UX-07 | 搜尋查無結果時，除了重新搜尋，也列出各產品分類連結與業務信箱 | 搜尋頁、`globals.css` | `ux-small.e2e.cjs` |
+| UX-08 | 詢價清單的型號可點擊回到產品頁（購物車資料新增 `slug`；舊資料沒有就維持純文字） | `CartContext.tsx`、`InquiryForm.tsx`、`ProductCardInquiryButton.tsx`、詢價頁 | `ux-small.e2e.cjs` |
+| UX-09 | 數量欄位：label 對應欄位、＋／－按鈕與數量輸入有三語標籤；最小值統一為 1、最大值 1,000,000，達上限時提示 | `InquiryForm.tsx`、詢價頁、`messages/*` | `ux-small.e2e.cjs` |
+| UX-11 | 鍵盤操作：新增「跳到主要內容」連結（`<main id="main-content">`）、全站 `:focus-visible` 外框；側欄「Catalog」標題依語言翻譯 | `[locale]/layout.tsx`、各頁 `<main>`、`CategorySidebar.tsx`、`globals.css` | `ux-small.e2e.cjs` |
+
+- 不改資料庫、不新增套件。還原：Revert 對應 PR。
+
+---
+
 ## 2026-10-17（第四十九至五十三批）：網站健診改善（工作包 B、A、C、D、E）
 
 來源：2026-10-17 網站健診（資安、操作性、視覺、效能與 SEO 四位審查員，含兩輪補測）。老闆決定依序處理 B→A→C→D→E；手機版後台（UX-21、22、23、30–33）排後面；F（資料與內容）等老闆補資料；G 之後再說。五個工作包在各自分支開發後整合，一次跑完整測試。

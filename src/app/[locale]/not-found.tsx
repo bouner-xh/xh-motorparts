@@ -10,7 +10,7 @@ export default async function LocaleNotFound() {
   const t = await getTranslations({ locale, namespace: 'notFound' });
 
   return (
-    <main className="status-page">
+    <main id="main-content" tabIndex={-1} className="status-page">
       <section className="surface status-page__panel">
         <p className="status-page__code" aria-hidden="true">404</p>
         <h1 className="status-page__title">{t('title')}</h1>

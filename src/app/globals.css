@@ -2628,3 +2628,50 @@ textarea {
   background: none;
   box-shadow: none;
 }
+
+/* UX-11：鍵盤操作時看得到焦點在哪；「跳到主要內容」連結只有鍵盤聚焦時才出現 */
+:focus-visible {
+  outline: 2px solid #f87171;
+  outline-offset: 2px;
+}
+
+main:focus {
+  outline: none;
+}
+
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -4rem;
+  z-index: 1000;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  background: #dc2626;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0.75rem;
+}
+
+.search-empty__categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.search-empty__categories a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.qty-max-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+}

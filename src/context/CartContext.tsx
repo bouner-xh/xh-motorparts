@@ -9,6 +9,8 @@ import { INQUIRY_LIMITS } from '@/lib/inquiry-limits';
 export interface CartItem {
   id: string;
   modelNumber: string;
+  /** 產品網址代號（url_key），詢價清單用來連回產品頁；舊資料沒有就不連結 */
+  slug?: string;
   nameZhTw: string;
   nameZhCn: string;
   nameEn: string;

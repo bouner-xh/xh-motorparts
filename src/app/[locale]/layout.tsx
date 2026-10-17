@@ -82,6 +82,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider locale={localeValue} messages={messages}>
           <CartProvider>
             <AnalyticsScripts />
+            <a className="skip-link" href="#main-content">{t('skipToContent')}</a>
             <div className="container page-shell">
               <SiteHeader
                 brand={

@@ -58,7 +58,7 @@ export default async function LocaleHome({
   const content = homeContent[localeValue];
 
   return (
-    <main>
+    <main id="main-content" tabIndex={-1}>
       {/* 把 < 轉成 \u003c，避免內容裡的字元提早結束 script 標籤 */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema(localeValue)).replace(/</g, '\\u003c') }} />
       <section className="hero">

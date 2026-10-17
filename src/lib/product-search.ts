@@ -44,10 +44,7 @@ function scoreToken(product: SearchableProduct, token: string): number {
   return 0;
 }
 
-/**
- * 每個關鍵字（以空白分開）都要符合才列出，依符合程度排序，最多 MAX_RESULTS 筆
- */
-export function searchProducts<T extends SearchableProduct>(products: T[], query: string): T[] {
+function rankProducts<T extends SearchableProduct>(products: T[], query: string): T[] {
   const tokens = normalizeQuery(query).split(' ').filter(Boolean);
   if (!tokens.length) return [];
   return products
@@ -62,6 +59,18 @@ export function searchProducts<T extends SearchableProduct>(products: T[], query
     })
     .filter((item): item is {product: T; total: number} => item !== null)
     .sort((a, b) => b.total - a.total || a.product.model.localeCompare(b.product.model))
-    .slice(0, MAX_RESULTS)
     .map((item) => item.product);
+}
+
+/**
+ * 每個關鍵字（以空白分開）都要符合才列出，依符合程度排序，最多 MAX_RESULTS 筆
+ */
+export function searchProducts<T extends SearchableProduct>(products: T[], query: string): T[] {
+  return rankProducts(products, query).slice(0, MAX_RESULTS);
+}
+
+/** 同 searchProducts，另外回傳符合的總筆數（超過 MAX_RESULTS 時畫面要提示只顯示前幾筆，UX-06） */
+export function searchProductsWithTotal<T extends SearchableProduct>(products: T[], query: string): {items: T[]; total: number} {
+  const ranked = rankProducts(products, query);
+  return {items: ranked.slice(0, MAX_RESULTS), total: ranked.length};
 }

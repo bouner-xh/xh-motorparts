@@ -10,6 +10,7 @@ import { localized } from '@/lib/localized-text';
 import { Icon } from '@/components/ui/Icon';
 import { INQUIRY_LIMITS } from '@/lib/inquiry-limits';
 import { inquiryErrorMessageKey } from '@/lib/inquiry-errors';
+import { encodeSegment } from '@/lib/url-segment';
 
 // 買家聯絡欄位（受控欄位：送出失敗時保留內容，切換語言時以 sessionStorage 暫存草稿）
 const EMPTY_FIELDS = { name: '', email: '', companyName: '', country: '', phone: '', message: '' };
@@ -156,7 +157,7 @@ export default function InquiryCartPage() {
   // 成功送出畫面
   if (isSuccess) {
     return (
-      <main className="container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main id="main-content" tabIndex={-1} className="container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <article className="card" style={{ maxWidth: '550px', width: '100%', padding: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '3.5rem', color: '#10b981', marginBottom: '1rem' }}>✓</div>
           <h1 style={{ fontSize: '1.75rem', marginTop: '0.83em', marginBottom: '0.8rem' }}>{t('inquirySuccess')}</h1>
@@ -182,7 +183,7 @@ export default function InquiryCartPage() {
   // 空購物車畫面
   if (cart.length === 0) {
     return (
-      <main className="container" style={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main id="main-content" tabIndex={-1} className="container" style={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <article className="card" style={{ maxWidth: '500px', width: '100%', padding: '2.5rem', textAlign: 'center' }}>
           <div style={{ color: '#94a3b8', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}><Icon name="clipboard" size={48} /></div>
           <h1 style={{ fontSize: '1.5rem', marginTop: '0.83em', marginBottom: '0.8rem' }}>{t('cartEmpty')}</h1>
@@ -201,7 +202,7 @@ export default function InquiryCartPage() {
   }
 
   return (
-    <main className="container">
+    <main id="main-content" tabIndex={-1} className="container">
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '2rem', margin: '0 0 0.5rem 0' }}>{t('inquiryListTitle')}</h1>
         <p className="muted" style={{ margin: 0 }}>
@@ -233,14 +234,26 @@ export default function InquiryCartPage() {
 
                   return (
                     <tr key={item.id} className="cart-row">
-                      <td className="cart-row__model" style={{ fontWeight: 'bold' }}>{item.modelNumber}</td>
+                      <td className="cart-row__model" style={{ fontWeight: 'bold' }}>
+                        {item.slug && item.categorySlug && item.subCategorySlug ? (
+                          <Link
+                            className="text-link"
+                            href={`/${locale}/products/${encodeSegment(item.categorySlug)}/${encodeURIComponent(item.subCategorySlug)}/${encodeURIComponent(item.slug)}`}
+                            aria-label={t('viewProductPage', {model: item.modelNumber})}
+                          >
+                            {item.modelNumber}
+                          </Link>
+                        ) : (
+                          item.modelNumber
+                        )}
+                      </td>
                       <td className="cart-row__name">{displayName || item.nameZhTw || item.nameEn}</td>
                       <td className="cart-row__qty">
                         <div className="quantity-control">
                           <button
                             type="button"
                             className="qty-btn"
-                            aria-label="-50"
+                            aria-label={t('decreaseQuantity')}
                             onClick={() => handleQtyChange(item.id, item.quantity - 50)}
                           >
                             -
@@ -248,6 +261,9 @@ export default function InquiryCartPage() {
                           <input
                             type="number"
                             className="qty-input"
+                            aria-label={t('quantityFor', {model: item.modelNumber})}
+                            min={1}
+                            max={INQUIRY_LIMITS.quantity}
                             value={item.quantity}
                             onChange={(e) => {
                               const v = parseInt(e.target.value, 10);
@@ -257,12 +273,15 @@ export default function InquiryCartPage() {
                           <button
                             type="button"
                             className="qty-btn"
-                            aria-label="+50"
+                            aria-label={t('increaseQuantity')}
                             onClick={() => handleQtyChange(item.id, item.quantity + 50)}
                           >
                             +
                           </button>
                         </div>
+                        {item.quantity >= INQUIRY_LIMITS.quantity ? (
+                          <p className="muted qty-max-note" role="status">{t('quantityMax', {max: INQUIRY_LIMITS.quantity.toLocaleString('en-US')})}</p>
+                        ) : null}
                       </td>
                       <td className="cart-row__remove" style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <button

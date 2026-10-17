@@ -27,7 +27,7 @@ export default async function PrivacyPage({
   const doc = privacyContent[localeValue];
 
   return (
-    <main className="privacy-page">
+    <main id="main-content" tabIndex={-1} className="privacy-page">
       <div className="section-heading">
         <div>
           <h1 className="page-title">{doc.title}</h1>

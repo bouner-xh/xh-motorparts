@@ -4,7 +4,8 @@
     "products": "产品目录",
     "about": "关于我们",
     "contact": "联系我们",
-    "privacy": "隐私政策"
+    "privacy": "隐私政策",
+    "skipToContent": "跳到主要内容"
   },
   "home": {
     "title": "产品分类",
@@ -28,7 +29,12 @@
     "searchPrompt": "请输入料号或品名",
     "category": "分类",
     "imagePath": "图片路径",
-    "backToCategory": "返回分类"
+    "backToCategory": "返回分类",
+    "searchTruncated": "共 {total} 项符合，仅显示前 {shown} 项，请输入更精确的关键字。",
+    "productCount": "共 {count} 项产品",
+    "emptyBrowse": "按分类浏览",
+    "emptyContact": "找不到零件？请把料号或照片发到",
+    "catalogLabel": "产品分类"
   },
   "about": {
     "title": "关于我们",
@@ -93,7 +99,12 @@
     "successSummary": "已提交 {count} 项，确认信已发送到 {email}。",
     "successSummaryNoEmail": "已提交 {count} 项。",
     "inquiryNumber": "询价编号 {number}",
-    "replyTime": "工作日 24 小时内回复（周一至周五 09:00–18:00，台湾时间 GMT+8）。"
+    "replyTime": "工作日 24 小时内回复（周一至周五 09:00–18:00，台湾时间 GMT+8）。",
+    "decreaseQuantity": "减少数量",
+    "increaseQuantity": "增加数量",
+    "quantityMax": "数量上限为 {max}。",
+    "quantityFor": "{model} 的数量",
+    "viewProductPage": "查看 {model} 的产品页"
   },
   "admin": {
     "loginTitle": "管理员登录",

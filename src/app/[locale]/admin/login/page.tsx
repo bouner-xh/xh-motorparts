@@ -79,7 +79,7 @@ export default async function AdminLoginPage({
   const errorMessage = resolveErrorMessage(query.error);
 
   return (
-    <main>
+    <main id="main-content" tabIndex={-1}>
       <div className="section-heading">
         <div>
           <h1 className="page-title">{t('loginTitle')}</h1>

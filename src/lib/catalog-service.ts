@@ -3,7 +3,7 @@ import { unstable_cache } from 'next/cache';
 import {getAllProducts, getProductsByCategory, findProduct, type Product} from '@/data/products';
 import {categoryDescriptions, categoryKeys, categoryNames, type CategoryKey, type Locale} from '@/lib/catalog';
 import {getSupabaseServerClient} from '@/lib/supabase/server';
-import {searchProducts} from '@/lib/product-search';
+import {searchProductsWithTotal} from '@/lib/product-search';
 import {matchCanonicalSegments} from '@/lib/canonical-path';
 import {NO_IMAGE_URL} from '@/lib/product-image-url';
 import {encodeSegment} from '@/lib/url-segment';
@@ -401,10 +401,12 @@ async function buildSearchIndex(locale: Locale): Promise<SearchIndexItem[]> {
 const cachedSearchIndex = unstable_cache(buildSearchIndex, ['search-index-v1'], {revalidate: 300, tags: ['catalog']});
 
 // 前台產品搜尋（P2）：只搜尋已上架產品；型號、三種語言名稱、規格、OEM 對照料號、適用車型都可以搜
-export async function searchCatalogProducts(query: string, locale: Locale = 'en'): Promise<ProductSearchResult[]> {
+// total 是符合的總筆數（items 最多 MAX_RESULTS 筆，超過時畫面要提示，UX-06）
+export async function searchCatalogWithTotal(query: string, locale: Locale = 'en'): Promise<{items: ProductSearchResult[]; total: number}> {
   if (!getSupabaseServerClient()) {
     const fallback = getAllProducts().map((p) => ({...p, subCategory: '', names: [p.name]}));
-    return searchProducts(fallback, query).map(({names: _names, ...p}) => p);
+    const {items, total} = searchProductsWithTotal(fallback, query);
+    return {items: items.map(({names: _names, ...p}) => p), total};
   }
 
   let index: SearchIndexItem[];
@@ -412,10 +414,15 @@ export async function searchCatalogProducts(query: string, locale: Locale = 'en'
     index = process.env.NODE_ENV === 'production' ? await cachedSearchIndex(locale) : await buildSearchIndex(locale);
   } catch (error) {
     console.error('[catalog] product search failed:', error instanceof Error ? error.message : error);
-    return [];
+    return {items: [], total: 0};
   }
 
-  return searchProducts(index, query).map(({names: _names, oemNumbers: _oem, vehicleModels: _models, ...item}) => item);
+  const {items, total} = searchProductsWithTotal(index, query);
+  return {items: items.map(({names: _names, oemNumbers: _oem, vehicleModels: _models, ...item}) => item), total};
+}
+
+export async function searchCatalogProducts(query: string, locale: Locale = 'en'): Promise<ProductSearchResult[]> {
+  return (await searchCatalogWithTotal(query, locale)).items;
 }
 
 export interface SubCategorySummary {

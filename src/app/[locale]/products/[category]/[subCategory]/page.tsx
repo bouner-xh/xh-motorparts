@@ -102,7 +102,7 @@ export default async function SubCategoryPage({
   ]);
 
   return (
-    <main>
+    <main id="main-content" tabIndex={-1}>
       <Breadcrumb
         items={[
           { label: tNav('home'), href: `/${localeValue}` },
@@ -116,6 +116,7 @@ export default async function SubCategoryPage({
         <div>
           <h1 className="page-title">{subCategoryData.name}</h1>
           <p className="muted page-lead">{categoryData.description} - {subCategoryData.name}</p>
+          <p className="muted" data-testid="subcategory-count">{tProducts('productCount', {count: rows.length})}</p>
         </div>
       </div>
 
