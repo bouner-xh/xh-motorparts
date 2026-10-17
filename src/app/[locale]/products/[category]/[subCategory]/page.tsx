@@ -3,12 +3,18 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
 import { getBaseUrl, localeAlternates } from '@/lib/site';
-import { getCategoryBySlug, getCategoryProducts, getSubCategoryBySlug, getCategorySummaries, getSubCategories, resolveCanonicalProductPath } from '@/lib/catalog-service';
+import { getCategoryBySlug, getCategoryProducts, getSubCategoryCoverImages, getSubCategoryBySlug, getCategorySummaries, getSubCategories, resolveCanonicalProductPath } from '@/lib/catalog-service';
 import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { ProductCard } from '@/components/products/ProductCard';
 import { localized } from '@/lib/localized-text';
+import { getCategoryCoverUrl, toProductImageUrl } from '@/lib/assets';
+import { NO_IMAGE_URL } from '@/lib/product-image-url';
+import { defaultShareImage, defaultTwitterImage, ogLocale } from '@/lib/page-seo';
 import { decodeSegment, encodeSegment } from '@/lib/url-segment';
+
+// 列表最前面幾張圖片直接載入（不延遲），其餘維持延遲載入
+const PRIORITY_IMAGE_COUNT = 4;
 
 export async function generateMetadata({
   params,
@@ -32,6 +38,15 @@ export async function generateMetadata({
   const baseUrl = getBaseUrl();
   const title = `${subCategoryData.name} | ${categoryData.name}`;
   const description = `${categoryData.description} - ${subCategoryData.name}`;
+  // 分享預覽圖：子分類第一個產品的照片 → 分類封面 → 全站預設分享圖
+  const subCover = (await getSubCategoryCoverImages([subCategoryData.id])).get(subCategoryData.id);
+  let cover = subCover ? toProductImageUrl(subCover) : NO_IMAGE_URL;
+  if (cover === NO_IMAGE_URL) {
+    const summaries = await getCategorySummaries(localeValue);
+    cover = getCategoryCoverUrl(categoryData.slug, summaries.find((item) => item.key === categoryData.slug)?.coverImage);
+  }
+  const hasCover = cover !== NO_IMAGE_URL;
+  const images = hasCover ? [cover] : [defaultShareImage];
 
   return {
     title,
@@ -41,9 +56,11 @@ export async function generateMetadata({
       title,
       description,
       url: `${baseUrl}/${locale}/products/${encodeSegment(category)}/${encodeURIComponent(subCategoryData.slug)}`,
-      locale,
+      images,
+      locale: ogLocale(locale),
       siteName: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' }),
     },
+    twitter: { card: 'summary_large_image' as const, title, description, images: hasCover ? [cover] : [defaultTwitterImage] },
     alternates: localeAlternates(locale, `/products/${encodeSegment(category)}/${encodeURIComponent(subCategoryData.slug)}`),
   };
 }
@@ -106,9 +123,10 @@ export default async function SubCategoryPage({
         <CategorySidebar locale={localeValue} activeCategory={categoryData.slug} activeSubCategory={decodedSubCategory} />
 
         <section className="card-grid">
-          {rows.length > 0 ? rows.map((product) => (
+          {rows.length > 0 ? rows.map((product, index) => (
             <ProductCard
               key={product.id}
+              priority={index < PRIORITY_IMAGE_COUNT}
               product={product}
               href={`/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeURIComponent(subCategoryData.slug)}/${encodeURIComponent(product.slug ?? product.model)}`}
               specLabel={tProducts('specifications')}

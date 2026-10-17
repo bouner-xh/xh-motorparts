@@ -1,15 +1,14 @@
 import type {Metadata} from 'next';
-import {localeAlternates} from '@/lib/site';
+import {buildPageMetadata} from '@/lib/page-seo';
 import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {locales, type Locale} from '@/lib/catalog';
 import {aboutContent, sharedStats} from '@/lib/site-content';
-import { localized } from '@/lib/localized-text';
 
-// canonical 與 hreflang 指向本頁（D14）；標題沿用 layout
+// canonical 與 hreflang 指向本頁（D14）；標題與描述見 page-seo（OP-06）
 export async function generateMetadata({params}: {params: Promise<{locale: string}>}): Promise<Metadata> {
   const {locale} = await params;
-  return {alternates: localeAlternates(locale, '/about')};
+  return buildPageMetadata(locale, 'about', '/about');
 }
 
 export default async function AboutPage({
@@ -29,7 +28,7 @@ export default async function AboutPage({
 
   return (
     <main>
-      <section className="hero">
+      <section className="hero hero--about">
         <article className="surface hero__panel">
           <span className="hero__eyebrow">{t('title')}</span>
           <h1 className="hero__title">{t('intro')}</h1>
@@ -55,10 +54,7 @@ export default async function AboutPage({
             <p className="muted">{section.body}</p>
           </article>
         ))}
-        <article className="card info-card">
-          <h3>{localized(localeValue, { 'zh-TW': '主要市場', 'zh-CN': '主要市场', en: 'Key Markets' })}</h3>
-          <p className="muted">{content.markets.join(' · ')}</p>
-        </article>
+        {/* 「主要市場：全球」與統計卡的「出口市場：全球」重複，不再另列一張卡（VI-31） */}
       </section>
     </main>
   );

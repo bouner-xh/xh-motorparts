@@ -82,14 +82,17 @@ export function Footer({locale}: {locale: Locale}) {
 
       <div className="footer-bottom">
         <strong>{footerCopy[locale].copyright}</strong>
-        <span className="footer-divider footer-divider--lead">|</span>
-        <span className="footer-legal">
-          <Link href={`/${locale}/legal/privacy`} className="footer-privacy-link">
-            {localized(locale, { 'zh-TW': '隱私政策', 'zh-CN': '隐私政策', en: 'Privacy Policy' })}
-          </Link>
-          <span className="footer-divider">|</span>
-          <CookieSettingsButton locale={locale} />
-        </span>
+        {/* 分隔線改由 CSS（li + li::before）畫在項目之間，手機換行時不會留下孤立的豎線（VI-24） */}
+        <ul className="footer-legal">
+          <li>
+            <Link href={`/${locale}/legal/privacy`} className="footer-privacy-link">
+              {localized(locale, { 'zh-TW': '隱私政策', 'zh-CN': '隐私政策', en: 'Privacy Policy' })}
+            </Link>
+          </li>
+          <li>
+            <CookieSettingsButton locale={locale} />
+          </li>
+        </ul>
       </div>
     </footer>
   );

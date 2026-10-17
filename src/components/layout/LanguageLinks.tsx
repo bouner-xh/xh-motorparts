@@ -1,6 +1,7 @@
 'use client';
 
 import { Link, usePathname } from '@/i18n/navigation';
+import { ADMIN_UNSAVED_LANGUAGE_MESSAGE, hasAdminUnsaved } from '@/lib/admin-unsaved';
 
 const languages = [
   { locale: 'en', label: 'EN' },
@@ -18,7 +19,16 @@ export function LanguageLinks() {
   return (
     <>
       {languages.map(({ locale, label }) => (
-        <Link key={locale} href={pathname} locale={locale} hrefLang={locale}>
+        <Link
+          key={locale}
+          href={pathname}
+          locale={locale}
+          hrefLang={locale}
+          onClick={(event) => {
+            // 後台有尚未儲存的表單時，切換語言會讓內容消失，先確認（UX-25）
+            if (pathname.startsWith('/admin') && hasAdminUnsaved() && !window.confirm(ADMIN_UNSAVED_LANGUAGE_MESSAGE)) event.preventDefault();
+          }}
+        >
           {label}
         </Link>
       ))}

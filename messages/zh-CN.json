@@ -20,7 +20,7 @@
     "inStock": "现货",
     "madeToOrder": "接单生产",
     "searchLabel": "搜索产品",
-    "searchPlaceholder": "输入料号或品名，例如 1HV-11311",
+    "searchPlaceholder": "零件号或名称",
     "searchButton": "搜索",
     "searchTitle": "搜索结果",
     "searchFor": "“{query}”共 {count} 项产品",
@@ -37,9 +37,9 @@
   },
   "contact": {
     "title": "联系我们",
-    "address": "地址：台中市南屯区黎明路一段533-2号",
-    "phone": "电话：+886 930 797 299",
-    "email": "Email：sales@xh-motorparts.com"
+    "address": "台中市南屯区黎明路一段533-2号",
+    "phone": "+886 930 797 299",
+    "email": "sales@xh-motorparts.com"
   },
   "privacy": {
     "title": "隐私政策",
@@ -78,12 +78,41 @@
     "inquirySuccess": "询价已成功提交！我们将尽快回复您。",
     "submitInquiry": "提交询价单 (RFQ)",
     "productModel": "型号",
-    "productName": "品名"
+    "productName": "品名",
+    "errors": {
+      "invalid_input": "资料不完整或格式有误，请检查表单后再提交，或发邮件到 sales@xh-motorparts.com。",
+      "rate_limited": "提交太频繁，请等几分钟后再试，或发邮件到 sales@xh-motorparts.com。",
+      "captcha_failed": "验证失败，请重新完成验证后再提交，或发邮件到 sales@xh-motorparts.com。",
+      "service_unavailable": "询价服务暂时无法使用，请稍后再试，或发邮件到 sales@xh-motorparts.com。",
+      "save_failed": "询价单暂时无法提交，请稍后再试，或发邮件到 sales@xh-motorparts.com。",
+      "server_error": "系统发生错误，请稍后再试，或发邮件到 sales@xh-motorparts.com。",
+      "network": "网络连接异常，请检查网络后再试，或发邮件到 sales@xh-motorparts.com。"
+    },
+    "captchaRequired": "请先完成验证",
+    "captchaExpired": "验证已过期，请重新验证。",
+    "successSummary": "已提交 {count} 项，确认信已发送到 {email}。",
+    "successSummaryNoEmail": "已提交 {count} 项。",
+    "inquiryNumber": "询价编号 {number}",
+    "replyTime": "工作日 24 小时内回复（周一至周五 09:00–18:00，台湾时间 GMT+8）。"
   },
   "admin": {
     "loginTitle": "管理员登录",
     "loginDescription": "请使用管理员账号登录后台以管理产品与询价资料。",
     "loginButton": "登录",
     "dashboardTitle": "管理后台"
+  },
+  "notFound": {
+    "title": "找不到这个页面",
+    "description": "您要找的页面可能已经搬移或不存在。可以用零件号或名称搜索产品目录，或回到首页。",
+    "home": "回首页",
+    "products": "浏览产品目录",
+    "contact": "需要协助找零件？请来信"
+  },
+  "error": {
+    "title": "页面发生问题",
+    "description": "这个页面暂时无法加载，请再试一次，或回到首页。",
+    "retry": "重新加载",
+    "home": "回首页",
+    "contact": "若问题持续，请来信"
   }
 }

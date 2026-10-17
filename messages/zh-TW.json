@@ -20,7 +20,7 @@
     "inStock": "現貨",
     "madeToOrder": "接單生產",
     "searchLabel": "搜尋產品",
-    "searchPlaceholder": "輸入料號或品名，例如 1HV-11311",
+    "searchPlaceholder": "零件號或名稱",
     "searchButton": "搜尋",
     "searchTitle": "搜尋結果",
     "searchFor": "「{query}」共 {count} 項產品",
@@ -37,9 +37,9 @@
   },
   "contact": {
     "title": "聯絡我們",
-    "address": "地址：台中市南屯區黎明路一段533-2號",
-    "phone": "電話：+886 930 797 299",
-    "email": "Email：sales@xh-motorparts.com"
+    "address": "台中市南屯區黎明路一段533-2號",
+    "phone": "+886 930 797 299",
+    "email": "sales@xh-motorparts.com"
   },
   "privacy": {
     "title": "隱私政策",
@@ -78,12 +78,41 @@
     "inquirySuccess": "詢價已成功送出！我們將儘速回覆您。",
     "submitInquiry": "送出詢價單 (RFQ)",
     "productModel": "型號",
-    "productName": "品名"
+    "productName": "品名",
+    "errors": {
+      "invalid_input": "資料不完整或格式有誤，請檢查表單後再送出，或寄信到 sales@xh-motorparts.com。",
+      "rate_limited": "送出太頻繁，請等幾分鐘後再試，或寄信到 sales@xh-motorparts.com。",
+      "captcha_failed": "驗證失敗，請重新完成驗證後再送出，或寄信到 sales@xh-motorparts.com。",
+      "service_unavailable": "詢價服務暫時無法使用，請稍後再試，或寄信到 sales@xh-motorparts.com。",
+      "save_failed": "詢價單暫時無法送出，請稍後再試，或寄信到 sales@xh-motorparts.com。",
+      "server_error": "系統發生錯誤，請稍後再試，或寄信到 sales@xh-motorparts.com。",
+      "network": "網路連線異常，請檢查網路後再試，或寄信到 sales@xh-motorparts.com。"
+    },
+    "captchaRequired": "請先完成驗證",
+    "captchaExpired": "驗證已過期，請重新驗證。",
+    "successSummary": "已送出 {count} 項，確認信已寄到 {email}。",
+    "successSummaryNoEmail": "已送出 {count} 項。",
+    "inquiryNumber": "詢價編號 {number}",
+    "replyTime": "營業日 24 小時內回覆（週一至週五 09:00–18:00，台灣時間 GMT+8）。"
   },
   "admin": {
     "loginTitle": "管理員登入",
     "loginDescription": "請使用管理員帳號登入後台以管理產品與詢價資料。",
     "loginButton": "登入",
     "dashboardTitle": "管理後台"
+  },
+  "notFound": {
+    "title": "找不到這個頁面",
+    "description": "您要找的頁面可能已經搬移或不存在。可以用零件號或名稱搜尋產品目錄，或回到首頁。",
+    "home": "回首頁",
+    "products": "瀏覽產品目錄",
+    "contact": "需要協助找零件？請來信"
+  },
+  "error": {
+    "title": "頁面發生問題",
+    "description": "這個頁面暫時無法載入，請再試一次，或回到首頁。",
+    "retry": "重新載入",
+    "home": "回首頁",
+    "contact": "若問題持續，請來信"
   }
 }

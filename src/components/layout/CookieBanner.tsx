@@ -2,11 +2,16 @@
 
 import CookieConsent from 'react-cookie-consent';
 import {useTranslations} from 'next-intl';
+import {usePathname} from 'next/navigation';
 
 const STORAGE_KEY = 'site-cookie-consent';
 
 export function CookieBanner() {
   const t = useTranslations('cookie');
+  const pathname = usePathname();
+
+  // 橫幅是給訪客的；後台（/zh-TW/admin…）不顯示，避免擋住操作（UX-34）
+  if (/^\/[^/]+\/admin(\/|$)/.test(pathname || '')) return null;
 
   return (
     <CookieConsent

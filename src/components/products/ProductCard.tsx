@@ -12,7 +12,8 @@ export function ProductCard({
   detailLabel,
   locale,
   categorySlug,
-  subCategorySlug
+  subCategorySlug,
+  priority = false
 }: {
   product: Product;
   href: string;
@@ -21,6 +22,8 @@ export function ProductCard({
   locale: Locale;
   categorySlug: string;
   subCategorySlug: string;
+  // 列表最前面幾張圖片是畫面最大的內容（LCP），不能延遲載入
+  priority?: boolean;
 }) {
   return (
     <article className="product-card">
@@ -32,6 +35,7 @@ export function ProductCard({
           fill
           sizes="(max-width: 768px) 100vw, 25vw"
           unoptimized
+          priority={priority}
         />
       </div>
       <div className="product-card__body">
@@ -40,7 +44,7 @@ export function ProductCard({
         <p className="muted product-card__specs">
           {specLabel}：{product.specifications.join(' / ')}
         </p>
-        <Link className="text-link" href={href}>
+        <Link className="text-link product-card__detail" href={href}>
           {detailLabel}
         </Link>
         <ProductCardInquiryButton

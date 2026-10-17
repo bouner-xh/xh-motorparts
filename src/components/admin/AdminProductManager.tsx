@@ -4,7 +4,20 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {toProductImageUrl} from '@/lib/product-image-url';
 import {resizeProductImage} from '@/lib/image-resize';
 import {fallbackToNoImage} from '@/components/ui/SafeImage';
-import {MAX_PRODUCT_IMAGES, normalizeModelNumber, normalizeOemNumbers, splitOemNumbers, splitSpecifications, validateProductForm} from '@/lib/product-form';
+import {
+  MAX_PRODUCT_IMAGES,
+  PRODUCT_FIELD_ORDER,
+  mapServerErrorToFields,
+  normalizeModelNumber,
+  normalizeOemNumbers,
+  splitOemNumbers,
+  splitSpecifications,
+  validateProductFormFields,
+  type ProductFieldErrors,
+  type ProductFormField
+} from '@/lib/product-form';
+import {useAdminStatus, type AdminStatusType} from '@/components/admin/AdminToast';
+import {useUnsavedWarning} from '@/components/admin/useUnsavedWarning';
 import type { Locale } from '@/lib/catalog';
 
 interface AdminCategoryItem {
@@ -60,7 +73,7 @@ interface AdminSubCategoryItem {
   nameZhTw: string;
 }
 
-type StatusType = 'idle' | 'info' | 'success' | 'error';
+type StatusType = AdminStatusType;
 type ActiveFilter = 'all' | 'active' | 'inactive';
 
 const PAGE_SIZE = 20;
@@ -90,10 +103,17 @@ export function AdminProductManager(_props: {locale: Locale}) {
   const [rows, setRows] = useState<AdminProductItem[]>([]);
   const [subCategories, setSubCategories] = useState<AdminSubCategoryItem[]>([]);
   const [form, setForm] = useState<ProductFormState>(emptyFormState);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [statusType, setStatusType] = useState<StatusType>('idle');
+  // 操作結果以 toast 顯示（UX-15）；表單驗證與伺服器對表單的回應則顯示在欄位旁（UX-24）
+  const setStatus: (type: StatusType, message: string) => void = useAdminStatus();
   const [loadError, setLoadError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  // 第一次載入完成前才顯示「載入中」；之後重新載入時保留舊列表，資料到了再替換（UX-20）
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<ProductFieldErrors>({});
+  // 表單頂端的摘要：byFields 代表詳細訊息已經顯示在各欄位旁，摘要只提示「請看標示的欄位」
+  const [formIssue, setFormIssue] = useState<{message: string; byFields: boolean} | null>(null);
+  const [focusRequest, setFocusRequest] = useState<{field: ProductFormField | 'summary'; n: number} | null>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   // 產品列表的搜尋、篩選與分頁（A7）
@@ -111,11 +131,6 @@ export function AdminProductManager(_props: {locale: Locale}) {
   const [vehicleFilter, setVehicleFilter] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
   const modelInputRef = useRef<HTMLInputElement>(null);
-
-  function setStatus(type: StatusType, message: string) {
-    setStatusType(type);
-    setStatusMessage(message);
-  }
 
   async function parseResponseJson<T>(response: Response): Promise<T | null> {
     try {
@@ -165,6 +180,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
       }
 
       setRows(data.items || []);
+      setHasLoaded(true);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : '載入產品失敗');
     } finally {
@@ -228,7 +244,6 @@ export function AdminProductManager(_props: {locale: Locale}) {
       if (!window.confirm('這個產品還沒有圖片，上架後前台會顯示預設圖片。\n仍要上架嗎？（按取消可回去上傳圖片）')) return;
     }
     setIsSubmitting(true);
-    setStatus('info', form.id ? '更新產品中...' : '新增產品中...');
 
     const payload = {
       id: form.id,
@@ -249,14 +264,16 @@ export function AdminProductManager(_props: {locale: Locale}) {
 
     const method = form.id ? 'PUT' : 'POST';
 
-    const validationErrors = validateProductForm(payload);
+    const validationErrors = validateProductFormFields(payload);
 
-    if (validationErrors.length) {
-      const message = `請修正：${validationErrors.join('、')}`;
-      setStatus('error', message);
+    if (Object.keys(validationErrors).length) {
+      showFieldErrors(validationErrors, `有 ${Object.keys(validationErrors).length} 個欄位需要修正，請看下方以紅框標示的欄位`, true);
       setIsSubmitting(false);
       return;
     }
+    setFieldErrors({});
+    setFormIssue(null);
+    setStatus('info', form.id ? '更新產品中...' : '新增產品中...');
 
     try {
       const response = await fetch('/api/admin/products', {
@@ -270,17 +287,34 @@ export function AdminProductManager(_props: {locale: Locale}) {
         throw new Error(result.error || `儲存失敗（HTTP ${response.status}）`);
       }
 
-      setStatus('success', form.id ? '產品更新成功' : '產品新增成功');
+      const doneMessage = form.id ? '產品更新成功' : '產品新增成功';
+      setFieldErrors({});
+      setFormIssue(null);
       // 保留剛剛選的分類與子分類，方便連續新增同分類的產品（A3）
       setForm({...emptyFormState, category: form.category, subCategoryId: form.subCategoryId});
       setUnsavedUploads([]);
+      // 列表重新載入完成後才顯示成功訊息，這時按「編輯」拿到的一定是最新資料
       await loadProducts();
+      setStatus('success', doneMessage);
       window.dispatchEvent(new Event('products-updated'));
     } catch (error) {
-      setStatus('error', error instanceof Error ? error.message : '儲存失敗');
+      // 伺服器的錯誤（型號重複、OEM 重複、欄位太長…）顯示在對應欄位旁，摘要保留（UX-24）
+      setStatus('idle', '');
+      const message = error instanceof Error ? error.message : '儲存失敗';
+      const {fields, unmapped} = mapServerErrorToFields(message);
+      if (Object.keys(fields).length) showFieldErrors(fields, unmapped ? message : '儲存失敗，請看下方以紅框標示的欄位', !unmapped);
+      else showFieldErrors({}, message, false);
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  // 顯示欄位錯誤，並把畫面捲到第一個有錯的欄位、把游標放進去
+  function showFieldErrors(errors: ProductFieldErrors, summary: string, byFields: boolean) {
+    setFieldErrors(errors);
+    setFormIssue({message: summary, byFields});
+    const first = PRODUCT_FIELD_ORDER.find((field) => errors[field]);
+    setFocusRequest((prev) => ({field: first ?? 'summary', n: (prev?.n ?? 0) + 1}));
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -328,16 +362,23 @@ export function AdminProductManager(_props: {locale: Locale}) {
     return !hasUnsavedChanges() || window.confirm('表單上有還沒儲存的內容，切換後會消失。確定要切換嗎？');
   }
 
+  function clearFormIssues() {
+    setFieldErrors({});
+    setFormIssue(null);
+  }
+
   function cancelEdit() {
     discardUnsavedUploads();
     setForm((prev) => ({...emptyFormState, category: prev.category, subCategoryId: prev.subCategoryId}));
     setStatus('idle', '');
+    clearFormIssues();
   }
 
   // 複製產品：帶入同一筆的分類、名稱、規格與圖片，型號留空待輸入，預設不上架（A7）
   function duplicateProduct(row: AdminProductItem) {
     if (!confirmDiscardChanges()) return;
     discardUnsavedUploads();
+    clearFormIssues();
     setForm({
       category: row.category,
       modelNumber: '',
@@ -360,6 +401,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
     if (row.id !== form.id && !confirmDiscardChanges()) return;
     discardUnsavedUploads();
     setStatus('idle', '');
+    clearFormIssues();
     focusForm();
     setForm({
       id: row.id,
@@ -399,8 +441,8 @@ export function AdminProductManager(_props: {locale: Locale}) {
         throw new Error(result.error || `刪除失敗（HTTP ${response.status}）`);
       }
 
-      setStatus('success', '產品已刪除');
       await loadProducts();
+      setStatus('success', '產品已刪除');
       window.dispatchEvent(new Event('products-updated'));
     } catch (error) {
       setStatus('error', error instanceof Error ? error.message : '刪除失敗');
@@ -432,8 +474,8 @@ export function AdminProductManager(_props: {locale: Locale}) {
       });
       const result = (await parseResponseJson<{error?: string}>(response)) || {};
       if (!response.ok) throw new Error(result.error || `${next ? '上架' : '下架'}失敗（HTTP ${response.status}）`);
-      setStatus('success', `${row.modelNumber} 已${next ? '上架' : '下架'}`);
       await loadProducts();
+      setStatus('success', `${row.modelNumber} 已${next ? '上架' : '下架'}`);
       window.dispatchEvent(new Event('products-updated'));
     } catch (error) {
       setStatus('error', error instanceof Error ? error.message : '操作失敗');
@@ -535,6 +577,48 @@ export function AdminProductManager(_props: {locale: Locale}) {
   const pageRows = filteredRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const editingRow = form.id ? rows.find((r) => r.id === form.id) : undefined;
 
+  // 表單有未儲存的修改時：重新整理或關閉分頁先警告，切換語言的連結也會先確認（UX-25）
+  useUnsavedWarning('product-form', hasUnsavedChanges());
+
+  // 欄位被修改後，該欄位的錯誤訊息隨即消失；全部消失後頂端摘要也收起來（UX-24）
+  const previousForm = useRef(form);
+  useEffect(() => {
+    const before = previousForm.current;
+    previousForm.current = form;
+    setFieldErrors((current) => {
+      const keys = Object.keys(current) as ProductFormField[];
+      const stale = keys.filter((key) => JSON.stringify(before[key as keyof ProductFormState]) !== JSON.stringify(form[key as keyof ProductFormState]));
+      if (!stale.length) return current;
+      const next = {...current};
+      stale.forEach((key) => delete next[key]);
+      return next;
+    });
+  }, [form]);
+  useEffect(() => {
+    if (formIssue?.byFields && Object.keys(fieldErrors).length === 0) setFormIssue(null);
+  }, [fieldErrors, formIssue]);
+
+  // 送出失敗：捲到並聚焦第一個有錯的欄位（沒有對應欄位時聚焦頂端摘要）
+  useEffect(() => {
+    if (!focusRequest) return;
+    const target = focusRequest.field === 'summary' ? summaryRef.current : document.getElementById(`product-field-${focusRequest.field}`);
+    if (!target) return;
+    target.scrollIntoView({block: 'center'});
+    target.focus({preventScroll: true});
+  }, [focusRequest]);
+
+  const fieldProps = (field: ProductFormField) => ({
+    id: `product-field-${field}`,
+    'aria-invalid': fieldErrors[field] ? (true as const) : undefined,
+    'aria-describedby': fieldErrors[field] ? `product-error-${field}` : undefined
+  });
+  const fieldError = (field: ProductFormField) =>
+    fieldErrors[field] ? (
+      <p className="admin-field-error" id={`product-error-${field}`} data-testid={`field-error-${field}`}>
+        {fieldErrors[field]}
+      </p>
+    ) : null;
+
   return (
     <div>
       <h3>產品管理</h3>
@@ -552,92 +636,128 @@ export function AdminProductManager(_props: {locale: Locale}) {
             </button>
           </div>
         ) : null}
-        <label>
-          分類
-          <select
-            value={form.category}
-            // 切換大分類時清空子分類，避免產品掛到其他大分類的子分類（A3）
-            onChange={(event) => setForm((prev) => ({...prev, category: event.target.value, subCategoryId: ''}))}
-          >
-            <option value="" disabled>
-              請選擇分類
-            </option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.slug}>
-                {c.nameZhTw} ({c.slug})
-              </option>
-            ))}
-          </select>
-        </label>
+        {/* 表單頂端摘要（UX-24）：詳細訊息在各欄位旁；無法對應欄位的錯誤直接寫在這裡 */}
+        {formIssue ? (
+          <div ref={summaryRef} tabIndex={-1} role="alert" className="admin-form-summary" data-testid="product-form-summary">
+            {formIssue.message}
+          </div>
+        ) : null}
 
-        <label>
-          子分類
-          <select
-            required
-            value={form.subCategoryId}
-            onChange={(event) => setForm((prev) => ({...prev, subCategoryId: event.target.value}))}
-          >
-            <option value="">請選擇子分類</option>
-            {subCategories
-              .filter((sc) => sc.category === form.category)
-              .map((sc) => (
-                <option key={sc.id} value={sc.id}>
-                  {sc.nameZhTw} ({sc.slug})
+        <div className="admin-field">
+          <label>
+            <span className="admin-required">分類</span>
+            <select
+              {...fieldProps('category')}
+              required
+              value={form.category}
+              // 切換大分類時清空子分類，避免產品掛到其他大分類的子分類（A3）
+              onChange={(event) => setForm((prev) => ({...prev, category: event.target.value, subCategoryId: ''}))}
+            >
+              <option value="" disabled>
+                請選擇分類
+              </option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.slug}>
+                  {c.nameZhTw} ({c.slug})
                 </option>
               ))}
-          </select>
-        </label>
+            </select>
+          </label>
+          {fieldError('category')}
+        </div>
 
-        <label>
-          型號
-          <input
-            ref={modelInputRef}
-            required
-            value={form.modelNumber}
-            onChange={(event) => setForm((prev) => ({...prev, modelNumber: event.target.value}))}
-            // 離開欄位時自動轉成大寫（原廠料號慣例）
-            onBlur={() => setForm((prev) => ({...prev, modelNumber: normalizeModelNumber(prev.modelNumber)}))}
-          />
-        </label>
+        <div className="admin-field">
+          <label>
+            <span className="admin-required">子分類</span>
+            <select
+              {...fieldProps('subCategoryId')}
+              required
+              value={form.subCategoryId}
+              onChange={(event) => setForm((prev) => ({...prev, subCategoryId: event.target.value}))}
+            >
+              <option value="">請選擇子分類</option>
+              {subCategories
+                .filter((sc) => sc.category === form.category)
+                .map((sc) => (
+                  <option key={sc.id} value={sc.id}>
+                    {sc.nameZhTw} ({sc.slug})
+                  </option>
+                ))}
+            </select>
+          </label>
+          {fieldError('subCategoryId')}
+        </div>
 
-        <label>
-          名稱（en）
-          <small className="muted">必填，英文為主要語言</small>
-          <input
-            required
-            value={form.nameEn}
-            onChange={(event) => setForm((prev) => ({...prev, nameEn: event.target.value}))}
-          />
-        </label>
+        <div className="admin-field">
+          <label>
+            <span className="admin-required">型號</span>
+            <input
+              {...fieldProps('modelNumber')}
+              ref={modelInputRef}
+              required
+              value={form.modelNumber}
+              onChange={(event) => setForm((prev) => ({...prev, modelNumber: event.target.value}))}
+              // 離開欄位時自動轉成大寫（原廠料號慣例）
+              onBlur={() => setForm((prev) => ({...prev, modelNumber: normalizeModelNumber(prev.modelNumber)}))}
+            />
+          </label>
+          {fieldError('modelNumber')}
+        </div>
 
-        <label>
-          名稱（zh-TW）
-          <small className="muted">選填；沒填時繁中頁顯示英文名稱</small>
-          <input
-            value={form.nameZhTw}
-            onChange={(event) => setForm((prev) => ({...prev, nameZhTw: event.target.value}))}
-          />
-        </label>
+        <div className="admin-field">
+          <label>
+            <span className="admin-required">名稱（en）</span>
+            <small className="muted">必填，英文為主要語言</small>
+            <input
+              {...fieldProps('nameEn')}
+              required
+              value={form.nameEn}
+              onChange={(event) => setForm((prev) => ({...prev, nameEn: event.target.value}))}
+            />
+          </label>
+          {fieldError('nameEn')}
+        </div>
 
-        <label>
-          名稱（zh-CN）
-          <small className="muted">選填；沒填時簡中頁顯示英文名稱</small>
-          <input
-            value={form.nameZhCn}
-            onChange={(event) => setForm((prev) => ({...prev, nameZhCn: event.target.value}))}
-          />
-        </label>
+        <div className="admin-field">
+          <label>
+            名稱（zh-TW）
+            <small className="muted">選填；沒填時繁中頁顯示英文名稱</small>
+            <input
+              {...fieldProps('nameZhTw')}
+              value={form.nameZhTw}
+              onChange={(event) => setForm((prev) => ({...prev, nameZhTw: event.target.value}))}
+            />
+          </label>
+          {fieldError('nameZhTw')}
+        </div>
 
-        <label>
-          規格（用逗號或頓號分隔）
-          <input
-            value={form.specifications}
-            onChange={(event) => setForm((prev) => ({...prev, specifications: event.target.value}))}
-            placeholder="STD, 47MM, 50MM"
-          />
-        </label>
+        <div className="admin-field">
+          <label>
+            名稱（zh-CN）
+            <small className="muted">選填；沒填時簡中頁顯示英文名稱</small>
+            <input
+              {...fieldProps('nameZhCn')}
+              value={form.nameZhCn}
+              onChange={(event) => setForm((prev) => ({...prev, nameZhCn: event.target.value}))}
+            />
+          </label>
+          {fieldError('nameZhCn')}
+        </div>
 
-        <fieldset className="admin-fitment" data-testid="admin-fitment">
+        <div className="admin-field">
+          <label>
+            規格（用逗號或頓號分隔）
+            <input
+              {...fieldProps('specifications')}
+              value={form.specifications}
+              onChange={(event) => setForm((prev) => ({...prev, specifications: event.target.value}))}
+              placeholder="STD, 47MM, 50MM"
+            />
+          </label>
+          {fieldError('specifications')}
+        </div>
+
+        <fieldset className="admin-fitment" data-testid="admin-fitment" id="product-field-vehicleModelIds" tabIndex={-1}>
           <legend>適用車型</legend>
           {!vehicleEnabled ? (
             <p className="muted">車型清單尚未啟用（資料庫還沒執行更新語法），請見「分類」分頁最下方的說明。</p>
@@ -677,29 +797,39 @@ export function AdminProductManager(_props: {locale: Locale}) {
           )}
         </fieldset>
 
-        <label>
-          OEM／對照料號
-          <small className="muted">用逗號分隔，自動轉成大寫</small>
-          <input
-            value={form.oemNumbers}
-            onChange={(event) => setForm((prev) => ({...prev, oemNumbers: event.target.value}))}
-            onBlur={() => setForm((prev) => ({...prev, oemNumbers: normalizeOemNumbers(prev.oemNumbers.split(/[,，、;；\n]/)).join(', ')}))}
-            placeholder="2A6-17421-00, 5T5-17421-00"
-          />
-        </label>
+        {fieldError('vehicleModelIds')}
 
-        <label>
-          庫存
-          <input
-            type="number"
-            min={0}
-            step={1}
-            value={form.stockQuantity}
-            onChange={(event) =>
-              setForm((prev) => ({...prev, stockQuantity: Number(event.target.value || 0)}))
-            }
-          />
-        </label>
+        <div className="admin-field">
+          <label>
+            OEM／對照料號
+            <small className="muted">用逗號分隔，自動轉成大寫</small>
+            <input
+              {...fieldProps('oemNumbers')}
+              value={form.oemNumbers}
+              onChange={(event) => setForm((prev) => ({...prev, oemNumbers: event.target.value}))}
+              onBlur={() => setForm((prev) => ({...prev, oemNumbers: normalizeOemNumbers(prev.oemNumbers.split(/[,，、;；\n]/)).join(', ')}))}
+              placeholder="2A6-17421-00, 5T5-17421-00"
+            />
+          </label>
+          {fieldError('oemNumbers')}
+        </div>
+
+        <div className="admin-field">
+          <label>
+            庫存
+            <input
+              {...fieldProps('stockQuantity')}
+              type="number"
+              min={0}
+              step={1}
+              value={form.stockQuantity}
+              onChange={(event) =>
+                setForm((prev) => ({...prev, stockQuantity: Number(event.target.value || 0)}))
+              }
+            />
+          </label>
+          {fieldError('stockQuantity')}
+        </div>
 
 
         <label style={{flexDirection: 'row', alignItems: 'center', gap: '0.5rem'}}>
@@ -712,11 +842,12 @@ export function AdminProductManager(_props: {locale: Locale}) {
           上架
         </label>
 
-        <div className="admin-gallery" data-testid="admin-gallery">
+        <div className="admin-gallery" data-testid="admin-gallery" id="product-field-images" tabIndex={-1}>
           <strong>
             產品圖片（{form.images.length} / {MAX_PRODUCT_IMAGES} 張）
           </strong>
           <p className="muted">第一張是主圖，產品列表與分類封面使用主圖。可一次選多張；用左右箭頭調整順序。</p>
+          {fieldError('images')}
           {form.images.length ? (
             <ul className="admin-gallery__list">
               {form.images.map((url, index) => (
@@ -789,30 +920,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
         </div>
       </form>
 
-      {statusMessage ? (
-        <p
-          style={{
-            marginTop: '0.75rem',
-            padding: '0.7rem 0.9rem',
-            borderRadius: '10px',
-            border:
-              statusType === 'error'
-                ? '1px solid rgba(248, 113, 113, 0.4)'
-                : statusType === 'success'
-                  ? '1px solid rgba(52, 211, 153, 0.45)'
-                  : '1px solid rgba(148, 163, 184, 0.25)',
-            background:
-              statusType === 'error'
-                ? 'rgba(127, 29, 29, 0.22)'
-                : statusType === 'success'
-                  ? 'rgba(6, 78, 59, 0.24)'
-                  : 'rgba(15, 23, 42, 0.48)'
-          }}
-        >
-          {statusMessage}
-        </p>
-      ) : null}
-      {loadError ? <p className="muted">產品資料載入失敗：{loadError}</p> : null}
+      {loadError ? <p className="muted" role="alert">產品資料載入失敗：{loadError}</p> : null}
       {isUploading ? <p className="muted">圖片上傳中...</p> : null}
 
       <div style={{display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center', marginTop: '1.25rem'}}>
@@ -858,7 +966,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
         </select>
       </div>
 
-      <div style={{overflowX: 'auto', marginTop: '0.75rem'}}>
+      <div style={{overflowX: 'auto', marginTop: '0.75rem'}} aria-busy={isLoading}>
         <table style={{width: '100%', borderCollapse: 'collapse'}}>
           <thead>
             <tr>
@@ -872,11 +980,11 @@ export function AdminProductManager(_props: {locale: Locale}) {
             </tr>
           </thead>
           <tbody>
-            {isLoading ? (
+            {isLoading && !hasLoaded ? (
               <tr>
                 <td colSpan={7}>載入中...</td>
               </tr>
-            ) : loadError ? (
+            ) : loadError && rows.length === 0 ? (
               <tr>
                 <td colSpan={7}>載入失敗，請檢查 Supabase 設定與資料表。</td>
               </tr>

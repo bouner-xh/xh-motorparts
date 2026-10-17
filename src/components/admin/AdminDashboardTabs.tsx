@@ -14,6 +14,7 @@ import {AdminProductManager} from '@/components/admin/AdminProductManager';
 import {AdminOverview, type OverviewData} from '@/components/admin/AdminOverview';
 import {AdminCustomerManager} from '@/components/admin/AdminCustomerManager';
 import {AdminAuditLog} from '@/components/admin/AdminAuditLog';
+import {AdminToastProvider} from '@/components/admin/AdminToast';
 
 export type AdminTab = 'overview' | 'inquiries' | 'customers' | 'products' | 'categories' | 'import' | 'audit';
 
@@ -133,7 +134,7 @@ export function AdminDashboardTabs({locale}: {locale: Locale}) {
   );
 
   return (
-    <>
+    <AdminToastProvider>
       <nav className="admin-tabs" role="tablist" aria-label="後台功能">
         {TABS.map((t) => (
           <button
@@ -206,6 +207,6 @@ export function AdminDashboardTabs({locale}: {locale: Locale}) {
           <AdminAuditLog />
         </section>
       )}
-    </>
+    </AdminToastProvider>
   );
 }

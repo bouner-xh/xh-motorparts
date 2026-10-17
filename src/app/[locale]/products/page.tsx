@@ -1,5 +1,5 @@
 import type {Metadata} from 'next';
-import {localeAlternates} from '@/lib/site';
+import {buildPageMetadata} from '@/lib/page-seo';
 import Link from 'next/link';
 import {SafeImage} from '@/components/ui/SafeImage';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -10,10 +10,10 @@ import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { notFound } from 'next/navigation';
 import { encodeSegment } from '@/lib/url-segment';
 
-// canonical 與 hreflang 指向本頁（D14）；標題沿用 layout
+// canonical 與 hreflang 指向本頁（D14）；標題與描述見 page-seo（OP-06）
 export async function generateMetadata({params}: {params: Promise<{locale: string}>}): Promise<Metadata> {
   const {locale} = await params;
-  return {alternates: localeAlternates(locale, '/products')};
+  return buildPageMetadata(locale, 'products', '/products');
 }
 
 export default async function ProductsPage({
@@ -44,10 +44,10 @@ export default async function ProductsPage({
         <CategorySidebar locale={localeValue} />
 
         <section className="card-grid">
-          {categories.map((category) => (
+          {categories.map((category, index) => (
             <article key={category.key} id={category.key} className="card category-card">
               <div className="category-card__media">
-                <SafeImage src={getCategoryCoverUrl(category.key, category.coverImage)} alt={category.name} fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized />
+                <SafeImage src={getCategoryCoverUrl(category.key, category.coverImage)} alt={category.name} fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized priority={index < 4} />
                 <div className="category-card__overlay" />
               </div>
               <div className="category-card__body">

@@ -4,6 +4,7 @@ import {toProductImageUrl} from '@/lib/assets';
 import {categoryNames, type CategoryKey, type Locale} from '@/lib/catalog';
 import { localized } from '@/lib/localized-text';
 import { encodeSegment } from '@/lib/url-segment';
+import { serializeJsonLd } from '@/lib/json-ld';
 
 function absoluteUrl(baseUrl: string, url: string) {
   return /^https?:\/\//.test(url) ? url : `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
@@ -26,7 +27,8 @@ export function ProductSchema({
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: `${product.model} ${product.name}`,
-    sku: product.id,
+    // sku 用對外有意義且唯一的網址代號（型號可重複，不再外露資料庫 UUID）
+    sku: product.slug ?? product.model,
     mpn: product.model,
     category: categoryNames[locale][category],
     description: `${product.name} ${product.specifications.join(', ')}`,
@@ -47,5 +49,5 @@ export function ProductSchema({
     }
   };
 
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(schema)}} />;
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{__html: serializeJsonLd(schema)}} />;
 }

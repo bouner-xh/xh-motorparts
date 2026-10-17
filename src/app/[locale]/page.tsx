@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import {SafeImage} from '@/components/ui/SafeImage';
 import { setRequestLocale } from 'next-intl/server';
@@ -9,6 +10,37 @@ import { notFound } from 'next/navigation';
 import { localized } from '@/lib/localized-text';
 import { Icon } from '@/components/ui/Icon';
 import { encodeSegment } from '@/lib/url-segment';
+import { buildPageMetadata } from '@/lib/page-seo';
+import { getBaseUrl } from '@/lib/site';
+
+// 首頁自己的標題與描述（含關鍵字）；canonical 與 hreflang 見 buildPageMetadata（OP-06）
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  return buildPageMetadata(locale, 'home');
+}
+
+// 給搜尋引擎的公司資料（OP-08）：只放老闆已確認的事實（不含認證、員工與廠房規模）
+function organizationSchema(locale: Locale) {
+  const baseUrl = getBaseUrl();
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Xie Huang Enterprise Co., Ltd.',
+    alternateName: '協皇企業有限公司',
+    url: baseUrl,
+    logo: `${baseUrl}/icon.png`,
+    foundingDate: '1990',
+    email: 'sales@xh-motorparts.com',
+    telephone: '+886 930 797 299',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: localized(locale, { 'zh-TW': '黎明路一段533-2號', 'zh-CN': '黎明路一段533-2号', en: 'No. 533-2, Sec. 1, Liming Rd.' }),
+      addressLocality: localized(locale, { 'zh-TW': '台中市南屯區', 'zh-CN': '台中市南屯区', en: 'Nantun Dist., Taichung City' }),
+      addressCountry: 'TW',
+    },
+    areaServed: 'Worldwide',
+  };
+}
 
 export default async function LocaleHome({
   params,
@@ -27,6 +59,8 @@ export default async function LocaleHome({
 
   return (
     <main>
+      {/* 把 < 轉成 \u003c，避免內容裡的字元提早結束 script 標籤 */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema(localeValue)).replace(/</g, '\\u003c') }} />
       <section className="hero">
         <div className="surface hero__panel hero__panel--home" style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -37,7 +71,7 @@ export default async function LocaleHome({
               <span className="hero__badge">{localized(localeValue, { 'zh-TW': '出口全球 20+ 國家', 'zh-CN': '出口全球 20+ 国家', en: 'Exported to 20+ Countries' })}</span>
             </div>
           </div>
-          <h1 className="hero__title" style={{ whiteSpace: 'pre-line', marginTop: '1.5rem' }}>{content.hero.title}</h1>
+          <h1 className="hero__title hero__title--manifesto" style={{ marginTop: '1.5rem' }}>{content.hero.title}</h1>
           <p className="muted hero__description" style={{ marginTop: '1rem' }}>{content.hero.subtitle}</p>
           
           <div className="hero__actions" style={{ marginTop: '2rem' }}>
@@ -129,9 +163,8 @@ export default async function LocaleHome({
         </div>
         <div className="brand-belief">
           <h2>{content.brandBelief.title}</h2>
-          {content.brandBelief.body.map((line, idx) => (
-            <p key={idx}>{line}</p>
-          ))}
+          {/* 內文原本逐行斷開，置中後行長參差；合成一段讓瀏覽器依寬度自然換行（VI-11） */}
+          <p>{content.brandBelief.body.join(localeValue === 'en' ? ' ' : '')}</p>
         </div>
       </section>
     </main>

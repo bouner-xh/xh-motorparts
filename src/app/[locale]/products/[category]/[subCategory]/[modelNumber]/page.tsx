@@ -7,7 +7,7 @@ import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { InquiryForm } from '@/components/products/InquiryForm';
 import { ProductSchema } from '@/components/products/ProductSchema';
 import { toProductImageUrl } from '@/lib/assets';
-import { getCatalogProduct, getCategoryBySlug, getSubCategoryBySlug, resolveCanonicalProductPath } from '@/lib/catalog-service';
+import { getCatalogProduct, getCatalogProducts, getCategoryBySlug, getSubCategoryBySlug, resolveCanonicalProductPath } from '@/lib/catalog-service';
 import { locales, type Locale, type CategoryKey } from '@/lib/catalog';
 import { getBaseUrl, localeAlternates } from '@/lib/site';
 import { localized } from '@/lib/localized-text';
@@ -177,9 +177,10 @@ export default async function ProductDetailPage({
             subCategorySlug={subCategoryData.slug}
           />
 
-          <p style={{ margin: 'auto 0 0' }}>
+          {/* 返回連結：上方留間距、至少 44px 高好點擊；中文不加空格（VI-28、VI-36） */}
+          <p className="detail-back">
             <Link className="text-link" href={`/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeURIComponent(subCategoryData.slug)}`}>
-              ← {localized(localeValue, { 'zh-TW': '返回', 'zh-CN': '返回', en: 'Back to' })} {subCategoryData.name}
+              ← {localized(localeValue, { 'zh-TW': `返回${subCategoryData.name}`, 'zh-CN': `返回${subCategoryData.name}`, en: `Back to ${subCategoryData.name}` })}
             </Link>
           </p>
         </div>
@@ -189,3 +190,25 @@ export default async function ProductDetailPage({
 }
 
 export const revalidate = 300;
+
+// 建置時最多預先產生幾個產品（每個語言各一頁），其餘第一次被瀏覽時再產生並快取（ISR），避免產品很多時建置過久
+const PRERENDER_PRODUCT_LIMIT = 100;
+
+// 沒有 generateStaticParams 時，Next 會把這個動態路由當成「每次都現場渲染」（回應標頭 private, no-store），
+// 補上後才會進入 ISR，由 CDN 快取 5 分鐘。讀取失敗或沒設資料庫時回傳空陣列，不可讓建置失敗
+export async function generateStaticParams() {
+  try {
+    const products = (await getCatalogProducts('en')).filter((product) => product.subCategory && product.category);
+    return locales.flatMap((locale) =>
+      products.slice(0, PRERENDER_PRODUCT_LIMIT).map((product) => ({
+        locale,
+        category: product.category as string,
+        subCategory: product.subCategory,
+        modelNumber: product.slug ?? product.model
+      }))
+    );
+  } catch (error) {
+    console.error('[catalog] generateStaticParams failed:', error instanceof Error ? error.message : error);
+    return [];
+  }
+}

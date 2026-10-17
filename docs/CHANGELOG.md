@@ -25,6 +25,24 @@
 
 ---
 
+## 2026-10-17（第四十九至五十三批）：網站健診改善（工作包 B、A、C、D、E）
+
+來源：2026-10-17 網站健診（資安、操作性、視覺、效能與 SEO 四位審查員，含兩輪補測）。老闆決定依序處理 B→A→C→D→E；手機版後台（UX-21、22、23、30–33）排後面；F（資料與內容）等老闆補資料；G 之後再說。五個工作包在各自分支開發後整合，一次跑完整測試。
+
+| 批 | 工作包 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|---|
+| 49 | B 詢價可靠度 | 送出失敗保留填寫內容（受控欄位，不再用 `<form action>`）、Turnstile 失敗／過期重置並提示；切換語言以 sessionStorage 保留草稿；失敗訊息紅色 `role="alert"` 並捲入視野；API 加穩定錯誤代碼（保留原 HTTP 狀態與中文 `error`），前端三語顯示並附 sales@；成功畫面顯示項數、確認信信箱、詢價編號、24 小時回覆；詢價清單「移除」不換行；同信箱每日最多 3 封確認信（Upstash，連不上略過；超過仍存單並通知管理員）；Turnstile 補 `remoteip` 並檢查 hostname；客戶信箱轉小寫不分大小寫比對、既有客戶資料不覆蓋只補空；詢價只查已上架產品 | `inquiry/page.tsx`、`api/inquiry/route.ts`、`inquiry-protection.ts`、`inquiry-errors.ts`、`inquiry-customer.ts`、`messages/*.json` | `inquiry-reliability`、`inquiry-email-quota`、`inquiry-customer.test.mts`、`inquiry-save-failure`（斷言改英文） |
+| 50 | A 安全快修 | 刪除公開 repo 的每日資料庫備份 workflow 與文件相關說明（備份改每月手動匯出）；CI 權限唯讀；Next.js 升 15.5.28、postcss 以 overrides 覆寫（`npm audit` 歸零；Next 兩項快取公告的根本修補在 Next 16.4，15.x 無）；後台登入 cookie HttpOnly、SameSite=Lax、正式環境 Secure、效期 7 天；CSP 補 `base-uri`／`object-src`／`form-action`／`frame-ancestors`、`connect-src` 收斂到專案 Supabase 並移除 Resend；COOP／CORP、`poweredByHeader:false`、後台 API 明確 no-store；`src/middleware.ts` 對後台寫入 API 做 Origin 檢查（跨站 403）；JSON-LD 轉義與 sku 改網址代號；舊版圖片路徑目錄邊界與副檔名白名單；批量匯入代號正規化；`doc/SUPABASE_INIT_SQL.md` 與正式庫對齊並附驗證 SQL | `next.config.ts`、`supabase/server.ts`、`auth-cookie.ts`、`security-headers.ts`、`origin-check.ts`、`json-ld.ts`、`legacy-asset-path.ts`、`middleware.ts`、`package.json` | `security-hardening`、`tests/security/*`（origin-check、auth-cookie、security-headers、legacy-asset-path）、`json-ld.test.mts` |
+| 51 | C 門面補齊 | 品牌 404／錯誤頁（含無語系網址）；暫用 favicon／apple icon／1200×630 預設分享圖、`metadataBase`、og／twitter；首頁、產品目錄、關於、聯絡、詢價、隱私三語各自標題與描述（只用已確認事實）；首頁 Organization JSON-LD；關於頁統計卡破版、繁中單字落單、手機搜尋提示、觸控目標 ≥44px、產品頁返回連結與平板雙欄、聯絡頁 mailto／tel、空詢價按鈕、頁尾分隔線與平板兩欄、隱私頁手機表格、規格 2 行、首頁引言排版 | `not-found.tsx`、`error.tsx`、`page-seo.ts`、`icon.png`、`opengraph-image.jpg`、`globals.css`、各頁面與 `messages/*.json` | `storefront-polish`（16 情境） |
+| 52 | D 速度 | 產品頁補 `generateStaticParams`，由每次現場渲染改為 ISR（CDN 快取 5 分鐘，每語言預先產生前 100 個產品）；產品頁主圖與列表前 4 張圖不 lazy 並加 `fetchpriority=high`；後台上傳圖片帶一年快取；正式環境（已設 Supabase）查詢失敗改丟錯，不再把示範資料快取給 Google（沒設資料庫時維持示範資料）；`/api/health` 實查資料庫（3 秒逾時，故障 503）；產品頁圖片與車型查詢並行 | `[modelNumber]/page.tsx`、`SafeImage.tsx`、`catalog-service.ts`、`catalog-fallback.ts`、`api/health/route.ts`、`upload-image/route.ts` | `perf-caching`、`health-check`、`catalog-fallback.test.mts` |
+| 53 | E 後台防呆（桌機優先） | 詢價詳情撰寫回覆或備忘錄未儲存時，Esc／點外面／關閉先確認，回覆草稿暫存可還原；切換回覆語言覆蓋前確認；批量匯入預覽顯示「新增／更新／多筆同型號」與「將新建分類」（需勾選確認）、擋下名稱全空的新產品、結果頁新增／更新／失敗數、可下載失敗清單與只重試失敗列、匯入中離開警告；產品表單欄位內嵌錯誤並聚焦第一個錯誤；列表操作後保留舊列表與捲動位置；結果訊息改頂端 toast（`role=status`／`alert`）；未儲存內容時重新整理與切換語言警告；分類與子分類上移／下移按鈕；後台不顯示 Cookie 橫幅 | `AdminToast.tsx`、`AdminInquiryManager.tsx`、`InquiryReplyComposer.tsx`、`AdminProductImporter.tsx`、`AdminProductManager.tsx`、`product-import-preview.ts`、`inquiry-reply-draft.ts`、`CookieBanner.tsx` | `admin-guardrails`、`admin-import-preview`、`product-import-preview.test.mts`、`inquiry-reply-draft.test.mts` |
+
+- 測試腳本：`tests/run-all.sh` 開頭改為清除 shell 內的 Supabase 變數（避免未指定資料庫的情境連到外部專案），新增第 4c 組（確認信額度）；第 2、5 組加 `health-check`，第 9 組加 `perf-caching`。
+- 不新增套件（Next.js 為既有套件升版）；不改資料庫 schema。還原：Revert 對應 PR；個別工作包可用該批的 commit 單獨還原（整合 PR 以保留各提交的方式合併）。
+- 上線後請老闆：①實際送一張詢價確認 Turnstile 與 Cloudflare 驗證在 COOP／CORP 與網域檢查下正常；②後台約每週重新登入一次；③GitHub 啟用 Dependabot、刪除 `DATABASE_URL` secret、檢查是否有公開備份附件；④舊上傳圖片若要一年快取需重新上傳。
+
+---
+
 ## 2026-10-17（第四十八批）：大分類與子分類卡片封面完整顯示
 
 | 項目 | 內容 | 主要檔案 | 測試 |

@@ -20,7 +20,7 @@
     "inStock": "In stock",
     "madeToOrder": "Made to order",
     "searchLabel": "Search products",
-    "searchPlaceholder": "Part number or name, e.g. 1HV-11311",
+    "searchPlaceholder": "Part no. or name",
     "searchButton": "Search",
     "searchTitle": "Search results",
     "searchFor": "{count} products for “{query}”",
@@ -37,9 +37,9 @@
   },
   "contact": {
     "title": "Contact Us",
-    "address": "Address: No. 533-2, Sec. 1, Liming Rd., Nantun Dist., Taichung City, Taiwan",
-    "phone": "Phone: +886 930 797 299",
-    "email": "Email: sales@xh-motorparts.com"
+    "address": "No. 533-2, Sec. 1, Liming Rd., Nantun Dist., Taichung City, Taiwan",
+    "phone": "+886 930 797 299",
+    "email": "sales@xh-motorparts.com"
   },
   "privacy": {
     "title": "Privacy Policy",
@@ -78,12 +78,41 @@
     "inquirySuccess": "Inquiry successfully sent! We will contact you soon.",
     "submitInquiry": "Submit RFQ",
     "productModel": "Model",
-    "productName": "Name"
+    "productName": "Name",
+    "errors": {
+      "invalid_input": "Some information is missing or invalid. Please check the form and try again, or email sales@xh-motorparts.com.",
+      "rate_limited": "Too many requests. Please wait a few minutes and try again, or email sales@xh-motorparts.com.",
+      "captcha_failed": "Verification failed. Please complete the verification again and resubmit, or email sales@xh-motorparts.com.",
+      "service_unavailable": "The inquiry service is temporarily unavailable. Please try again later, or contact us at sales@xh-motorparts.com.",
+      "save_failed": "We could not submit your inquiry. Please try again later, or contact us at sales@xh-motorparts.com.",
+      "server_error": "Something went wrong on our side. Please try again later, or contact us at sales@xh-motorparts.com.",
+      "network": "Network error. Please check your connection and try again, or email sales@xh-motorparts.com."
+    },
+    "captchaRequired": "Please complete the verification first",
+    "captchaExpired": "Verification expired. Please verify again.",
+    "successSummary": "{count, plural, one {# item} other {# items}} submitted. A confirmation email has been sent to {email}.",
+    "successSummaryNoEmail": "{count, plural, one {# item} other {# items}} submitted.",
+    "inquiryNumber": "Inquiry No. {number}",
+    "replyTime": "We reply within 24 hours on business days (Mon–Fri 09:00–18:00, Taiwan time, GMT+8)."
   },
   "admin": {
     "loginTitle": "Admin login",
     "loginDescription": "Sign in with an admin account to manage catalog and inquiry data.",
     "loginButton": "Login",
     "dashboardTitle": "Admin dashboard"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for may have moved or no longer exists. Search our catalog by part number or name, or head back to the homepage.",
+    "home": "Back to homepage",
+    "products": "Browse product catalog",
+    "contact": "Need help finding a part? Email us at"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "description": "This page could not be loaded. Please try again, or go back to the homepage.",
+    "retry": "Try again",
+    "home": "Back to homepage",
+    "contact": "If the problem continues, email us at"
   }
 }

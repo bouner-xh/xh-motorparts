@@ -19,7 +19,7 @@ if (expectBlocked) {
         page.click('button[type="submit"]')
       ]);
       assert(response.status() === 503, `API 回應 503（實際 ${response.status()}）`);
-      await page.getByText('詢價服務暫時無法使用').waitFor();
+      await page.getByText('The inquiry service is temporarily unavailable').waitFor();
       assert(true, '畫面顯示暫停服務與替代聯絡方式');
       const stored = JSON.parse((await page.evaluate(() => localStorage.getItem('xh_rfq_cart'))) || '[]');
       assert(stored.length === 1, '詢價清單保留，客戶稍後可以重送');

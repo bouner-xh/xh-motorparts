@@ -1,15 +1,15 @@
 import type {Metadata} from 'next';
-import {localeAlternates} from '@/lib/site';
+import {buildPageMetadata} from '@/lib/page-seo';
 import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {locales, type Locale} from '@/lib/catalog';
 import {contactMeta, orderingInfo} from '@/lib/site-content';
 import { localized } from '@/lib/localized-text';
 
-// canonical 與 hreflang 指向本頁（D14）；標題沿用 layout
+// canonical 與 hreflang 指向本頁（D14）；標題與描述見 page-seo（OP-06）
 export async function generateMetadata({params}: {params: Promise<{locale: string}>}): Promise<Metadata> {
   const {locale} = await params;
-  return {alternates: localeAlternates(locale, '/contact')};
+  return buildPageMetadata(locale, 'contact', '/contact');
 }
 
 export default async function ContactPage({
@@ -43,18 +43,18 @@ export default async function ContactPage({
           <p className="muted">{t('address')}</p>
         </article>
         <article className="card info-card">
-          <h3>{localized(localeValue, { 'zh-TW': '電話', 'zh-CN': '电话', en: 'Phone' })}</h3>
-          <p className="muted">{t('phone')}</p>
-        </article>
-        <article className="card info-card">
-          <h3>WhatsApp</h3>
+          <h3>{localized(localeValue, { 'zh-TW': '電話 / WhatsApp', 'zh-CN': '电话 / WhatsApp', en: 'Phone / WhatsApp' })}</h3>
           <p className="muted">
-            <a href="https://wa.me/886930797299" target="_blank" rel="noopener noreferrer">+886 930 797 299</a>
+            <a href="tel:+886930797299">{t('phone')}</a>
+            <br />
+            <a href="https://wa.me/886930797299" target="_blank" rel="noopener noreferrer">WhatsApp</a>
           </p>
         </article>
         <article className="card info-card">
           <h3>Email</h3>
-          <p className="muted">{t('email')}</p>
+          <p className="muted">
+            <a href="mailto:sales@xh-motorparts.com">{t('email')}</a>
+          </p>
         </article>
         <article className="card info-card">
           <h3>{localized(localeValue, { 'zh-TW': '營業時間', 'zh-CN': '营业时间', en: 'Business Hours' })}</h3>
