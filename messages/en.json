@@ -20,7 +20,7 @@
     "inStock": "In stock",
     "madeToOrder": "Made to order",
     "searchLabel": "Search products",
-    "searchPlaceholder": "Part number or name, e.g. 1HV-11311",
+    "searchPlaceholder": "Part no. or name",
     "searchButton": "Search",
     "searchTitle": "Search results",
     "searchFor": "{count} products for “{query}”",
@@ -37,9 +37,9 @@
   },
   "contact": {
     "title": "Contact Us",
-    "address": "Address: No. 533-2, Sec. 1, Liming Rd., Nantun Dist., Taichung City, Taiwan",
-    "phone": "Phone: +886 930 797 299",
-    "email": "Email: sales@xh-motorparts.com"
+    "address": "No. 533-2, Sec. 1, Liming Rd., Nantun Dist., Taichung City, Taiwan",
+    "phone": "+886 930 797 299",
+    "email": "sales@xh-motorparts.com"
   },
   "privacy": {
     "title": "Privacy Policy",
@@ -100,5 +100,19 @@
     "loginDescription": "Sign in with an admin account to manage catalog and inquiry data.",
     "loginButton": "Login",
     "dashboardTitle": "Admin dashboard"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for may have moved or no longer exists. Search our catalog by part number or name, or head back to the homepage.",
+    "home": "Back to homepage",
+    "products": "Browse product catalog",
+    "contact": "Need help finding a part? Email us at"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "description": "This page could not be loaded. Please try again, or go back to the homepage.",
+    "retry": "Try again",
+    "home": "Back to homepage",
+    "contact": "If the problem continues, email us at"
   }
 }

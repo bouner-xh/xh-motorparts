@@ -10,7 +10,8 @@ import { AnalyticsScripts } from '@/components/layout/AnalyticsScripts';
 import { CookieBanner } from '@/components/layout/CookieBanner';
 import { Footer } from '@/components/layout/Footer';
 import { locales, type Locale } from '@/lib/catalog';
-import { localeAlternates } from '@/lib/site';
+import { getBaseUrl, localeAlternates } from '@/lib/site';
+import { companyNameByLocale, defaultShareImage, defaultTwitterImage, getPageSeo, ogLocale } from '@/lib/page-seo';
 import { CartProvider } from '@/context/CartContext';
 import { CartIndicator } from '@/components/layout/CartIndicator';
 import { LanguageLinks } from '@/components/layout/LanguageLinks';
@@ -33,10 +34,27 @@ export async function generateMetadata({
     return {};
   }
 
+  const localeValue = locale as Locale;
+  const title = `${companyByLocale[localeValue]} - ${localized(locale, { 'zh-TW': '摩托車零件', 'zh-CN': '摩托车零件', en: 'Motorcycle Parts' })}`;
+  const description = getPageSeo(locale, 'products').description;
+
+  // metadataBase：讓分享圖等相對網址變成完整網址（og:image 必須是絕對網址）。
+  // 各頁自己的標題、描述見 src/lib/page-seo.ts；這裡是沒有自訂 metadata 的頁面的預設值。
+  // 預設分享圖（src/app/opengraph-image.jpg、twitter-image.jpg）明確列在這裡，頁面自己設了 openGraph 時也不會遺失
   return {
-    title: `${companyByLocale[locale as Locale]} - Motorcycle Parts`,
-    description: 'Motorcycle parts catalog and B2B inquiry website',
+    metadataBase: new URL(getBaseUrl()),
+    title,
+    description,
     alternates: localeAlternates(locale),
+    openGraph: {
+      type: 'website',
+      title,
+      description,
+      siteName: companyNameByLocale[localeValue],
+      locale: ogLocale(locale),
+      images: [defaultShareImage],
+    },
+    twitter: { card: 'summary_large_image', title, description, images: [defaultTwitterImage] },
   };
 }
 
