@@ -1,6 +1,7 @@
 import {cookies} from 'next/headers';
 import {createServerClient} from '@supabase/ssr';
 import {createClient} from '@supabase/supabase-js';
+import {hardenAuthCookieOptions} from '@/lib/auth-cookie';
 
 function getSupabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -43,7 +44,7 @@ export async function getSupabaseServerAuthClient() {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({name, value, options}) => {
-          cookieStore.set(name, value, options);
+          cookieStore.set(name, value, hardenAuthCookieOptions(options, process.env.NODE_ENV === 'production'));
         });
       }
     }
