@@ -97,10 +97,10 @@ export default async function CategoryPage({
         <CategorySidebar locale={localeValue} activeCategory={categoryData.slug} />
 
         <section className="card-grid">
-          {subCategories.length > 0 ? subCategories.map((sub) => (
+          {subCategories.length > 0 ? subCategories.map((sub, index) => (
             <Link key={sub.id} className="card category-card" href={`/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeSegment(sub.slug)}`} style={{ textDecoration: 'none' }}>
               <div className="category-card__media">
-                <SafeImage src={toProductImageUrl(subCovers.get(sub.id) || '')} alt={sub.name} fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized />
+                <SafeImage src={toProductImageUrl(subCovers.get(sub.id) || '')} alt={sub.name} fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized priority={index < 4} />
                 <div className="category-card__overlay" />
               </div>
               <div className="category-card__body">
