@@ -100,7 +100,7 @@ run('Turnstile：沒有 token 時按鈕變灰並顯示原因；失敗後重置�
     // 重新驗證後可再送出；token 過期時清空
     await page.evaluate(() => window.__ts.opts.callback('token-2'));
     assert(await submit.isEnabled(), '重新驗證後按鈕可按');
-    const expiredKey = await page.evaluate(() => Object.keys(window.__ts.opts).find((k) => /expired/i.test(k)));
+    const expiredKey = await page.evaluate(() => Object.keys(window.__ts.opts).find((k) => /expired-callback/i.test(k)));
     assert(Boolean(expiredKey), `有註冊過期回呼（${expiredKey}）`);
     await page.evaluate((k) => window.__ts.opts[k](), expiredKey);
     assert(await submit.isDisabled(), 'token 過期後按鈕變灰');
