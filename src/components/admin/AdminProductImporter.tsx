@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { resizeProductImage } from '@/lib/image-resize';
 import {
@@ -13,12 +13,22 @@ import {
   type CellValue,
   type ParsedProductRow
 } from '@/lib/product-import';
+import {
+  analyzeImportRows,
+  buildFailedCsv,
+  describeNewCategories,
+  type ExistingCatalog,
+  type ImportAction
+} from '@/lib/product-import-preview';
+import { useUnsavedWarning } from '@/components/admin/useUnsavedWarning';
 
 interface ImportRow extends ParsedProductRow {
   imageFile?: File | Blob;
   uploadedUrl?: string;
   status: 'pending' | 'uploading' | 'success' | 'failed';
   message?: string;
+  // 開始匯入當下預覽判定的動作；結果頁用它統計新增／更新筆數
+  action?: ImportAction;
 }
 
 type StepType = 'excel' | 'images' | 'match' | 'importing' | 'completed';
@@ -45,7 +55,10 @@ export function AdminProductImporter() {
   const [parsedRows, setParsedRows] = useState<ImportRow[]>([]);
   const [imageMap, setImageMap] = useState<Map<string, File | Blob>>(new Map());
   const [isProcessing, setIsProcessing] = useState(false);
-  const [importSummary, setImportSummary] = useState<{ total: number; success: number; failed: number } | null>(null);
+  const [importSummary, setImportSummary] = useState<{ total: number; success: number; failed: number; created: number; updated: number } | null>(null);
+  // 現有產品與分類（預覽比對用）；error 時不比對、也不擋匯入
+  const [catalog, setCatalog] = useState<{ state: 'idle' | 'loading' | 'ready' | 'error'; data?: ExistingCatalog }>({ state: 'idle' });
+  const [confirmNewCategories, setConfirmNewCategories] = useState(false);
   const [currentProgress, setCurrentProgress] = useState('');
   // 解析或匯入時的錯誤，顯示在畫面上（取代瀏覽器彈窗）
   const [errors, setErrors] = useState<string[]>([]);
@@ -53,6 +66,45 @@ export function AdminProductImporter() {
   const excelInputRef = useRef<HTMLInputElement>(null);
   const zipInputRef = useRef<HTMLInputElement>(null);
   const multiImagesInputRef = useRef<HTMLInputElement>(null);
+
+  // 匯入進行中離開頁面（重新整理、關閉分頁、切換語言）會中斷匯入，先警告（UX-18）
+  useUnsavedWarning('product-import', step === 'importing');
+
+  // 取得現有產品、大分類、子分類（用既有的後台 API，在瀏覽器比對）
+  const loadCatalog = async () => {
+    setCatalog({ state: 'loading' });
+    try {
+      const [p, c, sc] = await Promise.all([
+        fetch('/api/admin/products', { cache: 'no-store' }),
+        fetch('/api/admin/categories', { cache: 'no-store' }),
+        fetch('/api/admin/sub-categories', { cache: 'no-store' })
+      ]);
+      if (!p.ok || !c.ok || !sc.ok) throw new Error('load failed');
+      const [pd, cd, sd] = await Promise.all([p.json(), c.json(), sc.json()]);
+      setCatalog({
+        state: 'ready',
+        data: {
+          modelNumbers: ((pd.items || []) as { modelNumber: string }[]).map((x) => x.modelNumber),
+          categorySlugs: ((cd.items || []) as { slug: string }[]).map((x) => x.slug),
+          subCategories: ((sd.items || []) as { category: string; slug: string }[]).map((x) => ({ category: x.category, slug: x.slug }))
+        }
+      });
+    } catch {
+      setCatalog({ state: 'error' });
+    }
+  };
+
+  const analysis = useMemo(() => (catalog.data ? analyzeImportRows(parsedRows, catalog.data) : null), [parsedRows, catalog.data]);
+  const newCategoryText = analysis ? describeNewCategories(analysis) : '';
+  const blockedCount = analysis ? analysis.rows.filter((r) => r.nameMissing).length : 0;
+  const needsConfirm = Boolean(newCategoryText);
+  const canImport = !isProcessing && parsedRows.length > 0 && catalog.state !== 'loading' && blockedCount === 0 && (!needsConfirm || confirmNewCategories);
+  // 沒有要新建的分類時，上次的勾選不留著
+  useEffect(() => {
+    if (!needsConfirm) setConfirmNewCategories(false);
+  }, [needsConfirm]);
+
+  const removeRow = (modelNumber: string) => setParsedRows((rows) => rows.filter((r) => r.modelNumber !== modelNumber));
 
   // 1. 解析 Excel / CSV 檔案（解析套件隨網站打包，不從外部網站載入，A1）
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,6 +133,8 @@ export function AdminProductImporter() {
         return;
       }
       setParsedRows(result.rows.map((row) => ({ ...row, status: 'pending' })));
+      setConfirmNewCategories(false);
+      void loadCatalog();
       setStep('images');
     } catch (err) {
       setErrors([`解析檔案失敗：${err instanceof Error ? err.message : '未知錯誤'}`]);
@@ -155,24 +209,29 @@ export function AdminProductImporter() {
   };
 
   // 3. 執行圖片比對並上傳 & 批量匯入
-  const startImportFlow = async () => {
+  // targets 是這次要處理的列；第一次是全部，「只重試失敗的列」則只有失敗的那些（重用已解析的資料與已上傳的圖片）
+  const runImport = async (targets: ImportRow[]) => {
     setIsProcessing(true);
     setStep('importing');
 
-    // 複製一份 parsedRows 以在畫面上更新進度與狀態
-    const updatedRows = [...parsedRows];
-    let successCount = 0;
-    let failedCount = 0;
+    const allRows = [...parsedRows];
+    // 預覽判定的動作先記下來，匯入後統計新增／更新筆數用（匯入後資料庫就變了，不能再重新比對）
+    targets.forEach((row) => {
+      const index = parsedRows.indexOf(row);
+      if (!row.action && analysis && index >= 0) row.action = analysis.rows[index]?.action;
+      row.status = 'pending';
+      row.message = undefined;
+    });
 
-    for (let i = 0; i < updatedRows.length; i++) {
-      const row = updatedRows[i];
-      const matchName = row.imageFilename.toLowerCase();
-      const matchedFile = imageMap.get(matchName);
+    for (let i = 0; i < targets.length; i++) {
+      const row = targets[i];
+      const matchedFile = imageMap.get(row.imageFilename.toLowerCase());
 
-      if (matchedFile) {
+      // 重試時，之前已經上傳成功的圖片不再重傳
+      if (matchedFile && !row.uploadedUrl) {
         row.status = 'uploading';
-        setParsedRows([...updatedRows]);
-        setCurrentProgress(`正在上傳產品 ${row.modelNumber} 的圖片 (${i + 1}/${updatedRows.length})...`);
+        setParsedRows([...allRows]);
+        setCurrentProgress(`正在上傳產品 ${row.modelNumber} 的圖片 (${i + 1}/${targets.length})...`);
 
         try {
           // 上傳前先縮小照片（P1）
@@ -198,11 +257,11 @@ export function AdminProductImporter() {
     // 分批寫入資料庫：每批 IMPORT_CHUNK_SIZE 筆，避免一次太多筆超過伺服器執行時間（A4）
     // 某一批失敗時只標記該批，其他批次繼續
     const resultMap = new Map<string, BatchResult>();
-    const batches = chunk(updatedRows, IMPORT_CHUNK_SIZE);
+    const batches = chunk(targets, IMPORT_CHUNK_SIZE);
     for (let b = 0; b < batches.length; b++) {
       const batch = batches[b];
       const done = b * IMPORT_CHUNK_SIZE;
-      setCurrentProgress(`正在寫入資料庫（${done + 1}–${done + batch.length} / ${updatedRows.length}）...`);
+      setCurrentProgress(`正在寫入資料庫（${done + 1}–${done + batch.length} / ${targets.length}）...`);
       try {
         const res = await fetch('/api/admin/products/batch', {
           method: 'POST',
@@ -231,24 +290,26 @@ export function AdminProductImporter() {
       }
     }
 
-    updatedRows.forEach((row) => {
+    targets.forEach((row) => {
       const r = resultMap.get(row.modelNumber);
       if (r?.success) {
         row.status = 'success';
-        successCount++;
       } else {
         row.status = 'failed';
         row.message = [row.message, r?.error || '匯入失敗'].filter(Boolean).join('；');
-        failedCount++;
       }
     });
 
+    // 統計以全部的列為準（重試後，先前成功的列也算在內）
+    const succeeded = allRows.filter((r) => r.status === 'success');
     setImportSummary({
-      total: updatedRows.length,
-      success: successCount,
-      failed: failedCount
+      total: allRows.length,
+      success: succeeded.length,
+      failed: allRows.filter((r) => r.status === 'failed').length,
+      created: succeeded.filter((r) => r.action === 'create').length,
+      updated: succeeded.filter((r) => r.action === 'update' || r.action === 'ambiguous').length
     });
-    setParsedRows(updatedRows);
+    setParsedRows(allRows);
     setStep('completed');
     setIsProcessing(false);
     setCurrentProgress('');
@@ -259,11 +320,28 @@ export function AdminProductImporter() {
     window.dispatchEvent(new Event('products-updated'));
   };
 
+  const startImportFlow = () => runImport(parsedRows);
+  const retryFailed = () => runImport(parsedRows.filter((r) => r.status === 'failed'));
+
+  // 下載失敗清單（型號與原因），修正後可以重新匯入
+  const downloadFailed = () => {
+    const failed = parsedRows.filter((r) => r.status === 'failed');
+    const blob = new Blob([buildFailedCsv(failed)], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'import-failed.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const resetImporter = () => {
     setStep('excel');
     setParsedRows([]);
     setImageMap(new Map());
     setImportSummary(null);
+    setCatalog({ state: 'idle' });
+    setConfirmNewCategories(false);
     setErrors([]);
     if (excelInputRef.current) excelInputRef.current.value = '';
     if (zipInputRef.current) zipInputRef.current.value = '';
@@ -404,7 +482,7 @@ export function AdminProductImporter() {
               圖片庫已載入 <strong style={{ color: '#10b981' }}>{imageMap.size}</strong> 張圖片。請確認以下產品對照匹配狀態：
             </p>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button type="button" onClick={startImportFlow} disabled={isProcessing || parsedRows.length === 0}>
+              <button type="button" onClick={startImportFlow} disabled={!canImport}>
                 {step === 'importing' ? '匯入中...' : '確認無誤，開始匯入'}
               </button>
               <button type="button" onClick={resetImporter} disabled={isProcessing} style={{ background: '#334155' }}>
@@ -413,27 +491,78 @@ export function AdminProductImporter() {
             </div>
           </div>
 
+          {catalog.state === 'loading' && <p className="muted">正在比對現有產品與分類...</p>}
+          {catalog.state === 'error' && (
+            <p role="alert" style={{ color: '#fbbf24' }}>
+              無法取得現有產品與分類，預覽無法判斷「新增或更新」與「是否新建分類」，請確認後再匯入。
+            </p>
+          )}
+          {blockedCount > 0 && (
+            <p role="alert" data-testid="import-blocked" style={{ color: '#fca5a5', fontWeight: 'bold' }}>
+              有 {blockedCount} 個新產品沒有任何語言的名稱，無法匯入。請補上名稱後重新上傳，或按該列的「移除此列」。
+            </p>
+          )}
+          {newCategoryText && (
+            <div data-testid="import-new-categories" style={{ padding: '0.75rem 1rem', marginBottom: '1rem', borderRadius: '8px', border: '1px solid #fbbf24', background: 'rgba(251, 191, 36, 0.12)' }}>
+              <p style={{ margin: '0 0 0.5rem 0', color: '#fbbf24', fontWeight: 'bold' }}>{newCategoryText}</p>
+              <p className="muted" style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem' }}>
+                分類代號打錯字也會悄悄新建一個新分類。請確認下表「分類」欄標示的代號都正確。
+              </p>
+              <label style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
+                <input type="checkbox" style={{ width: 'auto' }} checked={confirmNewCategories} onChange={(e) => setConfirmNewCategories(e.target.checked)} disabled={step === 'importing'} />
+                我確認要新建這些分類
+              </label>
+            </div>
+          )}
+
           <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid #1e293b', borderRadius: '8px' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead style={{ background: '#1e293b', position: 'sticky', top: 0 }}>
                 <tr style={{ textAlign: 'left' }}>
                   <th style={{ padding: '0.5rem' }}>型號</th>
+                  <th style={{ padding: '0.5rem' }}>動作</th>
                   <th style={{ padding: '0.5rem' }}>名稱 (繁中)</th>
                   <th style={{ padding: '0.5rem' }}>大分類</th>
                   <th style={{ padding: '0.5rem' }}>子分類</th>
+                  <th style={{ padding: '0.5rem' }}>分類</th>
                   <th style={{ padding: '0.5rem' }}>圖片檔名</th>
                   <th style={{ padding: '0.5rem' }}>匹配狀態</th>
                 </tr>
               </thead>
               <tbody>
-                {parsedRows.map((row) => {
+                {parsedRows.map((row, index) => {
                   const hasImage = imageMap.has(row.imageFilename.toLowerCase());
+                  const info = analysis?.rows[index];
                   return (
-                    <tr key={row.modelNumber} style={{ borderBottom: '1px solid #1e293b' }}>
+                    <tr key={row.modelNumber} data-model={row.modelNumber} className={info?.nameMissing ? 'admin-import-row--blocked' : undefined} style={{ borderBottom: '1px solid #1e293b' }}>
                       <td style={{ padding: '0.5rem', color: '#fff' }}>{row.modelNumber}</td>
+                      <td style={{ padding: '0.5rem' }} data-col="action">
+                        {info?.action === 'create' && <span className="admin-import-badge admin-import-badge--create">新增</span>}
+                        {info?.action === 'update' && <span className="admin-import-badge admin-import-badge--update">更新既有</span>}
+                        {info?.action === 'ambiguous' && <span className="admin-import-badge admin-import-badge--blocked">多筆同型號無法更新</span>}
+                        {info?.nameMissing && (
+                          <div style={{ color: '#fca5a5', fontWeight: 'bold', marginTop: '0.3rem' }}>
+                            新產品沒有名稱
+                            {step === 'match' && (
+                              <button type="button" onClick={() => removeRow(row.modelNumber)} style={{ marginLeft: '0.5rem', padding: '0.15rem 0.5rem', background: '#334155' }}>
+                                移除此列
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td style={{ padding: '0.5rem' }}>{row.nameZhTw}</td>
                       <td style={{ padding: '0.5rem' }}>{row.categoryNameZhTw || row.categorySlug}</td>
                       <td style={{ padding: '0.5rem' }}>{row.subCategoryNameZhTw || row.subCategorySlug}</td>
+                      <td style={{ padding: '0.5rem' }} data-col="category">
+                        {info?.newCategory ? (
+                          <span className="admin-import-badge admin-import-badge--newcat">將新建大分類</span>
+                        ) : info?.newSubCategory ? (
+                          <span className="admin-import-badge admin-import-badge--newcat">將新建子分類</span>
+                        ) : info ? (
+                          <span className="muted">既有</span>
+                        ) : null}
+                      </td>
                       <td style={{ padding: '0.5rem' }}>{row.imageFilename || <span className="muted">無</span>}</td>
                       <td style={{ padding: '0.5rem' }}>
                         {row.status === 'success' && <span style={{ color: '#10b981' }}>已匯入</span>}
@@ -467,6 +596,11 @@ export function AdminProductImporter() {
             其中成功 <strong style={{ color: '#10b981' }}>{importSummary.success}</strong> 筆，
             失敗 <strong style={{ color: '#ef4444' }}>{importSummary.failed}</strong> 筆。
           </p>
+          <p data-testid="import-breakdown" style={{ margin: '0 0 1.5rem 0' }}>
+            新增 <strong style={{ color: '#10b981' }}>{importSummary.created}</strong> 筆、
+            更新 <strong style={{ color: '#60a5fa' }}>{importSummary.updated}</strong> 筆、
+            失敗 <strong style={{ color: '#ef4444' }}>{importSummary.failed}</strong> 筆
+          </p>
 
           {importSummary.failed > 0 && (
             <div style={{ textAlign: 'left', background: '#1e293b', padding: '1rem', borderRadius: '6px', marginBottom: '1.5rem', maxHeight: '180px', overflowY: 'auto' }}>
@@ -483,9 +617,21 @@ export function AdminProductImporter() {
             </div>
           )}
 
-          <button type="button" onClick={resetImporter}>
-            繼續匯入其他檔案
-          </button>
+          <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {importSummary.failed > 0 && (
+              <>
+                <button type="button" onClick={retryFailed} disabled={isProcessing}>
+                  只重試失敗的列
+                </button>
+                <button type="button" onClick={downloadFailed} style={{ background: '#334155' }}>
+                  下載失敗清單 CSV
+                </button>
+              </>
+            )}
+            <button type="button" onClick={resetImporter} style={importSummary.failed > 0 ? { background: '#334155' } : undefined}>
+              繼續匯入其他檔案
+            </button>
+          </div>
         </div>
       )}
     </div>

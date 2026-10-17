@@ -40,25 +40,25 @@ run('車型清單：新增、重複擋下（不分大小寫）、改名、刪除
     const box = page.getByTestId('admin-vehicle-models');
     await box.waitFor({ timeout: 30000 });
     await addModel(page, '  Yamaha   DT125 ');
-    await box.getByText('車型已新增').waitFor({ timeout: 15000 });
+    await page.getByText('車型已新增').waitFor({ timeout: 15000 });
     assert((await mockState()).tables.vehicle_models.some((m) => m.name === 'Yamaha DT125'), '名稱整理後存入（空白合併）');
 
     await addModel(page, 'yamaha dt125');
-    await box.getByText(/已經在清單裡/).waitFor({ timeout: 15000 });
+    await page.getByText(/已經在清單裡/).waitFor({ timeout: 15000 });
     assert((await mockState()).tables.vehicle_models.length === 1, '不分大小寫重複被擋下');
 
     await addModel(page, 'Honda CG125');
-    await box.getByText('車型已新增').first().waitFor();
+    await page.getByText('車型已新增').first().waitFor();
     await box.getByRole('row', { name: /Honda CG125/ }).getByRole('button', { name: '改名' }).click();
     await box.getByLabel('車型名稱：Honda CG125').fill('Honda CG125 (2010)');
     await box.getByRole('button', { name: '儲存' }).click();
-    await box.getByText('車型名稱已更新').waitFor({ timeout: 15000 });
+    await page.getByText('車型名稱已更新').waitFor({ timeout: 15000 });
     assert((await mockState()).tables.vehicle_models.some((m) => m.name === 'Honda CG125 (2010)'), '已改名');
 
     const dialogs = [];
     page.on('dialog', (d) => { dialogs.push(d.message()); return d.accept(); });
     await box.getByRole('row', { name: /Honda CG125/ }).getByRole('button', { name: '刪除' }).click();
-    await box.getByText('車型已刪除').waitFor({ timeout: 15000 });
+    await page.getByText('車型已刪除').waitFor({ timeout: 15000 });
     assert(dialogs[0]?.includes('確定刪除車型「Honda CG125 (2010)」'), `刪除前確認（${dialogs[0]}）`);
     assert((await mockState()).tables.vehicle_models.length === 1, '已刪除');
   })

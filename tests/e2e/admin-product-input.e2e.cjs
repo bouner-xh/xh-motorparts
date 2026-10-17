@@ -32,7 +32,7 @@ async function fillBasics(form, model) {
   await form.getByLabel('名稱（en）').fill('Test Cylinder');
 }
 
-const status = (page) => page.locator('form.admin-form + p');
+const status = (page) => page.getByTestId('field-error-modelNumber');
 
 run('規格用全形逗號、頓號分隔時拆成多個標籤', () =>
   withPage(async (page) => {

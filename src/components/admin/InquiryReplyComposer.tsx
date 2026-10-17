@@ -1,8 +1,9 @@
 'use client';
 
 // 從後台回覆客戶（A6 ④）：編輯 → 預覽確認 → 寄出
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {buildReplyDraft, buildReplyHtml, hasUnfilledPlaceholder, MAX_ATTACHMENT_BYTES, type ReplyInquiry, type ReplyLanguage} from '@/lib/inquiry-reply';
+import {browserSessionStorage, clearReplyDraft, isReplyEdited, loadReplyDraft, saveReplyDraft} from '@/lib/inquiry-reply-draft';
 
 const SALES_EMAIL = 'sales@xh-motorparts.com';
 
@@ -17,23 +18,61 @@ export function InquiryReplyComposer({
   onCancel: () => void;
   onSent: (status: string) => void;
 }) {
-  const [language, setLanguage] = useState<ReplyLanguage>('en');
-  const initial = useMemo(() => buildReplyDraft(inquiry, 'en'), [inquiry]);
-  const [subject, setSubject] = useState(initial.subject);
-  const [body, setBody] = useState(initial.body);
+  // 上次沒寄出的草稿（UX-12）：只在第一次顯示時讀取一次，有的話自動還原並提示
+  const [restored] = useState(() => {
+    const draft = loadReplyDraft(browserSessionStorage(), inquiry.id);
+    if (!draft) return null;
+    return isReplyEdited(draft, buildReplyDraft(inquiry, draft.language)) ? draft : null;
+  });
+  const [language, setLanguage] = useState<ReplyLanguage>(restored?.language ?? 'en');
+  const initial = useMemo(() => buildReplyDraft(inquiry, restored?.language ?? 'en'), [inquiry, restored]);
+  const [subject, setSubject] = useState(restored?.subject ?? initial.subject);
+  const [body, setBody] = useState(restored?.body ?? initial.body);
   const [file, setFile] = useState<File | null>(null);
   const [step, setStep] = useState<'edit' | 'preview'>('edit');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [restoredNotice, setRestoredNotice] = useState(restored);
+  const sent = useRef(false);
 
   const unfilled = hasUnfilledPlaceholder(body);
+  const edited = isReplyEdited({subject, body}, buildReplyDraft(inquiry, language));
+
+  // 每次修改都暫存草稿；內容和範本一樣就不留（UX-12）。寄出成功後不能再寫回去
+  useEffect(() => {
+    if (sent.current) return;
+    const storage = browserSessionStorage();
+    if (edited || file) saveReplyDraft(storage, inquiry.id, {language, subject, body, hadAttachment: Boolean(file) || Boolean(restoredNotice?.hadAttachment), savedAt: Date.now()});
+    else clearReplyDraft(storage, inquiry.id);
+  }, [edited, file, language, subject, body, inquiry.id, restoredNotice]);
 
   function switchLanguage(next: ReplyLanguage) {
     if (next === language) return;
+    // 內容已被修改時，換語言會用範本覆蓋，先確認（UX-13）
+    if (edited && !window.confirm('切換語言會覆蓋目前內容（主旨與信件內文都會重新套用範本），確定要切換嗎？')) return;
     const draft = buildReplyDraft(inquiry, next);
     setLanguage(next);
     setSubject(draft.subject);
     setBody(draft.body);
+    setRestoredNotice(null);
+  }
+
+  function discardDraft() {
+    const draft = buildReplyDraft(inquiry, 'en');
+    clearReplyDraft(browserSessionStorage(), inquiry.id);
+    setLanguage('en');
+    setSubject(draft.subject);
+    setBody(draft.body);
+    setFile(null);
+    setRestoredNotice(null);
+  }
+
+  // 「取消」回到詢價單詳情：有修改過就視為丟棄草稿，先確認
+  function cancel() {
+    if ((edited || file) && !window.confirm('要捨棄這封尚未寄出的回覆草稿嗎？捨棄後內容無法還原。')) return;
+    sent.current = true;
+    clearReplyDraft(browserSessionStorage(), inquiry.id);
+    onCancel();
   }
 
   function chooseFile(next: File | null) {
@@ -63,6 +102,9 @@ export function InquiryReplyComposer({
       const res = await fetch('/api/admin/inquiries/reply', {method: 'POST', body: form});
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || '寄信失敗');
+      // 寄出成功：草稿不再需要
+      sent.current = true;
+      clearReplyDraft(browserSessionStorage(), inquiry.id);
       onSent(data.status);
     } catch (err) {
       setError(err instanceof Error ? err.message : '寄信失敗');
@@ -122,8 +164,17 @@ export function InquiryReplyComposer({
         <button type="button" aria-pressed={language === 'zh-TW'} onClick={() => switchLanguage('zh-TW')}>
           中文
         </button>
-        <span className="muted">切換語言會重新套用範本</span>
+        <span className="reply-composer__lang-hint">切換語言會用範本覆蓋目前的主旨與內容；已修改過的內容會先請你確認。</span>
       </div>
+      {restoredNotice ? (
+        <p className="reply-composer__restored" data-testid="reply-draft-notice" role="status">
+          已還原上次沒寄出的草稿{restoredNotice.savedAt ? `（${new Date(restoredNotice.savedAt).toLocaleString('zh-TW', {month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'})}）` : ''}。
+          {restoredNotice.hadAttachment ? '附件無法保留，需要的話請重新選擇。' : ''}
+          <button type="button" className="admin-stat__link" onClick={discardDraft}>
+            捨棄草稿
+          </button>
+        </p>
+      ) : null}
       <label>
         主旨
         <input value={subject} maxLength={200} onChange={(e) => setSubject(e.target.value)} />
@@ -142,7 +193,7 @@ export function InquiryReplyComposer({
         </p>
       ) : null}
       <div className="admin-modal__actions">
-        <button type="button" className="button-secondary" onClick={onCancel}>
+        <button type="button" className="button-secondary" onClick={cancel}>
           取消
         </button>
         <button type="button" onClick={() => setStep('preview')} disabled={!subject.trim() || !body.trim()}>

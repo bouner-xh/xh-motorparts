@@ -2247,3 +2247,141 @@ textarea {
   margin: 0.15rem 0;
   overflow-wrap: anywhere;
 }
+
+/* ===== 後台防呆（健診 工作包 E）===== */
+.admin-toast-region {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  width: min(560px, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.admin-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #0f172a;
+  color: #f8fafc;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.admin-toast--success {
+  border-color: rgba(52, 211, 153, 0.6);
+  background: #064e3b;
+}
+
+.admin-toast--error {
+  border-color: rgba(248, 113, 113, 0.7);
+  background: #7f1d1d;
+}
+
+.admin-toast__close {
+  flex: none;
+  padding: 0 0.45rem;
+  line-height: 1.4;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font-size: 1.2rem;
+}
+
+.admin-required::after {
+  content: ' *';
+  color: #f87171;
+  font-weight: 700;
+}
+
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.admin-field-error {
+  margin: 0;
+  color: #fca5a5;
+  font-size: 0.88rem;
+}
+
+.admin-field input[aria-invalid='true'],
+.admin-field select[aria-invalid='true'] {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px #ef4444;
+}
+
+.admin-form-summary {
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(248, 113, 113, 0.5);
+  background: rgba(127, 29, 29, 0.3);
+  color: #fecaca;
+}
+
+.reply-composer__lang-hint {
+  flex: 1 1 100%;
+  color: #fbbf24;
+  font-size: 0.85rem;
+}
+
+.reply-composer__restored {
+  display: block;
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  background: rgba(29, 78, 216, 0.18);
+  font-size: 0.9rem;
+}
+
+.admin-move-buttons {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-right: 0.5rem;
+}
+
+.admin-move-button {
+  padding: 0.3rem 0.55rem;
+  background: #334155;
+  box-shadow: none;
+}
+
+.admin-move-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-import-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.admin-import-badge--create { color: #34d399; background: rgba(16, 185, 129, 0.15); }
+.admin-import-badge--update { color: #60a5fa; background: rgba(59, 130, 246, 0.15); }
+.admin-import-badge--blocked { color: #fca5a5; background: rgba(239, 68, 68, 0.2); }
+.admin-import-badge--newcat { color: #111827; background: #fbbf24; }
+
+.admin-import-row--blocked td {
+  background: rgba(127, 29, 29, 0.25);
+}
+
+.reply-composer__restored .admin-stat__link {
+  display: inline;
+  margin-top: 0;
+  margin-left: 0.4rem;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
