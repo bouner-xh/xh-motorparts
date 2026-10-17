@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-html-link-for-pages -- 沒有語系的 404：此處沒有 next-intl 與 Link 的語系環境，直接用一般連結帶訪客到各語系首頁 */
 import type { Metadata } from 'next';
 import './globals.css';
 
