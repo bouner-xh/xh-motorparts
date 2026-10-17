@@ -61,6 +61,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `admin-product-input.e2e.cjs` | 產品表單：規格全形逗號、錯誤訊息指出欄位、用語與進階圖片網址 | 需模擬 Supabase，見檔案開頭說明 |
 | `product-availability.e2e.cjs` | 產品頁顯示「現貨／接單生產」，不公開庫存數字 | 需模擬 Supabase，見檔案開頭說明 |
 | `product-search.e2e.cjs` | 前台產品搜尋：料號、名稱、規格，未上架搜不到，手機版 | 需模擬 Supabase，見檔案開頭說明 |
+| `ux-small.e2e.cjs` | 小型體驗改善：搜尋超過上限提示、查無結果分類連結、詢價清單型號連結、數量欄位標籤、跳到主要內容與焦點外框 | 需模擬 Supabase |
 | `product-urls.e2e.cjs` | sitemap 與結構化資料的產品網址含子分類、都能打開 | 需模擬 Supabase，見檔案開頭說明 |
 | `category-slug-spaces.e2e.cjs` | 分類代號含空白時分類、子分類、產品頁與 sitemap 網址都能開啟 | 需模擬 Supabase，見檔案開頭說明 |
 | `product-seo.e2e.cjs` | 產品頁標題、描述（SEO）與 robots.txt | 需模擬 Supabase，見檔案開頭說明 |

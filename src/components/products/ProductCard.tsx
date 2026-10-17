@@ -50,6 +50,7 @@ export function ProductCard({
         <ProductCardInquiryButton
           productId={product.id}
           productModel={product.model}
+          productSlug={product.slug}
           productName={product.name}
           locale={locale}
           categorySlug={categorySlug}

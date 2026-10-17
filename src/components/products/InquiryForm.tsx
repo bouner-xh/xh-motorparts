@@ -10,6 +10,7 @@ import { INQUIRY_LIMITS } from '@/lib/inquiry-limits';
 interface InquiryFormProps {
   productId: string;
   productModel: string;
+  productSlug?: string;
   productName: string;
   categorySlug: string;
   subCategorySlug: string;
@@ -21,6 +22,7 @@ interface InquiryFormProps {
 export function InquiryForm({
   productId,
   productModel,
+  productSlug,
   productName,
   categorySlug,
   subCategorySlug,
@@ -45,11 +47,11 @@ export function InquiryForm({
   }, [cart, productId]);
 
   const handleIncrement = () => {
-    setQuantity((prev) => prev + 50);
+    setQuantity((prev) => Math.min(INQUIRY_LIMITS.quantity, prev + 50));
   };
 
   const handleDecrement = () => {
-    setQuantity((prev) => Math.max(10, prev - 50));
+    setQuantity((prev) => Math.max(1, prev - 50));
   };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,6 +71,7 @@ export function InquiryForm({
       addToCart({
         id: productId,
         modelNumber: productModel,
+        slug: productSlug,
         nameZhTw: locale === 'zh-TW' ? productName : '',
         nameZhCn: locale === 'zh-CN' ? productName : '',
         nameEn: locale === 'en' ? productName : '',
@@ -86,6 +89,7 @@ export function InquiryForm({
       addToCart({
         id: productId,
         modelNumber: productModel,
+        slug: productSlug,
         nameZhTw: locale === 'zh-TW' ? productName : '',
         nameZhCn: locale === 'zh-CN' ? productName : '',
         nameEn: locale === 'en' ? productName : '',
@@ -105,21 +109,23 @@ export function InquiryForm({
 
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '0.75rem 1rem' }}>
         <div>
-          <label style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '0.4rem' }}>
+          <label htmlFor={`qty-${productId}`} style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '0.4rem' }}>
             {t('quantity')}
           </label>
           <div className="quantity-control">
-            <button type="button" className="qty-btn" onClick={handleDecrement}>
+            <button type="button" className="qty-btn" aria-label={t('decreaseQuantity')} onClick={handleDecrement}>
               -
             </button>
             <input
+              id={`qty-${productId}`}
               type="number"
               className="qty-input"
               value={quantity}
               onChange={handleQuantityChange}
               min={1}
+              max={INQUIRY_LIMITS.quantity}
             />
-            <button type="button" className="qty-btn" onClick={handleIncrement}>
+            <button type="button" className="qty-btn" aria-label={t('increaseQuantity')} onClick={handleIncrement}>
               +
             </button>
           </div>

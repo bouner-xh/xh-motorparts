@@ -86,7 +86,7 @@ export default async function CategoryPage({
   }
 
   return (
-    <main>
+    <main id="main-content" tabIndex={-1}>
       <Breadcrumb
         items={[
           { label: tNav('home'), href: `/${localeValue}` },

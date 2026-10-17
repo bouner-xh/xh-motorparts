@@ -32,7 +32,7 @@ export default async function ProductsPage({
   const categories = await getCategorySummaries(localeValue);
 
   return (
-    <main>
+    <main id="main-content" tabIndex={-1}>
       <div className="section-heading">
         <div>
           <h1 className="page-title">{t('title')}</h1>

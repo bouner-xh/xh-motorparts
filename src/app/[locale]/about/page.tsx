@@ -27,7 +27,7 @@ export default async function AboutPage({
   const content = aboutContent[localeValue];
 
   return (
-    <main>
+    <main id="main-content" tabIndex={-1}>
       <section className="hero hero--about">
         <article className="surface hero__panel">
           <span className="hero__eyebrow">{t('title')}</span>

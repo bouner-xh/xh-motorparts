@@ -105,7 +105,7 @@ export default async function ProductDetailPage({
   }
 
   return (
-    <main>
+    <main id="main-content" tabIndex={-1}>
       <ProductSchema product={product} category={categoryData.slug} subCategory={subCategoryData.slug} locale={localeValue} />
       <Breadcrumb
         items={[
@@ -172,6 +172,7 @@ export default async function ProductDetailPage({
           <InquiryForm
             productId={product.id}
             productModel={product.model}
+            productSlug={product.slug}
             productName={product.name}
             categorySlug={categoryData.slug}
             subCategorySlug={subCategoryData.slug}

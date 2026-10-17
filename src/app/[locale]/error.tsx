@@ -10,7 +10,7 @@ export default function LocaleError({ reset }: { error: Error & { digest?: strin
   const locale = useLocale();
 
   return (
-    <main className="status-page">
+    <main id="main-content" tabIndex={-1} className="status-page">
       <section className="surface status-page__panel">
         <h1 className="status-page__title">{t('title')}</h1>
         <p className="muted status-page__text">{t('description')}</p>

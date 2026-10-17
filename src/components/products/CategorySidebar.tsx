@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import {getTranslations} from 'next-intl/server';
 import type { CategoryKey, Locale } from '@/lib/catalog';
 import { getCategorySummaries, getSubCategories, type SubCategorySummary } from '@/lib/catalog-service';
 import { ProductSearchForm } from './ProductSearchForm';
@@ -19,6 +20,7 @@ export async function CategorySidebar({
   activeSubCategory?: string;
   searchValue?: string;
 }) {
+  const t = await getTranslations({locale, namespace: 'products'});
   const [categories, activeSubs] = await Promise.all([
     getCategorySummaries(locale),
     activeCategory ? getSubCategories(activeCategory, locale) : Promise.resolve([])
@@ -33,7 +35,7 @@ export async function CategorySidebar({
     <aside className="category-sidebar card">
       {/* 產品搜尋（P2）：所有產品列表頁的側欄最上方 */}
       <ProductSearchForm locale={locale} defaultValue={searchValue} />
-      <p className="category-sidebar__label">Catalog</p>
+      <p className="category-sidebar__label">{t('catalogLabel')}</p>
       <ul className="category-sidebar__list">
         {categories.map((c) => {
           const category = c.key;

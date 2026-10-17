@@ -2,7 +2,8 @@ import type {Metadata} from 'next';
 import {notFound} from 'next/navigation';
 import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {locales, type Locale} from '@/lib/catalog';
-import {searchCatalogProducts} from '@/lib/catalog-service';
+import Link from 'next/link';
+import {getCategorySummaries, searchCatalogWithTotal} from '@/lib/catalog-service';
 import {normalizeQuery} from '@/lib/product-search';
 import {CategorySidebar} from '@/components/products/CategorySidebar';
 import {ProductCard} from '@/components/products/ProductCard';
@@ -32,16 +33,22 @@ export default async function ProductSearchPage({
 
   const query = normalizeQuery((await searchParams).q);
   const t = await getTranslations({locale: localeValue, namespace: 'products'});
-  const results = query ? await searchCatalogProducts(query, localeValue) : [];
+  const {items: results, total} = query ? await searchCatalogWithTotal(query, localeValue) : {items: [], total: 0};
+  const emptyCategories = query && results.length === 0 ? await getCategorySummaries(localeValue) : [];
 
   return (
-    <main>
+    <main id="main-content" tabIndex={-1}>
       <div className="section-heading">
         <div>
           <h1 className="page-title">{t('searchTitle')}</h1>
           <p className="muted page-lead" data-testid="search-summary">
-            {query ? t('searchFor', {query, count: results.length}) : t('searchPrompt')}
+            {query ? t('searchFor', {query, count: total}) : t('searchPrompt')}
           </p>
+          {total > results.length ? (
+            <p className="muted" data-testid="search-truncated">
+              {t('searchTruncated', {shown: results.length, total})}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -70,6 +77,17 @@ export default async function ProductSearchPage({
             <div className="card search-empty" style={{gridColumn: '1 / -1'}}>
               <p>{t('searchEmpty', {query})}</p>
               <ProductSearchForm locale={localeValue} defaultValue={query} />
+              <p className="muted" style={{marginTop: '1rem'}}>{t('emptyBrowse')}</p>
+              <ul className="search-empty__categories" data-testid="search-empty-categories">
+                {emptyCategories.map((c) => (
+                  <li key={c.key}>
+                    <Link href={`/${localeValue}/products/${encodeSegment(c.key)}`}>{c.name}</Link>
+                  </li>
+                ))}
+              </ul>
+              <p className="muted">
+                {t('emptyContact')} <a href="mailto:sales@xh-motorparts.com">sales@xh-motorparts.com</a>
+              </p>
             </div>
           ) : null}
         </section>

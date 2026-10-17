@@ -14,7 +14,7 @@ export default function RootNotFound() {
   return (
     <html lang="en">
       <body>
-        <main className="container status-page">
+        <main id="main-content" tabIndex={-1} className="container status-page">
           <section className="surface status-page__panel">
             <p className="brand-name">Xie Huang Enterprise Co., Ltd.</p>
             <p className="status-page__code" aria-hidden="true">404</p>

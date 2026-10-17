@@ -13,6 +13,7 @@ const DEFAULT_QUANTITY = 100;
 export function ProductCardInquiryButton({
   productId,
   productModel,
+  productSlug,
   productName,
   locale,
   categorySlug,
@@ -20,6 +21,7 @@ export function ProductCardInquiryButton({
 }: {
   productId: string;
   productModel: string;
+  productSlug?: string;
   productName: string;
   locale: Locale;
   categorySlug: string;
@@ -38,6 +40,7 @@ export function ProductCardInquiryButton({
     addToCart({
       id: productId,
       modelNumber: productModel,
+      slug: productSlug,
       nameZhTw: locale === 'zh-TW' ? productName : '',
       nameZhCn: locale === 'zh-CN' ? productName : '',
       nameEn: locale === 'en' ? productName : '',
