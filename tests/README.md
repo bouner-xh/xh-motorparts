@@ -104,6 +104,14 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `product-duplicate-models.e2e.cjs` | 型號可重複（網址代號）：執行 SQL 前型號仍不可重複；執行後同型號多個產品、各自網址（型號／型號-OEM／型號-2）、列表搜尋 sitemap、OEM 料號全站唯一、改 OEM 不改網址、批量匯入不亂覆蓋 | 模擬 Supabase |
 | `product-moved-redirect.e2e.cjs` | 子分類改代號、被刪除或產品搬家後，舊網址（含小寫型號）一次 308 轉到現在的網址；找不到的型號仍 404 | 模擬 Supabase |
 | `search-cache.e2e.cjs` | 正式環境建置：前台搜尋索引有快取（直接改資料庫搜不到），經過後台儲存產品後馬上更新 | 模擬 Supabase、next build／start |
+| `inquiry-reliability.e2e.cjs` | 詢價送出失敗保留內容、錯誤代碼三語顯示、切換語言保留草稿、成功畫面摘要與詢價編號、既有客戶不被覆蓋、未上架產品查不到名稱 | 模擬 Supabase |
+| `inquiry-email-quota.e2e.cjs` | 同一信箱每日最多 3 封確認信（詢價單照存）、Redis 鍵不含信箱原文、Turnstile 失敗後重置與過期提示 | 模擬 Supabase、模擬 Upstash、驗證碼測試金鑰 |
+| `security-hardening.e2e.cjs` | 後台登入 cookie（HttpOnly、SameSite、7 天、登出後被擋）、後台寫入 API 的 Origin 檢查、安全標頭、JSON-LD sku、舊版圖片路徑 | 模擬 Supabase |
+| `storefront-polish.e2e.cjs` | 門面補齊：品牌 404、favicon 與分享預覽、各頁標題描述、Organization JSON-LD、關於頁統計卡、繁中落單、手機搜尋提示、聯絡頁連結、觸控目標、頁尾分隔符、隱私頁表格 | 模擬 Supabase |
+| `admin-guardrails.e2e.cjs` | 後台防呆：詢價詳情關閉確認與回覆草稿還原、切換語言確認、產品表單欄位錯誤、列表重新載入不跳位、toast、離開警告、分類上移下移、後台無 Cookie 橫幅 | 模擬 Supabase |
+| `admin-import-preview.e2e.cjs` | 批量匯入預覽「動作／分類」欄、擋下名稱全空的新產品、新建分類需勾選確認、結果頁統計、下載失敗清單 CSV、只重試失敗列、匯入中離開警告 | 模擬 Supabase |
+| `health-check.e2e.cjs` | `/api/health` 三種情境（用 `HEALTH_EXPECT=ok|down|not-configured` 切換） | 依情境 |
+| `perf-caching.e2e.cjs` | 正式環境建置：產品頁可被 CDN 快取、LCP 圖片不 lazy、上傳帶 cache-control、資料庫故障回 500 不快取示範資料 | 模擬 Supabase、`next build`／`start` |
 | `product-url-case.e2e.cjs` | 產品網址不分大小寫：分類、子分類、型號大小寫寫錯會轉到正確網址（308、保留語系）；不存在的網址仍 404、不會無限轉址 | 模擬 Supabase |
 | `admin-model-case.e2e.cjs` | 型號一律存成大寫（表單離開欄位自動轉、API 與批量匯入）、不分大小寫比對重複型號、舊小寫型號重存不跳改型號確認、匯入不會重複建立 | 模擬 Supabase |
 | `root-redirect.e2e.cjs` | 根網址一律轉到 /en、語言切換列 EN 排第一、中文版網址照舊可用 | 無資料庫即可 |

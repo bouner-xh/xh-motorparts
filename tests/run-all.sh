@@ -5,6 +5,8 @@
 set -u
 cd "$(dirname "$0")/.."
 export NODE_PATH="$(npm root -g)"
+# 清掉 shell 內可能存在的 Supabase 變數：各情境要用資料庫時會明確指定模擬值（MOCK_ENV），沒指定的情境必須是「沒有資料庫」
+unset NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY SUPABASE_JWT_SECRET
 PORT=3100
 FAIL=0
 SERVER=""
@@ -67,12 +69,12 @@ node --experimental-strip-types --test 'tests/security/*.test.mts' 'tests/admin/
 [ "${PIPESTATUS[0]}" -eq 0 ] || FAIL=1
 
 echo "== 2. 開發模式（無資料庫）"
-start_server npx next dev -p $PORT && e2e inquiry-flow admin-login admin-upload site-smoke international-copy html-lang canonical-url home-hero-responsive no-nested-interactive text-contrast contact-email home-section-order mobile-menu home-hero-cta no-emoji-icons inquiry-mobile-cards
+start_server npx next dev -p $PORT && { e2e inquiry-flow admin-login admin-upload site-smoke international-copy html-lang canonical-url home-hero-responsive no-nested-interactive text-contrast contact-email home-section-order mobile-menu home-hero-cta no-emoji-icons inquiry-mobile-cards; HEALTH_EXPECT=not-configured e2e health-check; }
 stop_server
 
 echo "== 3. 開發模式 + 模擬 Supabase（管理員名單：admin@example.com）"
 start_mock
-start_server env "${MOCK_ENV[@]}" "${MAIL_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next dev -p $PORT && e2e admin-access product-card-inquiry language-switch locale-text page-h1 hreflang admin-product-form admin-product-category admin-product-import admin-delete admin-inquiries admin-product-list admin-api-errors admin-dashboard-tabs product-detail-cta admin-inquiry-export admin-customers admin-inquiry-events admin-inquiry-reply inquiry-limits inquiry-confirmation-email admin-image-resize admin-product-input product-availability product-search product-urls category-slug-spaces product-seo admin-slug admin-product-update root-redirect sitemap-languages admin-product-names category-covers product-url-case admin-model-case admin-category-cover no-image-fallback admin-product-gallery admin-vehicle-models admin-audit-log product-duplicate-models product-moved-redirect
+start_server env "${MOCK_ENV[@]}" "${MAIL_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next dev -p $PORT && e2e admin-access product-card-inquiry language-switch locale-text page-h1 hreflang admin-product-form admin-product-category admin-product-import admin-delete admin-inquiries admin-product-list admin-api-errors admin-dashboard-tabs product-detail-cta admin-inquiry-export admin-customers admin-inquiry-events admin-inquiry-reply inquiry-limits inquiry-confirmation-email admin-image-resize admin-product-input product-availability product-search product-urls category-slug-spaces product-seo admin-slug admin-product-update root-redirect sitemap-languages admin-product-names category-covers product-url-case admin-model-case admin-category-cover no-image-fallback admin-product-gallery admin-vehicle-models admin-audit-log product-duplicate-models product-moved-redirect inquiry-reliability security-hardening storefront-polish admin-guardrails admin-import-preview health-check
 stop_server
 
 echo "== 4. 開發模式 + 模擬 Supabase（未設定管理員名單）+ 模擬 Upstash 與每日排程"
@@ -82,10 +84,14 @@ stop_server
 echo "== 4b. 開發模式 + 模擬 Supabase + 流量限制服務（Upstash）連不上"
 start_server env "${MOCK_ENV[@]}" "${MAIL_ENV[@]}" CRON_SECRET=e2e-cron-secret UPSTASH_REDIS_REST_URL=http://127.0.0.1:9 UPSTASH_REDIS_REST_TOKEN=dummy npx next dev -p $PORT && { e2e inquiry-ratelimit-down; E2E_EXPECT=upstash-down e2e cron-keepalive; }
 stop_server
+
+echo "== 4c. 開發模式 + 模擬 Supabase + 模擬 Upstash 與驗證碼金鑰（確認信每日額度、Turnstile 重置）"
+start_server env "${MOCK_ENV[@]}" "${MAIL_ENV[@]}" CRON_SECRET=e2e-cron-secret NEXT_PUBLIC_TURNSTILE_SITE_KEY=dummy UPSTASH_REDIS_REST_URL=http://127.0.0.1:54321/upstash UPSTASH_REDIS_REST_TOKEN=upstash-token npx next dev -p $PORT && e2e inquiry-email-quota
+stop_server
 stop_mock
 
 echo "== 5. 開發模式 + 資料庫故障"
-start_server env NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9 NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy SUPABASE_SERVICE_ROLE_KEY=dummy npx next dev -p $PORT && e2e inquiry-save-failure
+start_server env NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9 NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy SUPABASE_SERVICE_ROLE_KEY=dummy npx next dev -p $PORT && { e2e inquiry-save-failure; HEALTH_EXPECT=down e2e health-check; }
 stop_server
 
 echo "== 6. 開發模式 + 分析服務"
@@ -107,7 +113,7 @@ fi
 echo "== 9. 正式環境建置 + 模擬 Supabase（搜尋索引快取與失效）"
 start_mock
 if env "${MOCK_ENV[@]}" npx next build > /tmp/xh-e2e-build-cache.log 2>&1; then
-  start_server env "${MOCK_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next start -p $PORT && e2e search-cache
+  start_server env "${MOCK_ENV[@]}" ADMIN_EMAILS=admin@example.com npx next start -p $PORT && e2e search-cache perf-caching
   stop_server
 else
   echo "❌ 正式環境建置（模擬 Supabase）失敗，請看 /tmp/xh-e2e-build-cache.log"
