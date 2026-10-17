@@ -86,7 +86,7 @@ export default function InquiryCartPage() {
           <p className="muted" style={{ marginBottom: '2rem', lineHeight: '1.6' }}>
             {localized(locale, { 'zh-TW': '感謝您的洽詢，我們已收到您的詢價單，系統已自動發送確認信至您的信箱，協皇業務團隊將儘速與您聯繫。', 'zh-CN': '感谢您的洽询，我们已收到您的询价单，系统已自动发送确认信至您的邮箱，协皇业务团队将尽快与您联系。', en: 'Thank you for your interest. A confirmation email has been sent to your mailbox. Our sales team will get back to you shortly.' })}
           </p>
-          <Link href={`/${locale}/products`} className="button" style={{ display: 'inline-block', textDecoration: 'none' }}>
+          <Link href={`/${locale}/products`} className="button-primary button-primary--hero">
             {t('browseProducts')}
           </Link>
         </article>
@@ -104,9 +104,12 @@ export default function InquiryCartPage() {
           <p className="muted" style={{ marginBottom: '2rem' }}>
             {localized(locale, { 'zh-TW': '送出詢價前，請先至產品目錄將感興趣的零件型號加入清單。', 'zh-CN': '提交询价前，请先至产品目录将感兴趣的零件型号加入清单。', en: 'Please add motorcycle parts to your inquiry list before submitting.' })}
           </p>
-          <Link href={`/${locale}/products`} className="button" style={{ display: 'inline-block', textDecoration: 'none' }}>
+          <Link href={`/${locale}/products`} className="button-primary button-primary--hero">
             {t('browseProducts')}
           </Link>
+          <p className="muted" style={{ margin: '1.25rem 0 0' }}>
+            {localized(locale, { 'zh-TW': '或寄信至', 'zh-CN': '或寄信至', en: 'or email' })} <a href="mailto:sales@xh-motorparts.com" style={{ textDecoration: 'underline' }}>sales@xh-motorparts.com</a>
+          </p>
         </article>
       </main>
     );

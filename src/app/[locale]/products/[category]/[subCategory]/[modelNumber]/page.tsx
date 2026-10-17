@@ -177,9 +177,10 @@ export default async function ProductDetailPage({
             subCategorySlug={subCategoryData.slug}
           />
 
-          <p style={{ margin: 'auto 0 0' }}>
+          {/* 返回連結：上方留間距、至少 44px 高好點擊；中文不加空格（VI-28、VI-36） */}
+          <p className="detail-back">
             <Link className="text-link" href={`/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeURIComponent(subCategoryData.slug)}`}>
-              ← {localized(localeValue, { 'zh-TW': '返回', 'zh-CN': '返回', en: 'Back to' })} {subCategoryData.name}
+              ← {localized(localeValue, { 'zh-TW': `返回${subCategoryData.name}`, 'zh-CN': `返回${subCategoryData.name}`, en: `Back to ${subCategoryData.name}` })}
             </Link>
           </p>
         </div>

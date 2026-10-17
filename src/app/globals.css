@@ -1,3 +1,10 @@
+/* 品牌色 token：主按鈕紅與其淺階（標題、強調字用淺階，深色背景上對比足夠） */
+:root {
+  --brand-red: #dc2626;
+  --brand-red-soft: #fca5a5;
+  --muted-soft: #a9b6c9;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -168,6 +175,37 @@ textarea {
   padding: 1.5rem;
 }
 
+/* 關於我們的統計區塊：高度依內容，不跟著左欄被拉長（VI-01） */
+.hero__stats {
+  align-self: start;
+}
+
+/* 繁中／簡中標題：平衡斷行、嚴格禁則，避免單字落單（VI-25） */
+.hero__title,
+.hero__description {
+  line-break: strict;
+  overflow-wrap: anywhere;
+}
+
+.hero__title {
+  text-wrap: balance;
+}
+
+.hero__description {
+  text-wrap: pretty;
+}
+
+/* 首頁宣言：桌機保留設定好的換行，手機改自然換行 */
+.hero__title--manifesto {
+  white-space: pre-line;
+}
+
+/* 關於我們的 H1 降級，不與統計卡搶版面 */
+.hero--about .hero__title {
+  font-size: clamp(1.9rem, 3.4vw, 2.6rem);
+  line-height: 1.2;
+}
+
 /* 首頁 Hero：內距隨螢幕寬度縮放，桌機維持 3.5rem / 2.5rem，手機縮小以保留文字寬度（D5） */
 .hero__panel--home {
   padding: clamp(1.5rem, 5vw, 3.5rem) clamp(1.25rem, 4vw, 2.5rem);
@@ -267,13 +305,15 @@ textarea {
 }
 
 .stats-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .stats-card__value {
   margin: 0;
-  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  font-size: clamp(1.4rem, 2.6vw, 1.85rem);
   font-weight: 700;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
 }
 
 .stats-card__label {
@@ -480,14 +520,37 @@ textarea {
 }
 
 .product-card__specs {
-  min-height: 3.2rem;
+  min-height: 2.8rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* 「View details」改成次要按鈕樣式，手機好點（VI-27） */
+.product-card .product-card__detail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.product-card .product-card__detail:hover {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.5);
 }
 
 /* 產品卡片「加入詢價清單」按鈕（D1） */
 .product-card__inquiry {
   width: 100%;
   min-height: 44px;
-  margin-top: 0.9rem;
+  margin-top: 0.6rem;
   font-weight: 700;
 }
 
@@ -527,6 +590,23 @@ textarea {
   object-fit: contain;
   background: #fff;
   border-radius: 18px;
+}
+
+/* 平板（768–1024px）：主圖最高 520px，完整顯示不裁切（VI-28）；桌機維持 1:1 */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .detail-media img {
+    max-height: 520px;
+  }
+}
+
+/* 產品頁底部的返回連結：上方留間距、至少 44px 高 */
+.detail-back {
+  margin: auto 0 0;
+  padding-top: 1.25rem;
+}
+
+.detail-back .text-link {
+  min-height: 44px;
 }
 
 /* P8：產品頁的適用車型與 OEM 對照料號 */
@@ -603,6 +683,18 @@ textarea {
 
 .info-card {
   padding: 1.15rem;
+}
+
+.info-card p {
+  line-height: 1.6;
+}
+
+/* 信箱、電話等連結不在連字號處斷行，過長時才在任意處換行（VI-30） */
+.info-card a {
+  overflow-wrap: anywhere;
+  text-decoration: underline;
+  text-decoration-color: rgba(148, 163, 184, 0.4);
+  text-underline-offset: 3px;
 }
 
 .site-footer {
@@ -743,8 +835,7 @@ textarea {
   }
 
   .hero,
-  .page-grid,
-  .detail-grid {
+  .page-grid {
     grid-template-columns: 1fr;
   }
 
@@ -752,8 +843,7 @@ textarea {
     position: static;
   }
 
-  .hero__trust,
-  .stats-grid {
+  .hero__trust {
     grid-template-columns: 1fr;
   }
 
@@ -767,9 +857,21 @@ textarea {
   }
 }
 
+/* 產品頁：平板（768–960px）維持圖左資訊右雙欄，手機（767px 以下）才改單欄（VI-28） */
+@media (max-width: 767px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .site-header {
     padding: 1rem;
+  }
+
+  /* 手機：宣言不保留硬換行，由瀏覽器依寬度平衡斷行（VI-25） */
+  .hero__title--manifesto {
+    white-space: normal;
   }
 
   .hero__actions {
@@ -789,14 +891,18 @@ textarea {
 .brand-belief h2 {
   font-size: clamp(1.8rem, 4vw, 2.8rem);
   margin-bottom: 1.5rem;
-  color: #fca5a5;
+  color: var(--brand-red-soft);
+  text-wrap: balance;
+  line-break: strict;
 }
 .brand-belief p {
   font-size: clamp(1.1rem, 2vw, 1.3rem);
-  line-height: 1.8;
+  line-height: 1.7;
   color: #cbd5e1;
-  max-width: 800px;
+  max-width: 36em;
   margin: 0 auto;
+  text-wrap: pretty;
+  line-break: strict;
 }
 
 .why-grid {
@@ -952,21 +1058,38 @@ textarea {
 }
 
 .footer-legal {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.8rem;
+  justify-content: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-/* 手機：公司名稱與連結各佔一行，避免分隔線掛在行尾 */
+/* 分隔線只畫在項目之間；桌機另在公司名稱與連結之間畫一條（手機公司名稱獨佔一行，不畫） */
+.footer-legal li + li::before,
+.footer-legal::before {
+  content: '|';
+  margin: 0 0.8rem;
+  color: rgba(148, 163, 184, 0.3);
+}
+
 @media (max-width: 480px) {
   .footer-bottom > strong {
     flex-basis: 100%;
     text-align: center;
   }
 
-  .footer-divider--lead {
+  .footer-legal::before {
     display: none;
   }
+}
+
+/* 隱私頁：標題與內容卡片共用同一欄寬、左緣對齊（VI-35） */
+.privacy-page {
+  max-width: 860px;
+  margin: 0 auto;
 }
 
 .privacy-doc-card {
@@ -1067,6 +1190,48 @@ textarea {
 
 .privacy-table a:hover {
   color: #f87171;
+}
+
+/* 手機：服務商表格改成堆疊卡片，第三欄連結不被切掉（VI-29） */
+@media (max-width: 640px) {
+  .privacy-table,
+  .privacy-table thead,
+  .privacy-table tbody,
+  .privacy-table tr,
+  .privacy-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .privacy-table thead {
+    display: none;
+  }
+
+  .privacy-table tr {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+  }
+
+  .privacy-table tr:last-child {
+    border-bottom: none;
+  }
+
+  .privacy-table td {
+    border-bottom: none;
+    padding: 0.35rem 0.85rem;
+  }
+
+  .privacy-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-bottom: 0.1rem;
+  }
+
+  .privacy-table a {
+    overflow-wrap: anywhere;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1307,7 +1472,7 @@ textarea {
 
 .quote-author {
   font-size: clamp(0.95rem, 1.5vw, 1.15rem);
-  color: #fca5a5;
+  color: var(--brand-red-soft);
   font-weight: 500;
   display: block;
   letter-spacing: 0.05em;
@@ -1342,7 +1507,8 @@ textarea {
 
 .footer-col__desc {
   line-height: 1.7;
-  font-size: 0.92rem;
+  font-size: 14px;
+  color: var(--muted-soft);
 }
 
 .footer-badge-list {
@@ -1429,14 +1595,23 @@ textarea {
   flex-wrap: wrap;
 }
 
-.footer-divider {
-  color: rgba(148, 163, 184, 0.2);
-}
+
 
 @media (max-width: 960px) {
+  /* 平板：2 欄（品牌簡介獨佔第一列），手機再改單欄（VI-13） */
+  .footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
+  }
+
+  .footer-col--brand {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
   .footer-grid {
     grid-template-columns: 1fr;
-    gap: 2rem;
   }
 }
 
@@ -2245,5 +2420,73 @@ textarea {
 
 .admin-audit__changes li {
   margin: 0.15rem 0;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   404 與錯誤頁（UX-01／VI-02）
+   ========================================================= */
+.status-page {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.status-page__panel {
+  width: 100%;
+  max-width: 640px;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  text-align: center;
+}
+
+.status-page__code {
+  margin: 0;
+  font-size: clamp(3.5rem, 12vw, 6rem);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--brand-red);
+}
+
+.status-page__title {
+  margin: 0.75rem 0 0.5rem;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  text-wrap: balance;
+}
+
+.status-page__text {
+  max-width: 46ch;
+  margin: 0 auto 1.5rem;
+  line-height: 1.7;
+}
+
+.status-page__search {
+  max-width: 440px;
+  margin: 0 auto 1.25rem;
+}
+
+.status-page__search .product-search {
+  margin-bottom: 0;
+}
+
+.status-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.status-page__actions button {
+  font-weight: 700;
+}
+
+.status-page__contact {
+  margin: 1.5rem 0 0;
+  font-size: 0.95rem;
+}
+
+.status-page__contact a {
+  color: #e2e8f0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   overflow-wrap: anywhere;
 }

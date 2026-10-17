@@ -1,14 +1,14 @@
 import type {Metadata} from 'next';
-import {localeAlternates} from '@/lib/site';
+import {buildPageMetadata} from '@/lib/page-seo';
 import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales, type Locale } from '@/lib/catalog';
 import { privacyContent } from '@/lib/privacy-content';
 
-// canonical 與 hreflang 指向本頁（D14）；標題沿用 layout
+// canonical 與 hreflang 指向本頁（D14）；標題與描述見 page-seo（OP-06）
 export async function generateMetadata({params}: {params: Promise<{locale: string}>}): Promise<Metadata> {
   const {locale} = await params;
-  return {alternates: localeAlternates(locale, '/legal/privacy')};
+  return buildPageMetadata(locale, 'privacy', '/legal/privacy');
 }
 
 export default async function PrivacyPage({
@@ -27,7 +27,7 @@ export default async function PrivacyPage({
   const doc = privacyContent[localeValue];
 
   return (
-    <main>
+    <main className="privacy-page">
       <div className="section-heading">
         <div>
           <h1 className="page-title">{doc.title}</h1>
@@ -70,9 +70,9 @@ export default async function PrivacyPage({
                     <tbody>
                       {doc.services.map((service, sIdx) => (
                         <tr key={sIdx}>
-                          <td><strong>{service.name}</strong></td>
-                          <td>{service.purpose}</td>
-                          <td>
+                          <td data-label={doc.tableHeaders.service}><strong>{service.name}</strong></td>
+                          <td data-label={doc.tableHeaders.purpose}>{service.purpose}</td>
+                          <td data-label={doc.tableHeaders.policy}>
                             <a
                               href={`https://${service.url}`}
                               target="_blank"

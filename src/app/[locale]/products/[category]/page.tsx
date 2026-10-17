@@ -8,7 +8,9 @@ import { Breadcrumb } from '@/components/products/Breadcrumb';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import Link from 'next/link';
 import { SafeImage } from '@/components/ui/SafeImage';
-import { toProductImageUrl } from '@/lib/assets';
+import { getCategoryCoverUrl, toProductImageUrl } from '@/lib/assets';
+import { NO_IMAGE_URL } from '@/lib/product-image-url';
+import { defaultShareImage, defaultTwitterImage, ogLocale } from '@/lib/page-seo';
 import { localized } from '@/lib/localized-text';
 import { decodeSegment, encodeSegment } from '@/lib/url-segment';
 
@@ -29,6 +31,11 @@ export async function generateMetadata({
   const baseUrl = getBaseUrl();
   const title = `${categoryData.name} | ${localized(locale, { 'zh-TW': '產品系列', 'zh-CN': '产品系列', en: 'Products' })}`;
   const description = categoryData.description;
+  // 分享預覽圖：該分類的封面（自己上傳的，或第一個產品的照片）；沒有照片就用全站預設分享圖
+  const summaries = await getCategorySummaries(localeValue);
+  const cover = getCategoryCoverUrl(category, summaries.find((item) => item.key === categoryData.slug)?.coverImage);
+  const hasCover = cover !== NO_IMAGE_URL;
+  const images = hasCover ? [cover] : [defaultShareImage];
 
   return {
     title,
@@ -38,9 +45,11 @@ export async function generateMetadata({
       title,
       description,
       url: `${baseUrl}/${locale}/products/${encodeSegment(category)}`,
-      locale,
+      images,
+      locale: ogLocale(locale),
       siteName: localized(locale, { 'zh-TW': '協皇企業有限公司', 'zh-CN': '协皇企业有限公司', en: 'Xie Huang Enterprise Co., Ltd.' }),
     },
+    twitter: { card: 'summary_large_image' as const, title, description, images: hasCover ? [cover] : [defaultTwitterImage] },
     alternates: localeAlternates(locale, `/products/${encodeSegment(category)}`),
   };
 }

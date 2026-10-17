@@ -40,7 +40,7 @@ export function ProductCard({
         <p className="muted product-card__specs">
           {specLabel}：{product.specifications.join(' / ')}
         </p>
-        <Link className="text-link" href={href}>
+        <Link className="text-link product-card__detail" href={href}>
           {detailLabel}
         </Link>
         <ProductCardInquiryButton

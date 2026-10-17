@@ -20,7 +20,7 @@
     "inStock": "现货",
     "madeToOrder": "接单生产",
     "searchLabel": "搜索产品",
-    "searchPlaceholder": "输入料号或品名，例如 1HV-11311",
+    "searchPlaceholder": "零件号或名称",
     "searchButton": "搜索",
     "searchTitle": "搜索结果",
     "searchFor": "“{query}”共 {count} 项产品",
@@ -37,9 +37,9 @@
   },
   "contact": {
     "title": "联系我们",
-    "address": "地址：台中市南屯区黎明路一段533-2号",
-    "phone": "电话：+886 930 797 299",
-    "email": "Email：sales@xh-motorparts.com"
+    "address": "台中市南屯区黎明路一段533-2号",
+    "phone": "+886 930 797 299",
+    "email": "sales@xh-motorparts.com"
   },
   "privacy": {
     "title": "隐私政策",
@@ -85,5 +85,19 @@
     "loginDescription": "请使用管理员账号登录后台以管理产品与询价资料。",
     "loginButton": "登录",
     "dashboardTitle": "管理后台"
+  },
+  "notFound": {
+    "title": "找不到这个页面",
+    "description": "您要找的页面可能已经搬移或不存在。可以用零件号或名称搜索产品目录，或回到首页。",
+    "home": "回首页",
+    "products": "浏览产品目录",
+    "contact": "需要协助找零件？请来信"
+  },
+  "error": {
+    "title": "页面发生问题",
+    "description": "这个页面暂时无法加载，请再试一次，或回到首页。",
+    "retry": "重新加载",
+    "home": "回首页",
+    "contact": "若问题持续，请来信"
   }
 }
