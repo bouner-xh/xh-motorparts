@@ -2489,7 +2489,8 @@ textarea {
   text-decoration: underline;
   text-underline-offset: 3px;
   overflow-wrap: anywhere;
-=======
+}
+
 /* ===== 後台防呆（健診 工作包 E）===== */
 .admin-toast-region {
   position: fixed;
