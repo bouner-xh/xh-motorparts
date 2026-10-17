@@ -276,7 +276,7 @@ function handleStorage(req, url, raw) {
   const [, bucket, objectPath] = match;
   if ((req.method === 'POST' || req.method === 'PUT') && objectPath) {
     STORAGE.add(`${bucket}/${decodeURIComponent(objectPath)}`);
-    STORAGE_META[`${bucket}/${decodeURIComponent(objectPath)}`] = { bytes: req.bodyBytes, contentType: req.headers['content-type'] || '' };
+    STORAGE_META[`${bucket}/${decodeURIComponent(objectPath)}`] = { bytes: req.bodyBytes, contentType: req.headers['content-type'] || '', cacheControl: req.headers['cache-control'] || '' };
     return { status: 200, body: { Key: `${bucket}/${objectPath}` } };
   }
   if (req.method === 'DELETE') {
