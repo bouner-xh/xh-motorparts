@@ -49,9 +49,10 @@ export default async function ProductSearchPage({
         <CategorySidebar locale={localeValue} searchValue={query} />
 
         <section className="card-grid">
-          {results.map((product) => (
+          {results.map((product, index) => (
             <ProductCard
               key={product.id}
+              priority={index < 4}
               product={product}
               href={
                 product.subCategory

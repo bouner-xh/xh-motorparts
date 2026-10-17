@@ -10,6 +10,9 @@ import { ProductCard } from '@/components/products/ProductCard';
 import { localized } from '@/lib/localized-text';
 import { decodeSegment, encodeSegment } from '@/lib/url-segment';
 
+// 列表最前面幾張圖片直接載入（不延遲），其餘維持延遲載入
+const PRIORITY_IMAGE_COUNT = 4;
+
 export async function generateMetadata({
   params,
 }: {
@@ -106,9 +109,10 @@ export default async function SubCategoryPage({
         <CategorySidebar locale={localeValue} activeCategory={categoryData.slug} activeSubCategory={decodedSubCategory} />
 
         <section className="card-grid">
-          {rows.length > 0 ? rows.map((product) => (
+          {rows.length > 0 ? rows.map((product, index) => (
             <ProductCard
               key={product.id}
+              priority={index < PRIORITY_IMAGE_COUNT}
               product={product}
               href={`/${localeValue}/products/${encodeSegment(categoryData.slug)}/${encodeURIComponent(subCategoryData.slug)}/${encodeURIComponent(product.slug ?? product.model)}`}
               specLabel={tProducts('specifications')}

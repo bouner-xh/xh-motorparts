@@ -10,7 +10,7 @@ export function ProductGallery({images, alt, thumbLabel}: {images: string[]; alt
 
   return (
     <>
-      <SafeImage src={current} alt={alt} width={900} height={900} unoptimized />
+      <SafeImage src={current} alt={alt} width={900} height={900} unoptimized priority />
       {images.length > 1 ? (
         <ul className="product-gallery__thumbs" aria-label={alt}>
           {images.map((src, index) => (

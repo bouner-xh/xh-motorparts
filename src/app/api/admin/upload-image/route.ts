@@ -69,6 +69,8 @@ export async function POST(request: Request) {
 
   const {error: uploadError} = await service.storage.from(bucket).upload(objectPath, buffer, {
     contentType: detectedType,
+    // 檔名含 UUID，內容不會再變，讓瀏覽器與 CDN 快取一年（OP-04）；舊圖需重新上傳才會套用
+    cacheControl: '31536000',
     upsert: false
   });
 

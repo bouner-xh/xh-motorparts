@@ -20,6 +20,8 @@ export function SafeImage({src, onError, ...props}: ImageProps) {
   return (
     <Image
       {...props}
+      // priority 只會取消 lazy 並預先載入，不會幫 <img> 加上 fetchpriority；這裡一併補上，LCP 圖片才會優先下載
+      fetchPriority={props.priority ? 'high' : props.fetchPriority}
       ref={checkLoaded}
       src={failedSource === source ? NO_IMAGE_URL : source}
       onError={(event) => {
