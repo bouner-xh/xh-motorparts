@@ -78,7 +78,22 @@
     "inquirySuccess": "Inquiry successfully sent! We will contact you soon.",
     "submitInquiry": "Submit RFQ",
     "productModel": "Model",
-    "productName": "Name"
+    "productName": "Name",
+    "errors": {
+      "invalid_input": "Some information is missing or invalid. Please check the form and try again, or email sales@xh-motorparts.com.",
+      "rate_limited": "Too many requests. Please wait a few minutes and try again, or email sales@xh-motorparts.com.",
+      "captcha_failed": "Verification failed. Please complete the verification again and resubmit, or email sales@xh-motorparts.com.",
+      "service_unavailable": "The inquiry service is temporarily unavailable. Please try again later, or contact us at sales@xh-motorparts.com.",
+      "save_failed": "We could not submit your inquiry. Please try again later, or contact us at sales@xh-motorparts.com.",
+      "server_error": "Something went wrong on our side. Please try again later, or contact us at sales@xh-motorparts.com.",
+      "network": "Network error. Please check your connection and try again, or email sales@xh-motorparts.com."
+    },
+    "captchaRequired": "Please complete the verification first",
+    "captchaExpired": "Verification expired. Please verify again.",
+    "successSummary": "{count, plural, one {# item} other {# items}} submitted. A confirmation email has been sent to {email}.",
+    "successSummaryNoEmail": "{count, plural, one {# item} other {# items}} submitted.",
+    "inquiryNumber": "Inquiry No. {number}",
+    "replyTime": "We reply within 24 hours on business days (Mon–Fri 09:00–18:00, Taiwan time, GMT+8)."
   },
   "admin": {
     "loginTitle": "Admin login",
