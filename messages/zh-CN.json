@@ -78,7 +78,22 @@
     "inquirySuccess": "询价已成功提交！我们将尽快回复您。",
     "submitInquiry": "提交询价单 (RFQ)",
     "productModel": "型号",
-    "productName": "品名"
+    "productName": "品名",
+    "errors": {
+      "invalid_input": "资料不完整或格式有误，请检查表单后再提交，或发邮件到 sales@xh-motorparts.com。",
+      "rate_limited": "提交太频繁，请等几分钟后再试，或发邮件到 sales@xh-motorparts.com。",
+      "captcha_failed": "验证失败，请重新完成验证后再提交，或发邮件到 sales@xh-motorparts.com。",
+      "service_unavailable": "询价服务暂时无法使用，请稍后再试，或发邮件到 sales@xh-motorparts.com。",
+      "save_failed": "询价单暂时无法提交，请稍后再试，或发邮件到 sales@xh-motorparts.com。",
+      "server_error": "系统发生错误，请稍后再试，或发邮件到 sales@xh-motorparts.com。",
+      "network": "网络连接异常，请检查网络后再试，或发邮件到 sales@xh-motorparts.com。"
+    },
+    "captchaRequired": "请先完成验证",
+    "captchaExpired": "验证已过期，请重新验证。",
+    "successSummary": "已提交 {count} 项，确认信已发送到 {email}。",
+    "successSummaryNoEmail": "已提交 {count} 项。",
+    "inquiryNumber": "询价编号 {number}",
+    "replyTime": "工作日 24 小时内回复（周一至周五 09:00–18:00，台湾时间 GMT+8）。"
   },
   "admin": {
     "loginTitle": "管理员登录",

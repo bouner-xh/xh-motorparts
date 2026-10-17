@@ -78,7 +78,22 @@
     "inquirySuccess": "詢價已成功送出！我們將儘速回覆您。",
     "submitInquiry": "送出詢價單 (RFQ)",
     "productModel": "型號",
-    "productName": "品名"
+    "productName": "品名",
+    "errors": {
+      "invalid_input": "資料不完整或格式有誤，請檢查表單後再送出，或寄信到 sales@xh-motorparts.com。",
+      "rate_limited": "送出太頻繁，請等幾分鐘後再試，或寄信到 sales@xh-motorparts.com。",
+      "captcha_failed": "驗證失敗，請重新完成驗證後再送出，或寄信到 sales@xh-motorparts.com。",
+      "service_unavailable": "詢價服務暫時無法使用，請稍後再試，或寄信到 sales@xh-motorparts.com。",
+      "save_failed": "詢價單暫時無法送出，請稍後再試，或寄信到 sales@xh-motorparts.com。",
+      "server_error": "系統發生錯誤，請稍後再試，或寄信到 sales@xh-motorparts.com。",
+      "network": "網路連線異常，請檢查網路後再試，或寄信到 sales@xh-motorparts.com。"
+    },
+    "captchaRequired": "請先完成驗證",
+    "captchaExpired": "驗證已過期，請重新驗證。",
+    "successSummary": "已送出 {count} 項，確認信已寄到 {email}。",
+    "successSummaryNoEmail": "已送出 {count} 項。",
+    "inquiryNumber": "詢價編號 {number}",
+    "replyTime": "營業日 24 小時內回覆（週一至週五 09:00–18:00，台灣時間 GMT+8）。"
   },
   "admin": {
     "loginTitle": "管理員登入",

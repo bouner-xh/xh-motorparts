@@ -387,6 +387,12 @@ const server = http.createServer((req, res) => {
           return { result: 'OK' };
         }
         if (name === 'GET') return { result: REDIS[key] ?? null };
+        // 詢價確認信每日額度用：INCR 計數、EXPIRE 只記錄不真的過期
+        if (name === 'INCR') {
+          REDIS[key] = String((Number(REDIS[key]) || 0) + 1);
+          return { result: Number(REDIS[key]) };
+        }
+        if (name === 'EXPIRE') return { result: 1 };
         return { error: `mock: unsupported command ${name}` };
       };
       const body = JSON.parse(raw || '[]');

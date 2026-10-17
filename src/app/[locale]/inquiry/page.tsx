@@ -1,14 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { localized } from '@/lib/localized-text';
 import { Icon } from '@/components/ui/Icon';
 import { INQUIRY_LIMITS } from '@/lib/inquiry-limits';
+import { inquiryErrorMessageKey } from '@/lib/inquiry-errors';
+
+// 買家聯絡欄位（受控欄位：送出失敗時保留內容，切換語言時以 sessionStorage 暫存草稿）
+const EMPTY_FIELDS = { name: '', email: '', companyName: '', country: '', phone: '', message: '' };
+type FieldName = keyof typeof EMPTY_FIELDS;
+
+// 草稿只存欄位文字，不存 Turnstile token；只放在 sessionStorage（關閉分頁即消失），送出成功後清除
+const DRAFT_KEY = 'xh_inquiry_draft';
+
+function readDraft() {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const draft = { ...EMPTY_FIELDS };
+    for (const key of Object.keys(EMPTY_FIELDS) as FieldName[]) {
+      if (typeof parsed[key] === 'string') draft[key] = (parsed[key] as string).slice(0, INQUIRY_LIMITS[key]);
+    }
+    return draft;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(fields: typeof EMPTY_FIELDS) {
+  try {
+    if (Object.values(fields).every((v) => !v)) sessionStorage.removeItem(DRAFT_KEY);
+    else sessionStorage.setItem(DRAFT_KEY, JSON.stringify(fields));
+  } catch {
+    // 瀏覽器不允許寫入（無痕模式、容量已滿）時不影響填寫
+  }
+}
+
+function clearDraft() {
+  try {
+    sessionStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // 忽略
+  }
+}
 
 /**
  * B2B RFQ 詢價車詳情與客戶聯絡資料提交頁面
@@ -19,29 +59,57 @@ export default function InquiryCartPage() {
   const locale = (params.locale as string) || 'en';
 
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
-  const [status, setStatus] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [fields, setFields] = useState(EMPTY_FIELDS);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [summary, setSummary] = useState<{ count: number; email: string; confirmationSent: boolean; inquiryNo: string | null } | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [token, setToken] = useState<string>('');
   const [isSuccess, setIsSuccess] = useState(false);
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
+  // 掛載後還原草稿（不在初始渲染讀取，避免伺服器與瀏覽器畫面不一致）
+  useEffect(() => {
+    const draft = readDraft();
+    if (draft) setFields(draft);
+    setDraftLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (draftLoaded && !isSuccess) writeDraft(fields);
+  }, [fields, draftLoaded, isSuccess]);
+
+  // 出現錯誤訊息時捲入視野
+  useEffect(() => {
+    if (errorMessage) errorRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [errorMessage]);
+
+  const handleField = (name: FieldName) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFields((prev) => ({ ...prev, [name]: e.target.value }));
+  };
+
+  // Turnstile token 只能使用一次：送出失敗後必須重置 widget 並清空 token，讓買家重新驗證
+  const resetCaptcha = () => {
+    setToken('');
+    turnstileRef.current?.reset();
+  };
+
   const handleQtyChange = (id: string, value: number) => {
     updateQuantity(id, value);
   };
 
-  async function onSubmit(formData: FormData) {
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    // 不使用 <form action>：React 19 在 action 結束後會重設非受控欄位，失敗時買家填的內容會全部消失
+    event.preventDefault();
     if (cart.length === 0) return;
     setIsSubmitting(true);
-    setStatus(t('sending'));
+    setErrorMessage('');
 
     const payload = {
-      name: String(formData.get('name') || ''),
-      email: String(formData.get('email') || ''),
-      companyName: String(formData.get('companyName') || ''),
-      country: String(formData.get('country') || ''),
-      phone: String(formData.get('phone') || ''),
-      message: String(formData.get('message') || ''),
+      ...fields,
       items: cart.map((item) => ({
         productId: item.id,
         modelNumber: item.modelNumber,
@@ -60,19 +128,28 @@ export default function InquiryCartPage() {
         body: JSON.stringify(payload),
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
       if (response.ok) {
-        setStatus(t('success'));
+        setSummary({
+          count: Number(result.itemCount) || cart.length,
+          email: fields.email,
+          confirmationSent: result.confirmationSent === true,
+          inquiryNo: typeof result.inquiryNo === 'string' ? result.inquiryNo : null,
+        });
+        clearDraft();
         setIsSuccess(true);
         clearCart();
       } else {
-        setStatus(result.error || t('error'));
+        // 依 API 的錯誤代碼顯示買家語系的訊息（含備用聯絡方式）
+        setErrorMessage(t(`errors.${inquiryErrorMessageKey(result.code)}`));
         setIsSubmitting(false);
+        resetCaptcha();
       }
     } catch (e) {
       console.error(e);
-      setStatus(t('error'));
+      setErrorMessage(t('errors.network'));
       setIsSubmitting(false);
+      resetCaptcha();
     }
   }
 
@@ -83,9 +160,17 @@ export default function InquiryCartPage() {
         <article className="card" style={{ maxWidth: '550px', width: '100%', padding: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '3.5rem', color: '#10b981', marginBottom: '1rem' }}>✓</div>
           <h1 style={{ fontSize: '1.75rem', marginTop: '0.83em', marginBottom: '0.8rem' }}>{t('inquirySuccess')}</h1>
-          <p className="muted" style={{ marginBottom: '2rem', lineHeight: '1.6' }}>
-            {localized(locale, { 'zh-TW': '感謝您的洽詢，我們已收到您的詢價單，系統已自動發送確認信至您的信箱，協皇業務團隊將儘速與您聯繫。', 'zh-CN': '感谢您的洽询，我们已收到您的询价单，系统已自动发送确认信至您的邮箱，协皇业务团队将尽快与您联系。', en: 'Thank you for your interest. A confirmation email has been sent to your mailbox. Our sales team will get back to you shortly.' })}
-          </p>
+          {summary && (
+            <div data-testid="inquiry-success-summary" style={{ marginBottom: '2rem', lineHeight: '1.6' }}>
+              {summary.inquiryNo && <p style={{ margin: '0 0 0.4rem', fontWeight: 600 }}>{t('inquiryNumber', { number: summary.inquiryNo })}</p>}
+              <p style={{ margin: '0 0 0.4rem' }}>
+                {summary.confirmationSent
+                  ? t('successSummary', { count: summary.count, email: summary.email })
+                  : t('successSummaryNoEmail', { count: summary.count })}
+              </p>
+              <p className="muted" style={{ margin: 0 }}>{t('replyTime')}</p>
+            </div>
+          )}
           <Link href={`/${locale}/products`} className="button" style={{ display: 'inline-block', textDecoration: 'none' }}>
             {t('browseProducts')}
           </Link>
@@ -131,7 +216,7 @@ export default function InquiryCartPage() {
                   <th>{t('productModel')}</th>
                   <th>{t('productName')}</th>
                   <th style={{ width: '150px' }}>{t('quantity')}</th>
-                  <th style={{ width: '80px', textAlign: 'center' }}></th>
+                  <th style={{ textAlign: 'center' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -176,10 +261,11 @@ export default function InquiryCartPage() {
                           </button>
                         </div>
                       </td>
-                      <td className="cart-row__remove" style={{ textAlign: 'center' }}>
+                      <td className="cart-row__remove" style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <button
                           type="button"
                           className="remove-btn"
+                          style={{ whiteSpace: 'nowrap' }}
                           onClick={() => removeFromCart(item.id)}
                         >
                           {t('removeFromCart')}
@@ -196,44 +282,46 @@ export default function InquiryCartPage() {
         {/* 買家資訊表單 */}
         <section className="card" style={{ padding: '1.5rem' }}>
           <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.25rem' }}>{t('contactInfoTitle')}</h3>
-          <form action={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+          <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
             <label>
               <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>
                 {t('name')} <span style={{ color: '#ef4444' }}>*</span>
               </span>
-              <input name="name" type="text" required maxLength={INQUIRY_LIMITS.name} placeholder="e.g. Mr. Chen" />
+              <input name="name" value={fields.name} onChange={handleField('name')} type="text" required maxLength={INQUIRY_LIMITS.name} placeholder="e.g. Mr. Chen" />
             </label>
 
             <label>
               <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>
                 {t('email')} <span style={{ color: '#ef4444' }}>*</span>
               </span>
-              <input name="email" type="email" required maxLength={INQUIRY_LIMITS.email} placeholder="e.g. buyer@company.com" />
+              <input name="email" value={fields.email} onChange={handleField('email')} type="email" required maxLength={INQUIRY_LIMITS.email} placeholder="e.g. buyer@company.com" />
             </label>
 
             <label>
               <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>
                 {t('companyName')} <span style={{ color: '#ef4444' }}>*</span>
               </span>
-              <input name="companyName" type="text" required maxLength={INQUIRY_LIMITS.companyName} placeholder="e.g. Motor Parts Trading Co." />
+              <input name="companyName" value={fields.companyName} onChange={handleField('companyName')} type="text" required maxLength={INQUIRY_LIMITS.companyName} placeholder="e.g. Motor Parts Trading Co." />
             </label>
 
             <label>
               <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>
                 {t('country')} <span style={{ color: '#ef4444' }}>*</span>
               </span>
-              <input name="country" type="text" required maxLength={INQUIRY_LIMITS.country} placeholder="e.g. Germany / Vietnam" />
+              <input name="country" value={fields.country} onChange={handleField('country')} type="text" required maxLength={INQUIRY_LIMITS.country} placeholder="e.g. Germany / Vietnam" />
             </label>
 
             <label>
               <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>{t('phone')}</span>
-              <input name="phone" type="text" maxLength={INQUIRY_LIMITS.phone} placeholder="e.g. +886 4 12345678" />
+              <input name="phone" value={fields.phone} onChange={handleField('phone')} type="text" maxLength={INQUIRY_LIMITS.phone} placeholder="e.g. +886 4 12345678" />
             </label>
 
             <label>
               <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>{t('messageLabel')}</span>
               <textarea
                 name="message"
+                value={fields.message}
+                onChange={handleField('message')}
                 rows={4}
                 maxLength={INQUIRY_LIMITS.message}
                 placeholder={
@@ -244,7 +332,14 @@ export default function InquiryCartPage() {
 
             {siteKey ? (
               <div style={{ marginTop: '0.5rem' }}>
-                <Turnstile siteKey={siteKey} onSuccess={(v) => setToken(v)} />
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey={siteKey}
+                  onSuccess={(v) => setToken(v)}
+                  // token 過期或驗證出錯時清空，按鈕變灰並提示重新驗證
+                  onExpire={() => { setToken(''); setErrorMessage(t('captchaExpired')); }}
+                  onError={() => setToken('')}
+                />
               </div>
             ) : (
               <p className="muted" style={{ fontSize: '0.85rem' }}>{t('captchaPending')}</p>
@@ -263,7 +358,20 @@ export default function InquiryCartPage() {
               {isSubmitting ? t('sending') : t('submitInquiry')}
             </button>
 
-            {status && <p className="muted" style={{ fontSize: '0.9rem', textAlign: 'center', marginTop: '0.5rem' }}>{status}</p>}
+            {siteKey && !token && !isSubmitting && (
+              <p className="muted" data-testid="captcha-required" style={{ fontSize: '0.85rem', textAlign: 'center', margin: 0 }}>{t('captchaRequired')}</p>
+            )}
+
+            {errorMessage && (
+              <p
+                ref={errorRef}
+                role="alert"
+                data-testid="inquiry-error"
+                style={{ margin: 0, padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid rgba(248, 113, 113, 0.4)', background: 'rgba(127, 29, 29, 0.22)', color: '#fca5a5', fontSize: '0.9rem', lineHeight: 1.5 }}
+              >
+                {errorMessage}
+              </p>
+            )}
           </form>
         </section>
       </div>

@@ -17,8 +17,8 @@ run('資料庫故障時顯示失敗並保留詢價清單', () =>
     ]);
     assert(response.status() === 500, `API 回應 500（實際 ${response.status()}）`);
 
-    await page.getByText('詢價單暫時無法送出').waitFor();
-    assert(true, '畫面顯示失敗訊息與替代聯絡方式');
+    await page.getByText('We could not submit your inquiry').waitFor();
+    assert(true, '英文介面顯示英文失敗訊息與替代聯絡方式');
     assert((await page.getByText('Inquiry successfully sent').count()) === 0, '沒有顯示送出成功');
 
     const stored = JSON.parse((await page.evaluate(() => localStorage.getItem('xh_rfq_cart'))) || '[]');
