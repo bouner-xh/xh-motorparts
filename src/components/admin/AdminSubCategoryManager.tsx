@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useAdminStatus } from '@/components/admin/AdminToast';
 import type { Locale } from '@/lib/catalog';
 import { normalizeSlug, SLUG_MESSAGE } from '@/lib/slug';
 
@@ -47,17 +48,11 @@ export function AdminSubCategoryManager(_props: { locale: Locale }) {
   const [categories, setCategories] = useState<AdminCategoryItem[]>([]);
   const [rows, setRows] = useState<AdminSubCategoryItem[]>([]);
   const [form, setForm] = useState<SubCategoryFormState>(emptyFormState);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [statusType, setStatusType] = useState<StatusType>('idle');
+  const setStatus: (type: StatusType, message: string) => void = useAdminStatus();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
-  function setStatus(type: StatusType, message: string) {
-    setStatusType(type);
-    setStatusMessage(message);
-  }
 
   const loadCategories = useCallback(async () => {
     try {
@@ -86,7 +81,7 @@ export function AdminSubCategoryManager(_props: { locale: Locale }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [setStatus]);
 
   useEffect(() => {
     void loadCategories();
@@ -108,6 +103,43 @@ export function AdminSubCategoryManager(_props: { locale: Locale }) {
       window.removeEventListener('products-updated', handleProductsUpdated);
     };
   }, [loadCategories, loadSubCategories]);
+
+
+  // 排序：拖曳之外，每列的「上移／下移」按鈕讓鍵盤與觸控也能調整（UX-16）；儲存沿用同一支排序 API
+  const [isReordering, setIsReordering] = useState(false);
+  async function saveOrder(newRows: typeof rows) {
+    const updatedRows = newRows.map((item, idx) => ({ ...item, sortOrder: (idx + 1) * 10 }));
+    setRows(updatedRows);
+    setStatus('info', '正在儲存排列順序...');
+    setIsReordering(true);
+    try {
+      const response = await fetch('/api/admin/sub-categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedRows.map((item) => ({ id: item.id, sortOrder: item.sortOrder })))
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || '儲存排列失敗');
+      setStatus('success', '排列順序儲存成功');
+      // 以伺服器上的順序為準，避免畫面被更早送出的載入結果蓋掉
+      await loadSubCategories();
+      window.dispatchEvent(new Event('subcategories-updated'));
+    } catch (error) {
+      setStatus('error', error instanceof Error ? error.message : '儲存排列失敗');
+      void loadSubCategories();
+    } finally {
+      setIsReordering(false);
+    }
+  }
+
+  async function moveRow(index: number, delta: number) {
+    const to = index + delta;
+    if (to < 0 || to >= rows.length) return;
+    const newRows = [...rows];
+    const [item] = newRows.splice(index, 1);
+    newRows.splice(to, 0, item);
+    await saveOrder(newRows);
+  }
 
   async function submitSubCategory(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -233,12 +265,6 @@ export function AdminSubCategoryManager(_props: { locale: Locale }) {
         </div>
       </form>
 
-      {statusMessage && (
-        <p style={{ marginTop: '1rem', color: statusType === 'error' ? '#fca5a5' : '#86efac' }}>
-          {statusMessage}
-        </p>
-      )}
-
       <table style={{ width: '100%', marginTop: '1.5rem', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ textAlign: 'left', borderBottom: '1px solid #334155' }}>
@@ -252,7 +278,7 @@ export function AdminSubCategoryManager(_props: { locale: Locale }) {
           </tr>
         </thead>
         <tbody>
-          {isLoading ? (<tr><td colSpan={7}>載入中...</td></tr>) : rows.length === 0 ? (<tr><td colSpan={7}>無子目錄</td></tr>) : rows.map((r, index) => (
+          {isLoading && rows.length === 0 ? (<tr><td colSpan={7}>載入中...</td></tr>) : rows.length === 0 ? (<tr><td colSpan={7}>無子目錄</td></tr>) : rows.map((r, index) => (
             <tr
               key={r.id}
               style={{ borderBottom: '1px solid #1e293b' }}
@@ -324,6 +350,10 @@ export function AdminSubCategoryManager(_props: { locale: Locale }) {
               <td>{r.sortOrder}</td>
               <td>{r.productCount}</td>
               <td>
+                <span className="admin-move-buttons">
+                  <button type="button" className="admin-move-button" disabled={index === 0 || isReordering} aria-label={`上移：${r.nameZhTw}`} onClick={() => void moveRow(index, -1)}>↑</button>
+                  <button type="button" className="admin-move-button" disabled={index === rows.length - 1 || isReordering} aria-label={`下移：${r.nameZhTw}`} onClick={() => void moveRow(index, 1)}>↓</button>
+                </span>
                 <button type="button" onClick={() => startEdit(r)} style={{ marginRight: '0.5rem', padding: '0.3rem 0.6rem' }}>編輯</button>
                 <button type="button" onClick={() => void deleteSubCategory(r)} style={{ background: '#991b1b', padding: '0.3rem 0.6rem' }}>刪除</button>
               </td>

@@ -58,7 +58,8 @@ run('編輯時切換大分類：子分類自動清空，必須重選', () =>
     assert((await form.getByLabel('子分類').inputValue()) === '', '切換大分類後子分類清空');
 
     await form.getByRole('button', { name: '更新產品' }).click();
-    await page.getByText(/請修正：請選擇子分類/).waitFor({ timeout: 10000 });
+    // 錯誤改顯示在子分類欄位旁（UX-24）
+    await page.getByTestId('field-error-subCategoryId').getByText(/請選擇子分類/).waitFor({ timeout: 10000 });
     assert(true, '未重選子分類時無法儲存');
 
     await form.getByLabel('子分類').selectOption(CHAIN_SUB_ID);

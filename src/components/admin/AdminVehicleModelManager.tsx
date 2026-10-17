@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Locale } from '@/lib/catalog';
 import { VEHICLE_NAME_MAX } from '@/lib/vehicle-models';
+import { useAdminStatus } from '@/components/admin/AdminToast';
 
 interface VehicleModelItem {
   id: string;
@@ -21,13 +22,7 @@ export function AdminVehicleModelManager(_props: { locale: Locale }) {
   const [newName, setNewName] = useState('');
   const [editingId, setEditingId] = useState('');
   const [editName, setEditName] = useState('');
-  const [statusType, setStatusType] = useState<StatusType>('idle');
-  const [statusMessage, setStatusMessage] = useState('');
-
-  function setStatus(type: StatusType, message: string) {
-    setStatusType(type);
-    setStatusMessage(message);
-  }
+  const setStatus: (type: StatusType, message: string) => void = useAdminStatus();
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -42,7 +37,7 @@ export function AdminVehicleModelManager(_props: { locale: Locale }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [setStatus]);
 
   useEffect(() => {
     void load();
@@ -122,10 +117,6 @@ export function AdminVehicleModelManager(_props: { locale: Locale }) {
         </div>
       </form>
 
-      {statusMessage ? (
-        <p style={{ marginTop: '1rem', color: statusType === 'error' ? '#fca5a5' : '#86efac' }}>{statusMessage}</p>
-      ) : null}
-
       <table style={{ width: '100%', marginTop: '1rem', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ textAlign: 'left', borderBottom: '1px solid #334155' }}>
@@ -135,7 +126,7 @@ export function AdminVehicleModelManager(_props: { locale: Locale }) {
           </tr>
         </thead>
         <tbody>
-          {isLoading ? (
+          {isLoading && items.length === 0 ? (
             <tr><td colSpan={3}>載入中...</td></tr>
           ) : items.length === 0 ? (
             <tr><td colSpan={3}>{enabled ? '還沒有車型，請先新增。' : '尚未啟用。'}</td></tr>

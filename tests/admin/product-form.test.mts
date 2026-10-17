@@ -63,3 +63,26 @@ test('OEM／對照料號：逗號、頓號、分號、換行分隔，轉大寫�
   assert.deepEqual(splitOemNumbers(' , ，'), []);
   assert.deepEqual(normalizeOemNumbers(['ab-1', 'AB-1', '  ']), ['AB-1']);
 });
+
+// 健診 UX-24：欄位內嵌錯誤
+import { mapServerErrorToFields, validateProductFormFields } from '../../src/lib/product-form.ts';
+
+test('驗證結果依欄位回傳，validateProductForm 的訊息順序不變', () => {
+  const input = { modelNumber: '', subCategoryId: '', nameZhTw: '', nameZhCn: '', nameEn: '', stockQuantity: 1.5 };
+  const fields = validateProductFormFields(input);
+  assert.deepEqual(Object.keys(fields), ['modelNumber', 'subCategoryId', 'nameEn', 'stockQuantity']);
+  assert.deepEqual(validateProductForm(input), Object.values(fields));
+  assert.deepEqual(validateProductFormFields({ ...input, modelNumber: 'A', subCategoryId: 's', nameEn: 'n', stockQuantity: 1 }), {});
+});
+
+test('伺服器錯誤對應到欄位；對不上的保留給摘要', () => {
+  assert.deepEqual(mapServerErrorToFields(duplicateModelMessage('A-1')), { fields: { modelNumber: duplicateModelMessage('A-1') }, unmapped: false });
+  assert.deepEqual(mapServerErrorToFields('OEM／對照料號「X-1」已經被產品「A」使用，請確認'), { fields: { oemNumbers: 'OEM／對照料號「X-1」已經被產品「A」使用，請確認' }, unmapped: false });
+  assert.deepEqual(mapServerErrorToFields('請修正：型號太長（最多 100 字）、庫存必須是 0 到 1,000,000 的整數'), {
+    fields: { modelNumber: '型號太長（最多 100 字）', stockQuantity: '庫存必須是 0 到 1,000,000 的整數' },
+    unmapped: false
+  });
+  assert.equal(mapServerErrorToFields('請修正：每個規格最多 200 字').fields.specifications, '每個規格最多 200 字');
+  assert.equal(mapServerErrorToFields('資料庫操作失敗，請稍後再試').unmapped, true);
+  assert.equal(mapServerErrorToFields('請修正：型號太長（最多 100 字）、奇怪的錯誤').unmapped, true);
+});

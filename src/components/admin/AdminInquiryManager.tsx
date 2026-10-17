@@ -4,6 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { navigateAdmin } from '@/components/admin/AdminCustomerManager';
 import { InquiryReplyComposer } from '@/components/admin/InquiryReplyComposer';
+import { useAdminStatus } from '@/components/admin/AdminToast';
+import { useUnsavedWarning } from '@/components/admin/useUnsavedWarning';
+
+// 詳情視窗有尚未儲存或寄出的內容時，關閉前的確認文字（UX-12）
+const CLOSE_CONFIRM_MESSAGE = '尚未儲存或寄出的內容會消失，確定要關閉嗎？';
 
 interface InquiryItem {
   productId: string;
@@ -86,7 +91,9 @@ export function AdminInquiryManager() {
   const [loading, setLoading] = useState(true);
   // 錯誤與操作結果顯示在面板內，不取代整個面板、不用瀏覽器彈窗（A6）
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
+  // 操作結果改成貼在視窗頂端的 toast（UX-15）
+  const setStatus = useAdminStatus();
+  const setNotice = useCallback((message: string) => setStatus('success', message), [setStatus]);
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [editStatus, setEditStatus] = useState<Inquiry['status']>('pending');
   const [editNotes, setEditNotes] = useState('');
@@ -178,6 +185,17 @@ export function AdminInquiryManager() {
     openerRef.current?.focus();
   }, []);
 
+  // 回覆信撰寫中，或狀態、處理備忘錄有未儲存的修改（UX-12）
+  const detailDirty = Boolean(selectedInquiry) && (composing || editStatus !== selectedInquiry?.status || editNotes !== (selectedInquiry?.reply_notes || ''));
+  useUnsavedWarning('inquiry-detail', detailDirty);
+
+  // Esc、點視窗外、按「關閉」都走這裡：有未儲存內容時先確認，取消就不關
+  const requestClose = useCallback(() => {
+    if (detailDirty && !window.confirm(CLOSE_CONFIRM_MESSAGE)) return;
+    handleCloseDetail();
+  }, [detailDirty, handleCloseDetail]);
+  const backdropPressed = useRef(false);
+
   // 開啟詳情時載入處理紀錄（A6 ③）
   const loadEvents = useCallback(async (inquiryId: string) => {
     setEventsState('loading');
@@ -198,14 +216,19 @@ export function AdminInquiryManager() {
 
   // 詳情視窗：開啟時移入焦點，按 Esc 關閉（A6）
   useEffect(() => {
+    if (selectedInquiry) dialogRef.current?.focus();
+    // 只在換一張詢價單時移入焦點；之後修改欄位不能把焦點搶走
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedInquiry?.id]);
+
+  useEffect(() => {
     if (!selectedInquiry) return;
-    dialogRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') handleCloseDetail();
+      if (event.key === 'Escape') requestClose();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [selectedInquiry, handleCloseDetail]);
+  }, [selectedInquiry, requestClose]);
 
   const handleSave = async () => {
     if (!selectedInquiry) return;
@@ -358,11 +381,6 @@ export function AdminInquiryManager() {
           {error}
         </div>
       ) : null}
-      {notice && !error ? (
-        <div role="status" style={{ padding: '0.75rem 1rem', marginBottom: '1rem', borderRadius: '8px', border: '1px solid rgba(52, 211, 153, 0.45)', background: 'rgba(6, 78, 59, 0.24)' }}>
-          {notice}
-        </div>
-      ) : null}
 
       {loading ? (
         <div style={{ padding: '2rem', textAlign: 'center' }}>載入詢價單中...</div>
@@ -474,6 +492,15 @@ export function AdminInquiryManager() {
       {/* Modal 詢價詳情彈出視窗 */}
       {selectedInquiry && (
         <div
+          // 點視窗外也算關閉（有未儲存內容時先確認）；按下與放開都在背景上才算，避免選取文字拖到外面時誤關
+          onMouseDown={(e) => {
+            backdropPressed.current = e.target === e.currentTarget;
+          }}
+          onClick={(e) => {
+            const pressed = backdropPressed.current;
+            backdropPressed.current = false;
+            if (pressed && e.target === e.currentTarget) requestClose();
+          }}
           style={{
             position: 'fixed',
             inset: 0,
@@ -562,6 +589,7 @@ export function AdminInquiryManager() {
                 className="admin-stat__link"
                 onClick={() => {
                   const email = selectedInquiry.customer_email;
+                  if (detailDirty && !window.confirm(CLOSE_CONFIRM_MESSAGE)) return;
                   handleCloseDetail();
                   navigateAdmin({ tab: 'customers', email });
                 }}
@@ -687,7 +715,7 @@ export function AdminInquiryManager() {
               </button>
               <button
                 type="button"
-                onClick={handleCloseDetail}
+                onClick={requestClose}
                 style={{
                   background: 'rgba(30, 41, 59, 0.6)',
                   border: '1px solid rgba(148, 163, 184, 0.15)',

@@ -94,13 +94,83 @@ export interface ProductFormInput {
   stockQuantity: number;
 }
 
+// 表單欄位（健診 UX-24）：欄位內嵌錯誤用；順序就是畫面由上到下的順序，送出失敗時聚焦第一個有錯的欄位
+export type ProductFormField =
+  | 'category'
+  | 'subCategoryId'
+  | 'modelNumber'
+  | 'nameEn'
+  | 'nameZhTw'
+  | 'nameZhCn'
+  | 'specifications'
+  | 'vehicleModelIds'
+  | 'oemNumbers'
+  | 'stockQuantity'
+  | 'images';
+
+export const PRODUCT_FIELD_ORDER: ProductFormField[] = [
+  'category',
+  'subCategoryId',
+  'modelNumber',
+  'nameEn',
+  'nameZhTw',
+  'nameZhCn',
+  'specifications',
+  'vehicleModelIds',
+  'oemNumbers',
+  'stockQuantity',
+  'images'
+];
+
+export type ProductFieldErrors = Partial<Record<ProductFormField, string>>;
+
+// 送出前在瀏覽器先檢查，訊息與伺服器一致；依欄位回傳
+export function validateProductFormFields(input: ProductFormInput): ProductFieldErrors {
+  const errors: ProductFieldErrors = {};
+  if (!input.modelNumber) errors.modelNumber = '型號不可為空';
+  if (!input.subCategoryId) errors.subCategoryId = '請選擇子分類（沒有子分類時請先到「分類」分頁建立）';
+  // 英文名稱必填；繁中、簡中選填（沒填時前台顯示英文名稱）
+  if (!input.nameEn) errors.nameEn = '名稱（en）不可為空';
+  if (!Number.isInteger(input.stockQuantity) || input.stockQuantity < 0 || input.stockQuantity > MAX_STOCK_QUANTITY) errors.stockQuantity = STOCK_MESSAGE;
+  return errors;
+}
+
 // 送出前在瀏覽器先檢查，訊息與伺服器一致
 export function validateProductForm(input: ProductFormInput): string[] {
-  const errors: string[] = [];
-  if (!input.modelNumber) errors.push('型號不可為空');
-  if (!input.subCategoryId) errors.push('請選擇子分類（沒有子分類時請先到「分類」分頁建立）');
-  // 英文名稱必填；繁中、簡中選填（沒填時前台顯示英文名稱）
-  if (!input.nameEn) errors.push('名稱（en）不可為空');
-  if (!Number.isInteger(input.stockQuantity) || input.stockQuantity < 0 || input.stockQuantity > MAX_STOCK_QUANTITY) errors.push(STOCK_MESSAGE);
-  return errors;
+  return Object.values(validateProductFormFields(input));
+}
+
+// 一句伺服器回傳的錯誤訊息屬於哪個欄位（伺服器訊息見 src/app/api/admin/products/route.ts）
+function fieldForMessagePart(part: string): ProductFormField | null {
+  if (part.startsWith('型號')) return 'modelNumber';
+  if (part.startsWith('名稱（en）')) return 'nameEn';
+  if (part.startsWith('名稱（zh-TW）')) return 'nameZhTw';
+  if (part.startsWith('名稱（zh-CN）')) return 'nameZhCn';
+  if (part.startsWith('庫存')) return 'stockQuantity';
+  if (part.startsWith('子分類')) return 'subCategoryId';
+  if (part.startsWith('大分類')) return 'category';
+  if (part.includes('規格')) return 'specifications';
+  if (part.includes('對照料號') || part.startsWith('OEM')) return 'oemNumbers';
+  if (part.startsWith('適用車型')) return 'vehicleModelIds';
+  if (part.startsWith('圖片')) return 'images';
+  return null;
+}
+
+// 把伺服器回傳的錯誤訊息對應到欄位；只要有一句對不上欄位（unmapped），畫面頂端的摘要就要顯示完整訊息
+export function mapServerErrorToFields(message: string): {fields: ProductFieldErrors; unmapped: boolean} {
+  const fields: ProductFieldErrors = {};
+  if (message.startsWith('請修正：')) {
+    let unmapped = false;
+    for (const part of message.slice('請修正：'.length).split('、')) {
+      const field = fieldForMessagePart(part);
+      if (field) fields[field] = fields[field] ? `${fields[field]}、${part}` : part;
+      else unmapped = true;
+    }
+    return {fields, unmapped};
+  }
+  if (message.startsWith('找不到這個大分類')) return {fields: {category: message}, unmapped: false};
+  if (message.startsWith('子分類不屬於')) return {fields: {subCategoryId: message}, unmapped: false};
+  if (message.startsWith('型號「') && message.includes('已經存在')) return {fields: {modelNumber: message}, unmapped: false};
+  if (message.startsWith('OEM／對照料號「')) return {fields: {oemNumbers: message}, unmapped: false};
+  return {fields, unmapped: true};
 }
