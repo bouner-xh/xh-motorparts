@@ -39,7 +39,7 @@
 - 開發與預覽：`npm run dev`。
 - 交付前至少執行：`npm run build`。
 - 圖片改名工具：`python3 rename_images.py`。
-- CI 檔案：`.github/workflows/ci.yml`、`.github/workflows/db-backup.yml`。
+- CI 檔案：`.github/workflows/ci.yml`（資料庫備份採每月手動匯出，不使用 GitHub Actions，因為 repo 公開）。
 
 ## 修改原則（給 AI/自動化代理）
 - 優先小範圍修改，避免無關重構與大幅格式化。

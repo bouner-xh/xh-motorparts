@@ -1,21 +1,13 @@
 import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {getLegacyImagesRoot} from '@/lib/assets';
-
-const mimeTypes: Record<string, string> = {
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-  '.gif': 'image/gif',
-  '.webp': 'image/webp'
-};
+import {LEGACY_ASSET_MIME_TYPES, resolveLegacyAssetPath} from '@/lib/legacy-asset-path';
 
 export async function GET(_request: Request, {params}: {params: Promise<{path: string[]}>}) {
   const {path: segments} = await params;
-  const safePath = path.normalize(segments.join('/')).replace(/^(\.\.(\/|\\|$))+/, '');
-  const filePath = path.join(getLegacyImagesRoot(), safePath);
+  const filePath = resolveLegacyAssetPath(getLegacyImagesRoot(), segments);
 
-  if (!filePath.startsWith(getLegacyImagesRoot())) {
+  if (!filePath) {
     return new Response('Forbidden', {status: 403});
   }
 
@@ -25,7 +17,7 @@ export async function GET(_request: Request, {params}: {params: Promise<{path: s
 
     return new Response(file, {
       headers: {
-        'Content-Type': mimeTypes[ext] || 'application/octet-stream',
+        'Content-Type': LEGACY_ASSET_MIME_TYPES[ext],
         'Cache-Control': 'public, max-age=31536000, immutable'
       }
     });

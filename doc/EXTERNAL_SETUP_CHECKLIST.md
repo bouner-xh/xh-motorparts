@@ -74,7 +74,7 @@
 | Supabase Project URL | 前後端查資料 | `NEXT_PUBLIC_SUPABASE_URL` | 必要 |
 | Supabase Anon Key | 前端/Server 讀取公開資料 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 必要 |
 | Supabase Service Role Key | 後端管理操作（未全面啟用） | `SUPABASE_SERVICE_ROLE_KEY` | 建議 |
-| PostgreSQL `DATABASE_URL` | GitHub 備份 workflow | `DATABASE_URL` | 必要 |
+| PostgreSQL `DATABASE_URL` | 不再使用（備份改為每月手動匯出，見 R7；repo 公開，不使用 GitHub Actions 備份） | — | 不需要 |
 | Supabase Auth 設定資訊 | Admin 登入串接 | 無固定 env，需後台設定 | 下一步必要 |
 
 ### C. Cloudflare Turnstile
@@ -158,7 +158,6 @@
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `DATABASE_URL`
 - `CF_ACCOUNT_ID`
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
@@ -180,8 +179,7 @@
 - `LINE_NOTIFY_TOKEN`
 
 ### GitHub Secrets
-至少先補：
-- `DATABASE_URL`
+至少先補（注意：不要在 GitHub 設定 `DATABASE_URL`，備份改為每月手動匯出）：
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
@@ -265,20 +263,17 @@
 3. 在 UptimeRobot 建立監控後，狀態應為 up。
 
 ### 5.7 GitHub Actions / 備份
-**你要提供**
-- GitHub Secrets
-- `DATABASE_URL`
+備份採每月手動匯出（見 R7），不使用 GitHub Actions 備份，因為 repo 公開（備份檔會成為公開 repo 的附件）。原本的 `db-backup.yml` 已刪除，也不需要設定 `DATABASE_URL`。
 
 **驗收方式**
-1. 到 GitHub Actions 手動執行 backup workflow。
-2. 應產出 `.dump` artifact。
-3. PR 時 CI workflow 應能正常跑完。
+1. PR 時 CI workflow 應能正常跑完。
+2. 每月依 R7 手動匯出資料並存放在私人位置。
 
 ---
 
 ## 6. 建議提供順序（最省時間）
 1. 正式網域
-2. Supabase：`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`DATABASE_URL`
+2. Supabase：`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`
 3. Turnstile：site key + secret key
 4. Upstash：URL + token
 5. Resend：API key + from/admin email
@@ -310,7 +305,6 @@ NEXT_PUBLIC_BASE_URL=
 Supabase：
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-DATABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 
 Turnstile：

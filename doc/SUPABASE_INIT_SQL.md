@@ -197,21 +197,29 @@ execute function public.set_updated_at();
 alter table public.customers enable row level security;
 alter table public.inquiry_requests enable row level security;
 
--- Drop existing policies if any
+-- 詢價資料只由網站伺服器（service role）寫入，不開放匿名 INSERT。
+-- R4（2026-10-04）已在正式資料庫刪除下列匿名 INSERT 規則；
+-- 以下 drop 讓舊環境重新執行本檔時也會清掉，請勿再建立任何 anon／public 的 insert 規則：
 drop policy if exists "public_insert_customers" on public.customers;
-create policy "public_insert_customers"
-on public.customers
-for insert
-with check (true);
-
 drop policy if exists "public_insert_inquiry_requests" on public.inquiry_requests;
-create policy "public_insert_inquiry_requests"
-on public.inquiry_requests
-for insert
-with check (true);
+-- R4 同時刪除了 categories／products／product_images 各一條重複的 "Allow public read access"
+-- （條件為 true；products 那條會讓未上架產品被匿名讀取）。
+-- 上方第 5 節的規則才是正確版本：products 只允許 is_active = true。
+drop policy if exists "Allow public read access" on public.categories;
+drop policy if exists "Allow public read access" on public.products;
+drop policy if exists "Allow public read access" on public.product_images;
 ```
 
 ## 檢查是否建置成功
+
+先核對 RLS 規則是否與正式庫一致（不確定的地方請老闆以這段 SQL 的實際結果為準）。
+預期 public 只有 SELECT 規則，且沒有任何 anon／public 的 INSERT、UPDATE、DELETE；products 的讀取條件限已上架（`is_active = true`）：
+
+```sql
+select schemaname, tablename, policyname, cmd, roles from pg_policies where schemaname='public' order by tablename;
+```
+
+其他檢查：
 
 ```sql
 select slug, sort_order from public.categories order by sort_order;

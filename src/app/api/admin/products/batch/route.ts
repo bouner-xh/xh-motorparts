@@ -6,6 +6,7 @@ import { isAdminEmail } from '@/lib/admin-auth';
 import { revalidateCatalog } from '@/lib/revalidate';
 import { getProductImageUrls, removeUnreferencedImages } from '@/lib/product-image-cleanup';
 import { escapeLikePattern, MAX_STOCK_QUANTITY, normalizeModelNumber } from '@/lib/product-form';
+import { normalizeSlug, SLUG_MESSAGE } from '@/lib/slug';
 import { describeDbError, INVALID_INPUT_MESSAGE, type DbErrorLike } from '@/lib/admin-api-errors';
 
 // 每列的錯誤訊息：原始資料庫錯誤記在伺服器 log，畫面顯示中文說明（A9）
@@ -75,13 +76,18 @@ export async function POST(request: Request) {
 
   for (const item of products) {
     try {
+      // 分類代號一律正規化（小寫英文、數字、連字號）再比對／建立（SX-14）；正規化前後相同者不受影響
+      const categorySlug = normalizeSlug(item.categorySlug);
+      const subCategorySlug = normalizeSlug(item.subCategorySlug);
+      if (!categorySlug || !subCategorySlug) throw new Error(SLUG_MESSAGE);
+
       // 1. 確保大分類存在
-      let categoryId = categoryCache.get(item.categorySlug);
+      let categoryId = categoryCache.get(categorySlug);
       if (!categoryId) {
         const { data: catExisted } = await service
           .from('categories')
           .select('id')
-          .eq('slug', item.categorySlug)
+          .eq('slug', categorySlug)
           .maybeSingle();
 
         if (catExisted?.id) {
@@ -90,13 +96,13 @@ export async function POST(request: Request) {
           // 建立新大分類
           const nameI18n = {...item.categoryNameI18n};
           if (Object.keys(nameI18n).length === 0) {
-            nameI18n['zh-TW'] = item.categorySlug;
+            nameI18n['zh-TW'] = item.categorySlug; // 顯示名稱沿用原輸入
           }
 
           const { data: catNew, error: catErr } = await service
             .from('categories')
             .insert({
-              slug: item.categorySlug,
+              slug: categorySlug,
               name_i18n: nameI18n,
               description_i18n: { 'zh-TW': '', 'zh-CN': '', en: '' },
               sort_order: 0
@@ -110,18 +116,18 @@ export async function POST(request: Request) {
           categoryId = catNew.id;
         }
         if (!categoryId) throw new Error('無法取得或建立大分類 ID');
-        categoryCache.set(item.categorySlug, categoryId);
+        categoryCache.set(categorySlug, categoryId);
       }
 
       // 2. 確保子分類存在
-      const subCatCacheKey = `${categoryId}:${item.subCategorySlug}`;
+      const subCatCacheKey = `${categoryId}:${subCategorySlug}`;
       let subCategoryId = subCategoryCache.get(subCatCacheKey);
       if (!subCategoryId) {
         const { data: subExisted } = await service
           .from('sub_categories')
           .select('id')
           .eq('category_id', categoryId)
-          .eq('slug', item.subCategorySlug)
+          .eq('slug', subCategorySlug)
           .maybeSingle();
 
         if (subExisted?.id) {
@@ -130,14 +136,14 @@ export async function POST(request: Request) {
           // 建立新子分類
           const nameI18n = {...item.subCategoryNameI18n};
           if (Object.keys(nameI18n).length === 0) {
-            nameI18n['zh-TW'] = item.subCategorySlug;
+            nameI18n['zh-TW'] = item.subCategorySlug; // 顯示名稱沿用原輸入
           }
 
           const { data: subNew, error: subErr } = await service
             .from('sub_categories')
             .insert({
               category_id: categoryId,
-              slug: item.subCategorySlug,
+              slug: subCategorySlug,
               name_i18n: nameI18n,
               sort_order: 0
             })
