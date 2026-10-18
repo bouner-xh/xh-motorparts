@@ -6,7 +6,7 @@ import {getProductImageUrls, removeUnreferencedImages} from '@/lib/product-image
 import {describeDbError, INVALID_ID_MESSAGE, INVALID_INPUT_MESSAGE, isUuid} from '@/lib/admin-api-errors';
 import {describeProductInputIssues, duplicateModelMessage, escapeLikePattern, MAX_OEM_NUMBERS, MAX_PRODUCT_IMAGES, MAX_STOCK_QUANTITY, MAX_VEHICLE_MODELS_PER_PRODUCT, normalizeModelNumber, normalizeOemNumbers} from '@/lib/product-form';
 import {isMissingVehicleSchema, VEHICLE_SETUP_MESSAGE} from '@/lib/vehicle-models';
-import {diffFields, safeSnapshot, writeAuditLog} from '@/lib/audit-log';
+import {auditValue, diffFields, safeSnapshot, writeAuditLog} from '@/lib/audit-log';
 import {snapshotProduct} from '@/lib/audit-snapshots';
 import {findOemConflict, oemConflictMessage, pickUrlKey, urlKeyColumnExists} from '@/lib/product-url-key';
 
@@ -537,6 +537,70 @@ export async function PUT(request: Request) {
 
   revalidateCatalog();
   return Response.json({ok: true, requestId});
+}
+
+// 批量上架／下架（P9）：一次最多 100 筆，只更新「狀態真的會改變」的產品，每筆各寫一筆操作紀錄
+const bulkActivePayloadSchema = z.object({
+  ids: z.array(z.string()).min(1).max(100),
+  isActive: z.boolean()
+});
+
+export async function PATCH(request: Request) {
+  const requestId = buildRequestId();
+  const authResult = await getAuthenticatedUser();
+  if (!authResult.ok) {
+    return Response.json({error: authResult.error, requestId}, {status: toAuthErrorStatus(authResult.error)});
+  }
+
+  const service = getSupabaseServiceRoleClient();
+  if (!service) {
+    return Response.json({error: 'Supabase service role config is missing', requestId}, {status: 500});
+  }
+
+  const parsed = bulkActivePayloadSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success || !parsed.data.ids.every(isUuid)) {
+    return Response.json({error: INVALID_INPUT_MESSAGE, requestId}, {status: 400});
+  }
+  const ids = [...new Set(parsed.data.ids)];
+  const {isActive} = parsed.data;
+
+  const {data: current, error: queryError} = await service.from('products').select('id,model_number,is_active').in('id', ids);
+  if (queryError) return dbError(requestId, 'bulk query products failed', queryError);
+
+  const found = (current as Array<{id: string; model_number: string; is_active: boolean | null}> | null) || [];
+  const changing = found.filter((item) => Boolean(item.is_active) !== isActive);
+  if (changing.length) {
+    const {error} = await service
+      .from('products')
+      .update({is_active: isActive})
+      .in(
+        'id',
+        changing.map((item) => item.id)
+      );
+    if (error) return dbError(requestId, 'bulk update products failed', error);
+
+    await Promise.all(
+      changing.map((item) =>
+        writeAuditLog(service, {
+          actorEmail: authResult.user.email || '',
+          action: 'update',
+          entityType: 'product',
+          entityId: item.id,
+          entityLabel: item.model_number,
+          changes: {上架: [auditValue(item.is_active), auditValue(isActive)]}
+        })
+      )
+    );
+    revalidateCatalog();
+  }
+
+  return Response.json({
+    ok: true,
+    updated: changing.length,
+    unchanged: found.length - changing.length,
+    missing: ids.length - found.length,
+    requestId
+  });
 }
 
 export async function DELETE(request: Request) {
