@@ -121,6 +121,9 @@ export function AdminProductManager(_props: {locale: Locale}) {
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterActive, setFilterActive] = useState<ActiveFilter>('all');
   const [page, setPage] = useState(1);
+  // 批量上架／下架（P9）：勾選的產品 id；搜尋或篩選條件改變時清空，避免誤操作看不到的產品
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkBusy, setIsBulkBusy] = useState(false);
   // 已上傳但還沒存檔的圖片；換圖或取消時刪除，避免留在儲存空間（A7）
   const [unsavedUploads, setUnsavedUploads] = useState<string[]>([]);
   // 「進階」手動輸入的圖片網址
@@ -479,6 +482,59 @@ export function AdminProductManager(_props: {locale: Locale}) {
       window.dispatchEvent(new Event('products-updated'));
     } catch (error) {
       setStatus('error', error instanceof Error ? error.message : '操作失敗');
+    }
+  }
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // 批量上架／下架：先確認（含沒有圖片的提醒），每 100 筆送一次
+  async function bulkSetActive(next: boolean) {
+    const targets = rows.filter((row) => selectedIds.has(row.id));
+    if (!targets.length) return;
+    const action = next ? '上架' : '下架';
+    const noImage = next ? targets.filter((row) => row.images.length === 0).length : 0;
+    const message =
+      `確定要將選取的 ${targets.length} 項產品${action}嗎？` +
+      (noImage ? `\n\n其中 ${noImage} 項還沒有圖片，上架後前台會顯示預設圖片。` : '');
+    if (!window.confirm(message)) return;
+
+    setIsBulkBusy(true);
+    setStatus('info', `批量${action}中：${targets.length} 項`);
+    let updated = 0;
+    let unchanged = 0;
+    let missing = 0;
+    try {
+      for (let i = 0; i < targets.length; i += 100) {
+        const response = await fetch('/api/admin/products', {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ids: targets.slice(i, i + 100).map((row) => row.id), isActive: next})
+        });
+        const result = (await parseResponseJson<{error?: string; updated?: number; unchanged?: number; missing?: number}>(response)) || {};
+        if (!response.ok) {
+          throw new Error(`${result.error || `批量${action}失敗（HTTP ${response.status}）`}${updated ? `（前面已有 ${updated} 項${action}成功）` : ''}`);
+        }
+        updated += result.updated || 0;
+        unchanged += result.unchanged || 0;
+        missing += result.missing || 0;
+      }
+      setSelectedIds(new Set());
+      await loadProducts();
+      window.dispatchEvent(new Event('products-updated'));
+      const extra = [unchanged ? `${unchanged} 項本來就是${action}` : '', missing ? `${missing} 項找不到（可能已被刪除）` : ''].filter(Boolean).join('、');
+      setStatus('success', `已${action} ${updated} 項${extra ? `（${extra}）` : ''}`);
+    } catch (error) {
+      await loadProducts();
+      setStatus('error', error instanceof Error ? error.message : '操作失敗');
+    } finally {
+      setIsBulkBusy(false);
     }
   }
 
@@ -932,6 +988,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(1);
+            setSelectedIds(new Set());
           }}
           style={{flex: '1 1 220px', minWidth: 0}}
         />
@@ -941,6 +998,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
           onChange={(e) => {
             setFilterCategory(e.target.value);
             setPage(1);
+            setSelectedIds(new Set());
           }}
           style={{width: 'auto'}}
         >
@@ -957,6 +1015,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
           onChange={(e) => {
             setFilterActive(e.target.value as ActiveFilter);
             setPage(1);
+            setSelectedIds(new Set());
           }}
           style={{width: 'auto'}}
         >
@@ -966,10 +1025,53 @@ export function AdminProductManager(_props: {locale: Locale}) {
         </select>
       </div>
 
+      {selectedIds.size > 0 ? (
+        <div
+          role="region"
+          aria-label="批量操作"
+          data-testid="bulk-bar"
+          style={{display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center', marginTop: '0.75rem', padding: '0.6rem 0.8rem', borderRadius: '8px', background: 'rgba(29, 78, 216, 0.15)'}}
+        >
+          <strong data-testid="bulk-count">已選取 {selectedIds.size} 項</strong>
+          <button type="button" disabled={isBulkBusy} onClick={() => void bulkSetActive(true)}>
+            批量上架
+          </button>
+          <button type="button" disabled={isBulkBusy} onClick={() => void bulkSetActive(false)} style={{background: '#334155'}}>
+            批量下架
+          </button>
+          {filteredRows.length > selectedIds.size ? (
+            <button type="button" disabled={isBulkBusy} onClick={() => setSelectedIds(new Set(filteredRows.map((row) => row.id)))} style={{background: '#334155'}}>
+              選取符合條件的全部 {filteredRows.length} 項
+            </button>
+          ) : null}
+          <button type="button" disabled={isBulkBusy} onClick={() => setSelectedIds(new Set())} style={{background: 'transparent', border: '1px solid #475569'}}>
+            取消選取
+          </button>
+        </div>
+      ) : null}
+
       <div style={{overflowX: 'auto', marginTop: '0.75rem'}} aria-busy={isLoading}>
         <table style={{width: '100%', borderCollapse: 'collapse'}}>
           <thead>
             <tr>
+              <th align="left" style={{width: '2.5rem'}}>
+                <input
+                  type="checkbox"
+                  aria-label="選取本頁全部產品"
+                  checked={pageRows.length > 0 && pageRows.every((row) => selectedIds.has(row.id))}
+                  disabled={pageRows.length === 0}
+                  onChange={(e) =>
+                    setSelectedIds((prev) => {
+                      const next = new Set(prev);
+                      for (const row of pageRows) {
+                        if (e.target.checked) next.add(row.id);
+                        else next.delete(row.id);
+                      }
+                      return next;
+                    })
+                  }
+                />
+              </th>
               <th align="left">圖片</th>
               <th align="left">型號</th>
               <th align="left">分類</th>
@@ -982,15 +1084,18 @@ export function AdminProductManager(_props: {locale: Locale}) {
           <tbody>
             {isLoading && !hasLoaded ? (
               <tr>
-                <td colSpan={7}>載入中...</td>
+                <td colSpan={8}>載入中...</td>
               </tr>
             ) : loadError && rows.length === 0 ? (
               <tr>
-                <td colSpan={7}>載入失敗，請檢查 Supabase 設定與資料表。</td>
+                <td colSpan={8}>載入失敗，請檢查 Supabase 設定與資料表。</td>
               </tr>
             ) : pageRows.length ? (
               pageRows.map((row) => (
                 <tr key={row.id} style={row.id === form.id ? {background: 'rgba(29, 78, 216, 0.15)'} : undefined}>
+                  <td>
+                    <input type="checkbox" aria-label={`選取 ${row.modelNumber}`} checked={selectedIds.has(row.id)} onChange={() => toggleSelected(row.id)} />
+                  </td>
                   <td>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={toProductImageUrl(row.imagePath)} alt="" onError={fallbackToNoImage} width={48} height={48} loading="lazy" style={{objectFit: 'cover', borderRadius: '6px', display: 'block'}} />
@@ -1027,7 +1132,7 @@ export function AdminProductManager(_props: {locale: Locale}) {
               ))
             ) : (
               <tr>
-                <td colSpan={7}>{rows.length ? '沒有符合條件的產品。' : '目前沒有產品資料。'}</td>
+                <td colSpan={8}>{rows.length ? '沒有符合條件的產品。' : '目前沒有產品資料。'}</td>
               </tr>
             )}
           </tbody>
