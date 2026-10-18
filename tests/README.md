@@ -64,6 +64,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/<檔名>.e2e.cjs
 | `ux-small.e2e.cjs` | 小型體驗改善：搜尋超過上限提示、查無結果分類連結、詢價清單型號連結、數量欄位標籤、跳到主要內容與焦點外框 | 需模擬 Supabase |
 | `admin-bulk-active.e2e.cjs` | 後台批量上架／下架：勾選、確認視窗與沒有圖片提醒、只改狀態會變的、操作紀錄、未登入被擋 | 需模擬 Supabase |
 | `mobile-tablet-layout.e2e.cjs` | 平板頁首收合、手機分類側欄收合、手機 Cookie 橫幅按鈕高度 | 需模擬 Supabase |
+| `visual-polish-n1.e2e.cjs` | 分類頁子分類少時的聯絡卡片、平板分類卡片落單撐滿整列、搜尋卡規格字大小 | 需模擬 Supabase |
 | `product-urls.e2e.cjs` | sitemap 與結構化資料的產品網址含子分類、都能打開 | 需模擬 Supabase，見檔案開頭說明 |
 | `category-slug-spaces.e2e.cjs` | 分類代號含空白時分類、子分類、產品頁與 sitemap 網址都能開啟 | 需模擬 Supabase，見檔案開頭說明 |
 | `product-seo.e2e.cjs` | 產品頁標題、描述（SEO）與 robots.txt | 需模擬 Supabase，見檔案開頭說明 |
