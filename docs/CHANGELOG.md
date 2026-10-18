@@ -25,6 +25,18 @@
 
 ---
 
+## 2026-10-18（第五十六批）：手機與平板前台版面（健診 VI-12、VI-23、UX-10，工作包 N2）
+
+| 項目 | 內容 | 主要檔案 | 測試 |
+|---|---|---|---|
+| VI-12 | 平板（1024px 以下）頁首同手機收合成 ☰ 選單（原本 768px 以下），頁首不再佔掉大半螢幕 | `src/app/globals.css`（手機版標頭區塊） | `mobile-tablet-layout.e2e.cjs` |
+| VI-23 | 960px 以下的產品列表分類側欄預設收合，按「產品分類」才展開，商品露出在第一屏；桌機維持攤開 | `src/components/products/CollapsibleSidebar.tsx`（新）、`CategorySidebar.tsx`、`globals.css` | 同上 |
+| UX-10 | 手機 Cookie 橫幅縮小，「接受／拒絕」按鈕至少 44px 高 | `globals.css` | 同上 |
+
+- 不改資料庫、不新增套件。還原：Revert 對應 PR。
+
+---
+
 ## 2026-10-18（第五十五批）：後台批量上架／下架（P9）
 
 | 項目 | 內容 | 主要檔案 | 測試 |
