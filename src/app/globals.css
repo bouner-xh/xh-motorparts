@@ -1620,14 +1620,14 @@ textarea {
 
 
 /* =========================================================
-   手機版標頭：768px 以下收合為 ☰ 選單（D4）
+   手機與平板標頭：1024px 以下收合為 ☰ 選單（D4、VI-12）
    ========================================================= */
 .header-actions,
 .menu-toggle {
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .site-header {
     margin: 0.5rem 0 1rem;
     padding: 0.7rem 0.9rem;
@@ -2674,4 +2674,83 @@ main:focus {
 .qty-max-note {
   margin: 0.35rem 0 0;
   font-size: 0.8rem;
+}
+
+/* VI-23：手機與平板的分類側欄預設收合，商品不被擠出第一屏；桌機維持攤開 */
+.category-sidebar__toggle {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .category-sidebar__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 0.9rem;
+    border-radius: 10px;
+    background: rgba(30, 41, 59, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: #e2e8f0;
+    font-weight: 600;
+    box-shadow: none;
+  }
+
+  .category-sidebar__toggle:hover {
+    transform: none;
+    box-shadow: none;
+    background: rgba(51, 65, 85, 0.8);
+  }
+
+  .category-sidebar__toggle svg {
+    transition: transform 0.15s ease;
+  }
+
+  .category-sidebar__toggle[aria-expanded='true'] svg {
+    transform: rotate(180deg);
+  }
+
+  .category-sidebar__collapsible > .category-sidebar__label {
+    display: none;
+  }
+
+  .category-sidebar__collapsible:not(.is-open) > .category-sidebar__list {
+    display: none;
+  }
+
+  .category-sidebar__collapsible.is-open > .category-sidebar__list {
+    margin-top: 0.75rem;
+  }
+}
+
+/* UX-10：手機 Cookie 橫幅縮小，按鈕至少 44px 高、好點擊 */
+@media (max-width: 640px) {
+  .CookieConsent {
+    padding: 0.4rem 0.6rem !important;
+    align-items: center !important;
+  }
+
+  .CookieConsent > div:first-child {
+    flex: 1 1 100% !important;
+    margin: 0.3rem 0.4rem !important;
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+
+  .CookieConsent > div:last-child {
+    display: flex;
+    flex: 1 1 100%;
+    gap: 0.5rem;
+  }
+
+  #rcc-confirm-button,
+  #rcc-decline-button {
+    flex: 1 1 0;
+    min-height: 44px;
+    margin: 0.2rem 0 !important;
+    padding: 0 1rem !important;
+    font-size: 14px !important;
+  }
 }

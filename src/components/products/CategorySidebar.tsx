@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {getTranslations} from 'next-intl/server';
 import type { CategoryKey, Locale } from '@/lib/catalog';
 import { getCategorySummaries, getSubCategories, type SubCategorySummary } from '@/lib/catalog-service';
+import { CollapsibleSidebar } from './CollapsibleSidebar';
 import { ProductSearchForm } from './ProductSearchForm';
 import { encodeSegment } from '@/lib/url-segment';
 
@@ -35,8 +36,9 @@ export async function CategorySidebar({
     <aside className="category-sidebar card">
       {/* 產品搜尋（P2）：所有產品列表頁的側欄最上方 */}
       <ProductSearchForm locale={locale} defaultValue={searchValue} />
+      <CollapsibleSidebar label={t('catalogLabel')}>
       <p className="category-sidebar__label">{t('catalogLabel')}</p>
-      <ul className="category-sidebar__list">
+      <ul id="category-sidebar-list" className="category-sidebar__list">
         {categories.map((c) => {
           const category = c.key;
           const isActive = category === activeCategory;
@@ -76,6 +78,7 @@ export async function CategorySidebar({
           );
         })}
       </ul>
+      </CollapsibleSidebar>
     </aside>
   );
 }
