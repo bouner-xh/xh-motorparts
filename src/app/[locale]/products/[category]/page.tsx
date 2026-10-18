@@ -120,6 +120,16 @@ export default async function CategoryPage({
           )) : (
             <p className="muted" style={{ gridColumn: '1 / -1', padding: '2rem' }}>{localized(localeValue, { 'zh-TW': '目前尚未建立子目錄。', 'zh-CN': '目前尚未建立子目录。', en: 'No sub-categories yet.' })}</p>
           )}
+          {/* 子分類只有 1～2 個時右側會一大片空白：補一張聯絡卡片（VI-06） */}
+          {subCategories.length > 0 && subCategories.length <= 2 ? (
+            <div className="card category-contact-card" data-testid="category-contact-card">
+              <h3>{localized(localeValue, { 'zh-TW': '找不到你要的零件？', 'zh-CN': '找不到你要的零件？', en: "Can't find your part?" })}</h3>
+              <p className="muted">
+                {localized(localeValue, { 'zh-TW': '把料號、尺寸或照片寄給我們，我們協助比對與報價。', 'zh-CN': '把料号、尺寸或照片发给我们，我们协助比对与报价。', en: 'Email us the part number, size or a photo and we will help you match and quote.' })}
+              </p>
+              <a className="text-link" href="mailto:sales@xh-motorparts.com">sales@xh-motorparts.com</a>
+            </div>
+          ) : null}
         </section>
       </div>
     </main>

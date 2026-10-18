@@ -2754,3 +2754,35 @@ main:focus {
     font-size: 14px !important;
   }
 }
+
+/* VI-06：分類頁子分類少時的聯絡卡片 */
+.category-contact-card {
+  display: grid;
+  align-content: center;
+  gap: 0.6rem;
+  padding: 1.5rem;
+}
+
+.category-contact-card h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.category-contact-card p {
+  margin: 0;
+}
+
+/* VI-24：平板的分類卡片 2 欄，最後落單的一張撐滿整列；搜尋卡規格字縮小 */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .card-grid:has(> .category-card) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card-grid > .category-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+.product-card__specs {
+  font-size: 0.82rem;
+}
